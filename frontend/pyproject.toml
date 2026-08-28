@@ -1,8 +1,14 @@
 [project]
-name = "project_name_front"
+name = "Frontend info project ENSAI"
 version = "0.1.0"
-description = "User interface template for the ENSAI 2nd year IT project"
-authors = [{ name = "Lastname Firstname" }, { name = "Author2" }]
+description = "User interface for the ENSAI 2nd year IT project"
+authors = [
+  { name = "AOUISSI Junior" },
+  { name = "CERVANTES Axel" },
+  { name = "CALLET Remi" },
+  { name = "FERRAND Marlene" },
+  { name = "POUPLIN Timothé" },
+]
 requires-python = ">=3.13"
 
 dependencies = ["pandas", "python-dotenv", "PyYAML", "requests", "streamlit"]
