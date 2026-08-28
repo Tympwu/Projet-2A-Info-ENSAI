@@ -1,5 +1,5 @@
 [project]
-name = "Frontend info project ENSAI"
+name = "Frontend_info_project_ENSAI"
 version = "0.1.0"
 description = "User interface for the ENSAI 2nd year IT project"
 authors = [
