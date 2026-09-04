@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from game import Game
+from business_object.game import Game
 
 
 class GameMode(ABC):
@@ -9,7 +9,7 @@ class GameMode(ABC):
     """
 
     @abstractmethod
-    def play(p1, p2, **kwargs) -> Game:
+    def play(self, p1, p2, **kwargs) -> Game:
         """
         Méthode abstraite permettant de lancer une partie du jeu
         """

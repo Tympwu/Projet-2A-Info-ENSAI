@@ -1,8 +1,9 @@
 import secrets
 from datetime import time
 
-from game import Game
-from game_mode import GameMode
+from business_object.game import Game
+from business_object.game_mode import GameMode
+from business_object.player import Player
 
 
 class DiceMode(GameMode):
@@ -10,7 +11,7 @@ class DiceMode(GameMode):
     Jeu permettant de lancer un dé, le joueur ayant le plus haut résultat gagne
     """
 
-    def play(p1, p2) -> Game:
+    def play(self, p1: Player, p2: Player) -> Game:
         """
         Fonction principale permettant de lancer la partie
         """

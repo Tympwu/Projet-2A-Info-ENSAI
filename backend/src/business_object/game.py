@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from player import Player
+from business_object.player import Player
 
 
 class Game:
@@ -19,8 +19,8 @@ class Game:
         timestamp: datetime,
     ):
         self.id_game = None
-        self.player1 = player1
-        self.player2 = player2
+        self.p1 = player1
+        self.p2 = player2
         assert game_mode in os.environ["GAME_SUPPORTED"], "Le jeu n'est pas reconnu"
         self.game_mode: str = game_mode
         self.winner: Player | None = winner
@@ -28,4 +28,4 @@ class Game:
         self.timestamp = timestamp
 
     def __str__(self):
-        return f"{self.game_mode} between {self.player1.username} and {self.player2.username}.Winner : {self.winner}"
+        return f"{self.game_mode} between {self.p1.username} and {self.p2.username}.Winner : {self.winner}"

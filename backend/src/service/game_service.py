@@ -36,6 +36,7 @@ class GameService:
         game = GameModFactory().get_mode(game_mode)
         result_game = game.play(p1, p2, **kwargs)
 
+        print(result_game)
         # Mise à jour de l'élo de chaque joueur
         ScoringStrategy().update_player_ratings(result_game)
 

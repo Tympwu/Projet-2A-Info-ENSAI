@@ -10,7 +10,7 @@ class CoinFlipMode(GameMode):
     A game about flipping a coin
     """
 
-    def play(p1, p2, choice) -> Game:
+    def play(self, p1, p2, choice) -> Game:
         """
         Méthode permettant de lancer le jeu de lancer de pièces
         """
