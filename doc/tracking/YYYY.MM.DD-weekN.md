@@ -1,7 +1,7 @@
 # Weekly Report
 
-Date: Thursday ...
-Week No. ...
+Date: Thursday 04/09
+Week No. 2
 
 ## Tasks completed this week
 
@@ -10,8 +10,9 @@ Week No. ...
 ### Student 1: Last Name, First Name
 
 
-### Student 2: Last Name, First Name
-
+### Student 2: Ferrand Marlène
+création du dossier d'analyse
+Diagramme de Gantt
 
 ### Student 3: Last Name, First Name
 
