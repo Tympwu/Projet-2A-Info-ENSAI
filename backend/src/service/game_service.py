@@ -1,7 +1,9 @@
 from fastapi import HTTPException
 
+from business_object.game import Game
 from business_object.game_mode.game_mode_factory import GameModeFactory
 from business_object.scoring_strategy import ScoringStrategy
+from dao.game_dao import GameDao
 from dao.player_dao import PlayerDao
 from utils.log_utils import log
 
@@ -40,4 +42,51 @@ class GameService:
         PlayerDao().update(p1)
         PlayerDao().update(p2)
 
+        GameDao().create(game)
+
         return game
+
+    @log
+    def find_by_id(self, id_game) -> Game:
+        """Research a game with the given ID.
+        Args:
+            id_game (int): The unique identifier of the game.
+        Returns:
+            game (Game) : a game object with the ID given
+        Raises:
+            HTTPException: 404 if the ID does not correspond to a game.
+        """
+        game = GameDao().find_by_id(id_game)
+
+        if not game:
+            raise HTTPException(status_code=404, detail="Game not found")
+
+        return game
+
+    @log
+    def find_all_by_player(self, id_player, game_mode) -> list[Game]:
+        """Research all game with the player ID requested.
+        Args:
+            id_player (int): The unique identifier of the player research.
+            game_mode (str | None): The game mode requested. If None, all game mode is considered
+        Returns:
+            list_game (list[Game]) : a list of game object with the player ID asked
+        Raises:
+            HTTPException: 404 if the ID does not correspond to a player.
+        """
+        if not PlayerDao().find_by_id(id_player):
+            raise HTTPException(status_code=404, detail="Player not found")
+        game = GameDao().find_all_by_player(id_player)
+
+        if not game:
+            raise HTTPException(status_code=404, detail="No game found")
+
+        if game_mode:
+            result = []
+            for element in game:
+                if element.game_mode == game_mode:
+                    result.append(game)
+        else:
+            result = game
+
+        return result

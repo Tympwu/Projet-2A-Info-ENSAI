@@ -13,3 +13,16 @@ CREATE TABLE player (
 );
 
 
+-----------------------------------------------------
+-- Game
+-----------------------------------------------------
+DROP TABLE IF EXISTS game CASCADE;
+CREATE TABLE game (
+    id_game      SERIAL PRIMARY KEY,
+    id_player1   INTEGER REFERENCES player(id_player),
+    id_player2   INTEGER REFERENCES player(id_player),
+    game_mode    VARCHAR(20),
+    id_winner    INTEGER REFERENCES player(id_player),
+    detail       VARCHAR(100),
+    timestamp    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
