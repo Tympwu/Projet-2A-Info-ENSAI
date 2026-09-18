@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from schema.game_model import GamePlayModel, GameResponse
+from schema.game_model import GamePlayModel, GameReadModel, GameResponse
+from schema.player_model import PlayerReadModel
 from service.game_service import GameService
 from service.player_service import PlayerService
 from utils.log_utils import get_logger
@@ -44,7 +45,7 @@ def play_game(
     )
 
 
-@router.get("/", response_model=list[GameResponse], tags=["Games"])
+@router.get("/", response_model=list[GameReadModel], tags=["Games"])
 def get_games(id_player, game_service=Depends(get_game_service), game_mode: str | None = None):
     if not PlayerService().find_by_id(id_player):
         raise HTTPException(status_code=404, detail="Player not found")
@@ -52,14 +53,28 @@ def get_games(id_player, game_service=Depends(get_game_service), game_mode: str 
     games = game_service.find_all_by_player(id_player, game_mode)
     result = []
     for element in games:
+        p1 = PlayerReadModel(
+            id_player=element.player1.id_player,
+            username=element.player1.username,
+            elo=element.player1.elo,
+            email=element.player1.email,
+            pokemon_fan=element.player1.pokemon_fan,
+        )
+        p2 = PlayerReadModel(
+            id_player=element.player2.id_player,
+            username=element.player2.username,
+            elo=element.player2.elo,
+            email=element.player2.email,
+            pokemon_fan=element.player2.pokemon_fan,
+        )
         result.append(
-            GameResponse(
-                username1=element.player1.username,
-                username2=element.player2.username,
+            GameReadModel(
+                id_game=element.id_game,
+                game_mode=element.game_mode,
                 description=element.description,
-                winner=element.winner.username if element.winner else None,
-                new_elo1=element.player1.elo,
-                new_elo2=element.player2.elo,
+                timestamp=element.timestamp,
+                player1=p1,
+                player2=p2,
             )
         )
     return result
