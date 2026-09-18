@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from schema.game_model import GamePlayModel, GameResponse
 from service.game_service import GameService
+from service.player_service import PlayerService
 from utils.log_utils import get_logger
 from utils.security import verify_token
 
@@ -41,3 +42,24 @@ def play_game(
         new_elo1=game.player1.elo,
         new_elo2=game.player2.elo,
     )
+
+
+@router.get("/", response_model=list[GameResponse], tags=["Games"])
+def get_games(id_player, game_service=Depends(get_game_service), game_mode: str | None = None):
+    if not PlayerService().find_by_id(id_player):
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    games = game_service.find_all_by_player(id_player, game_mode)
+    result = []
+    for element in games:
+        result.append(
+            GameResponse(
+                username1=element.player1.username,
+                username2=element.player2.username,
+                description=element.description,
+                winner=element.winner.username if element.winner else None,
+                new_elo1=element.player1.elo,
+                new_elo2=element.player2.elo,
+            )
+        )
+    return result
