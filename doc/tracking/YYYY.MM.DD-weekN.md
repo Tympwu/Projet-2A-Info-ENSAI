@@ -7,20 +7,19 @@ Week No. 2
 
 > Examples: `- [x] Task 1` or - `none`
 
-### Student 1: Last Name, First Name
+### Student 1: Cervantes Axel
 
 
 ### Student 2: Ferrand Marlène
-création du dossier d'analyse
-Diagramme de Gantt
-
-### Student 3: Last Name, First Name
 
 
-### Student 4: Last Name, First Name
+### Student 3: Callet Rémi
 
 
-### Student 5: Last Name, First Name
+### Student 4: AOUISSI Junior
+
+
+### Student 5: Pouplin Timothé
 
 ---
 
