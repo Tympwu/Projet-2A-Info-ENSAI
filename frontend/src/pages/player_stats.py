@@ -7,6 +7,7 @@ Endpoints used:
     GET /player
 """
 
+import pandas as pd
 import streamlit as st
 
 from utils.api_client import api_client
@@ -22,7 +23,42 @@ if not st.query_params["id_player"].isnumeric():
 else:
     player_id = st.query_params["id_player"]
 
-player = api_client.get(path="/player/", params={"id_player": player_id})
+    player = api_client.get(f"/player/{player_id}")["data"]
 
-st.write(f"/player?id_player={player_id}")
-st.write(player)
+    st.subheader(player["username"])
+
+    col1, col2, col3 = st.columns(3, border=True)
+    with col1:
+        (st.metric("Elo", player["elo"]))
+    with col2:
+        st.write(player["email"])
+    with col3:
+        st.checkbox("Pokemon fan", player["pokemon_fan"])
+
+# Game
+
+games = api_client.get(path="/game/", params={"id_player": player_id})["data"]
+
+if not games:
+    st.warning("There is no game linked with this player")
+    st.stop()
+else:
+    df = pd.DataFrame([
+        {
+            "Mode": games[i]["game_mode"],
+            "Opponent": games[i]["player1"]["username"]
+            if games[i]["player1"]["id_player"] != player_id
+            else games[i]["player2"]["username"],
+
+            "Result": "Draw"
+            if games[i]["winner"] is None
+            else (
+                "Win"
+                if (games[i]["winner"]["id_player"] == int(player_id))
+                else "Loss"
+            ),
+        }
+        for i in range(len(games))
+    ])
+
+    st.dataframe(df, use_container_width=True)

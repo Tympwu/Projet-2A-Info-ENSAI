@@ -22,10 +22,18 @@ check_authentification()
 
 players = api_client.get("/player").get("data")
 
+url_stat = pd.DataFrame({
+    "Stat": [f"/player_stats?id_player={player['id_player']}" for player in players]
+})
+
 if players:
     if isinstance(players, list):
-        df = pd.DataFrame(players)
-        st.dataframe(df, hide_index=True)
+        df = pd.DataFrame(players).join(url_stat)
+        st.dataframe(
+            df,
+            hide_index=True,
+            column_config={"Stat": st.column_config.LinkColumn(label="Stats", display_text="📊")},
+        )
     else:
         logger.info("No players found.")
         st.info("No players found.")
