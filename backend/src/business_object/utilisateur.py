@@ -13,3 +13,5 @@ class utilisateur:
         self.email: str = email
         self.mot_de_passe: str = mot_de_passe
         self.id_historique: int = id_historique
+def __repr__(self) -> str:
+        return f"Utilisateur(id={self.id}, name='{self.name}', email='{self.email}')"
