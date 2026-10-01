@@ -5,9 +5,9 @@ class vulnerabilites:
     Une vulnérabilité est décrite par un texte et un score de danger.
     Au-delà d'un seuil,(à voir lequel je ne sais) elle est considérée comme critique.
 
-    Attributs
+    Attributes
     ---------
-    SEUIL_CRITIQUE (int): Score à partir duquel une vulnérabilité est jugée critique.
+    seuil_critique (int): Score à partir duquel une vulnérabilité est jugée critique.
         description (str): Description de la vulnérabilité.
         score_danger (int): Score de danger, compris entre 0 et 10.
     """
