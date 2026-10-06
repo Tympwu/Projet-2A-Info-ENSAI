@@ -7,21 +7,20 @@ from utils.singleton import Singleton
 
 
 class DBConnection(metaclass=Singleton):
-    """Database connection manager implementing the Singleton pattern.
+    """Classe de connexion avec la base de données utilisant le pattern Singleton
 
-    This class ensures that only a single connection to the PostgreSQL
-    database is opened and shared throughout the application lifecycle.
+    Cette classe assure qu'une unique connexion à la base de données PostgreSQL est
+    ouverte et utilisé dans l'application
 
-    Attributes:
-        connection (psycopg2.extensions.connection): The active database
-            connection instance.
+    Attributs :
+        connection : La connexion active à la base de donnée
     """
 
     def __init__(self):
-        """Initializes the database connection using environment variables.
+        """Initialise la connexion avec la base de données en utilisant les variables d'environnement
         Raises:
-            KeyError: If any of the required POSTGRES_* environment variables are missing.
-            psycopg2.Error: If the connection to the database fails.
+            KeyError: Si une variable nécessaire pour la connexion est manquante.
+            psycopg2.Error: Si la connexion avec la base de donnée échoue.
         """
 
         self.__connection = psycopg2.connect(
@@ -36,8 +35,8 @@ class DBConnection(metaclass=Singleton):
 
     @property
     def connection(self):
-        """Provides access to the underlying database connection.
+        """Donne accès à la connexion à la base de données
         Returns:
-            The established database connection.
+            La connexion établie avec la base de donnée.
         """
         return self.__connection

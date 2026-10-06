@@ -1,4 +1,4 @@
-from business_object.player import Player
+from business_object.utilisateur import Utilisateur
 from dao.db_connection import DBConnection
 from utils.log_utils import get_logger, log
 from utils.singleton import Singleton
@@ -6,16 +6,16 @@ from utils.singleton import Singleton
 logger = get_logger(__name__)
 
 
-class PlayerDao(metaclass=Singleton):
-    """Class containing methods to access Players in the database."""
+class UtilisateurDao(metaclass=Singleton):
+    """Classe contenant différentes méthodes d'accès aux données des utilisateurs dans la base de donnée."""
 
     @log
-    def create(self, player) -> bool:
-        """Create a player in the database.
-        Args:
-            Player to create
+    def create(self, user) -> bool:
+        """Créer un utilisateur dans la base de donnée
+        Arguments :
+            user (Utilisateur) : Utilisateur à créer
         Returns:
-            True if creation is successful, False otherwise
+            True si la création réussie, False sinon
         """
         res = None
 
@@ -23,15 +23,13 @@ class PlayerDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "INSERT INTO player(username, password, elo, email, pokemon_fan) VALUES "
-                        "(%(username)s, %(password)s, %(elo)s, %(email)s, %(pokemon_fan)s) "
-                        "RETURNING id_player;",
+                        "INSERT INTO Utilisateurs(mot_de_passe, name, email) VALUES "
+                        "(%(mot_de_passe)s, %(name)s, %(email)s) "
+                        "RETURNING id;",
                         {
-                            "username": player.username,
-                            "password": player.password,
-                            "elo": player.elo,
-                            "email": player.email,
-                            "pokemon_fan": player.pokemon_fan,
+                            "mot_de_passe": user.mot_de_passe,
+                            "name": user.name,
+                            "email": user.email,
                         },
                     )
                     res = cursor.fetchone()
@@ -41,45 +39,42 @@ class PlayerDao(metaclass=Singleton):
 
         created = False
         if res:
-            player.id_player = res["id_player"]
+            user.id = res["id"]
             created = True
 
         return created
 
     @log
-    def find_by_id(self, id_player: int) -> Player:
-        """Find a player by their id.
-        Args:
-            id_player (int): The ID of the player to find
+    def find_by_id(self, id_user: int) -> Utilisateur:
+        """Trouve un utilisateur par son id.
+        Arguments :
+            id_user (int): L'ID de l'utilisateur à trouver
         Returns:
-            Player matching the given id
+            Utilisateur avec l'ID correspondant
         """
         try:
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT *                            "
-                        "  FROM player                       "
-                        " WHERE id_player = %(id_player)s;   ",
-                        {"id_player": id_player},
+                        "SELECT *                                 "
+                        "  FROM utilisateurs                      "
+                        " WHERE id = %(id_user)s;   ",
+                        {"id_user": id_user},
                     )
                     res = cursor.fetchone()
         except Exception as e:
             logger.error(e)
             raise
 
-        player = None
+        utilisateur = None
         if res:
-            player = Player(
-                username=res["username"],
-                elo=res["elo"],
+            utilisateur = Utilisateur(
+                id=id_user,
                 email=res["email"],
-                pokemon_fan=res["pokemon_fan"],
-                id_player=res["id_player"],
-                password=res["password"],
+                mot_de_passe=res["mot_de_passe"],
             )
 
-        return player
+        return utilisateur
 
     @log
     def find_all(self) -> list[Player]:
