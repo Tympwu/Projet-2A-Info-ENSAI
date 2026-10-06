@@ -2,10 +2,7 @@ from business_object.vulnerabilites import Vulnerabilites
 
 
 class Dependances:
-
-    def __init__(
-        self, nom: str, version: str, auteur: str | None
-    ) -> None:
+    def __init__(self, nom: str, version: str, auteur: str | None) -> None:
         self.nom = nom
         self.auteur = auteur
         self.version = version

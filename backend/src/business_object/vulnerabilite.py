@@ -1,4 +1,4 @@
-class vulnerabilites:
+class Vulnerabilites:
     """
     Représente une vulnérabilité de sécurité détectée dans un projet.
 

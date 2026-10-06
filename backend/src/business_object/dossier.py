@@ -58,8 +58,10 @@ class Dossier:
 
     # def obtenir_dependances_dossiers() pas compris si on voulait rassembler toutes les
     # dépendances présentes dans le dossier ?
+    # -> Pour moi oui, faut checker toutes les dépendances des fichiers dans le dosier et renvoyer l'ensemble avec un
+    # format sympa (genre {"dependance1" : version, ...})
 
-    def __repr__(self) -> str:  # j'ai rajouté, peut-être que ca pourra aidé pour debugage...
+    def __repr__(self) -> str:
         """
         Représentation textuelle du dossier
 
