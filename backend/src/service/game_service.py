@@ -3,7 +3,7 @@ import secrets
 
 from fastapi import HTTPException
 
-from dao.player_dao import PlayerDao
+from dao.utilisateur_dao import UtilisateurDao
 from utils.log_utils import log
 
 
@@ -26,7 +26,7 @@ class GameService:
         if id_player == id_opponent:
             raise HTTPException(status_code=400, detail="Two different players required")
 
-        p1 = PlayerDao().find_by_id(id_player)
+        p1 = UtilisateurDao().find_by_id(id_player)
         p2 = PlayerDao().find_by_id(id_opponent)
 
         if not p1 or not p2:

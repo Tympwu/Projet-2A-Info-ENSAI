@@ -1,7 +1,7 @@
 import secrets
 
 from business_object.player import Player
-from dao.player_dao import PlayerDao
+from dao.utilisateur_dao import UtilisateurDao
 from utils.log_utils import log
 from utils.security import hash_password
 
@@ -28,14 +28,14 @@ class PlayerService:
             email=email,
             pokemon_fan=pokemon_fan,
         )
-        return new_player if PlayerDao().create(new_player) else None
+        return new_player if UtilisateurDao().create(new_player) else None
 
     @log
     def find_all(self) -> list[Player]:
         """Retrieves all players from the database.
         Returns:
             list[Player]"""
-        return PlayerDao().find_all()
+        return UtilisateurDao().find_all()
 
     @log
     def find_by_id(self, id_player: int) -> Player:
@@ -45,7 +45,7 @@ class PlayerService:
         Returns:
             Player object if found, otherwise None.
         """
-        return PlayerDao().find_by_id(id_player)
+        return UtilisateurDao().find_by_id(id_player)
 
     @log
     def update(self, player) -> Player:
@@ -55,7 +55,7 @@ class PlayerService:
         Returns:
             The updated Player object, or None if the update failed.
         """
-        return player if PlayerDao().update(player) else None
+        return player if UtilisateurDao().update(player) else None
 
     @log
     def delete(self, player) -> bool:
@@ -65,7 +65,7 @@ class PlayerService:
         Returns:
             True if deletion was successful, False otherwise.
         """
-        return PlayerDao().delete(player)
+        return UtilisateurDao().delete(player)
 
     @log
     def login(self, username: str, password: str) -> Player:
@@ -76,7 +76,7 @@ class PlayerService:
         Returns:
             Player object if authentication is successful, otherwise None.
         """
-        player = PlayerDao().login(username, hash_password(password, username))
+        player = UtilisateurDao().login(username, hash_password(password, username))
         if player:
             # Generate a token and update the Player
             player.access_token = secrets.token_urlsafe(32)
@@ -92,5 +92,5 @@ class PlayerService:
         Returns:
             True if the username already exists in the database.
         """
-        players = PlayerDao().find_all()
+        players = UtilisateurDao().find_all()
         return username in [p.username for p in players]

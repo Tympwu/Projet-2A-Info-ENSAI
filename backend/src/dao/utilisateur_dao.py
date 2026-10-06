@@ -77,10 +77,10 @@ class UtilisateurDao(metaclass=Singleton):
         return utilisateur
 
     @log
-    def find_all(self) -> list[Player]:
+    def find_all(self) -> list[Utilisateur]:
         """List all players in the database.
         Returns:
-            list[Player] sorted by username
+            list[Utilisateur] sorted by username
         """
 
         try:
@@ -100,7 +100,7 @@ class UtilisateurDao(metaclass=Singleton):
 
         if res:
             for row in res:
-                player = Player(
+                player = Utilisateur(
                     id_player=row["id_player"],
                     username=row["username"],
                     password=row["password"],
@@ -117,7 +117,7 @@ class UtilisateurDao(metaclass=Singleton):
     def update(self, player) -> bool:
         """Update a player in the database.
         Args:
-            Player to be updated
+            Utilisateur to be updated
         Returns:
             True if update is successful, False otherwise
         """
@@ -156,7 +156,7 @@ class UtilisateurDao(metaclass=Singleton):
     def delete(self, player) -> bool:
         """Delete a player from the database.
         Args:
-            Player to delete from the database
+            Utilisateur to delete from the database
         Returns:
             True if the player was successfully deleted, False otherwise
         """
@@ -176,13 +176,13 @@ class UtilisateurDao(metaclass=Singleton):
         return res > 0
 
     @log
-    def login(self, username: str, password: str) -> Player:
+    def login(self, username: str, password: str) -> Utilisateur:
         """Login using username and password.
         Args:
             username (str)
             password (str)
         Returns:
-            Player or None
+            Utilisateur or None
         """
         res = None
         try:
@@ -203,7 +203,7 @@ class UtilisateurDao(metaclass=Singleton):
         player = None
 
         if res:
-            player = Player(
+            player = Utilisateur(
                 username=res["username"],
                 password=res["password"],
                 elo=res["elo"],
@@ -216,12 +216,12 @@ class UtilisateurDao(metaclass=Singleton):
         return player
 
     @log
-    def find_by_token(self, access_token: str) -> Player:
+    def find_by_token(self, access_token: str) -> Utilisateur:
         """Find a player by their access token.
         Args:
             access_token (str): The token to search for.
         Returns:
-            Player object if found, otherwise None.
+            Utilisateur object if found, otherwise None.
         """
         if not access_token:
             return None
@@ -243,7 +243,7 @@ class UtilisateurDao(metaclass=Singleton):
 
         player = None
         if res:
-            player = Player(
+            player = Utilisateur(
                 id_player=res["id_player"],
                 username=res["username"],
                 password=res["password"],
