@@ -1,7 +1,7 @@
 
 from datetime import datetime
 
-from .dossier import Dossier
+from business_object.dossier import Dossier
 
 
 class Audit:

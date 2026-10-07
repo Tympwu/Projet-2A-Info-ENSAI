@@ -1,5 +1,5 @@
 
-from .audit import Audit
+from business_object.audit import Audit
 
 
 class Historique:

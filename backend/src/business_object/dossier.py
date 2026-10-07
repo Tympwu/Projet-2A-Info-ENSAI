@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from .fichier import Fichier
+from business_object.fichier import Fichier
 
 
 class Dossier:

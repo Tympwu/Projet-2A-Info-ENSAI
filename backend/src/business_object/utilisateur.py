@@ -1,13 +1,16 @@
+from business_object.historique import Historique
+
+
 class Utilisateur:
     def __init__(
-        self, id: int, name: str, email: str, mot_de_passe: str, id_historique: int
+        self, id: int, name: str, email: str, mot_de_passe: str, historique: Historique
     ) -> None:
 
         self.id: int = id
         self.name: str = name
         self.email: str = email
         self.mot_de_passe: str = mot_de_passe
-        self.id_historique: int = id_historique
+        self.historique: Historique = historique
 
     def __repr__(self) -> str:
         return f"Utilisateur(id={self.id}, name='{self.name}', email='{self.email}')"

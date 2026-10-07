@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from vulnerabilite import Vulnerabilite
+from business_object.vulnerabilite import Vulnerabilite
 
 
 class Fichier:
