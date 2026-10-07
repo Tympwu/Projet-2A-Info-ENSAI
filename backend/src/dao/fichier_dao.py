@@ -46,8 +46,41 @@ class FichierDao(metaclass=Singleton):
 
         return created
 
-    def update_fichier(self, id_fichier: int, fichier: Fichier) -> bool:
-        pass
+    def update_fichier(self, fichier: Fichier) -> bool:
+        """Met à jour un fichier dans la base de donnée
+        Arguments:
+            fichier (Fichier) : Fichier à mettre à jour
+        Returns :
+            True si la mise à jour est réussie, False sinon
+        """
+        nb_affected_rows = 0
+
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "UPDATE fichier                        "
+                        "   SET chemin = %(chemin)s,           "
+                        "       extension = %(extension)s,     "
+                        "       score = %(score)s,             "
+                        "       complexite = %(complexite)s,   "
+                        "       emissionCO2 = %(emissionCO2)s, "
+                        " WHERE id = %(id_fichier)s;           ",
+                        {
+                            "chemin": fichier.chemin,
+                            "extension": fichier.extension,
+                            "score": fichier.score,
+                            "complexite": fichier.complexite,
+                            "emissionCO2": fichier.emissionCO2,
+                            "id_fichier": fichier.id,
+                        },
+                    )
+                    nb_affected_rows = cursor.rowcount
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        return nb_affected_rows == 1
 
     def remove_fichier(self, id_fichier: int) -> bool:
         pass
