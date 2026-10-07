@@ -1,5 +1,6 @@
 from business_object.utilisateur import Utilisateur
 from dao.db_connection import DBConnection
+from dao.historique_dao import HistoriqueDao
 from utils.log_utils import get_logger, log
 from utils.singleton import Singleton
 
@@ -10,7 +11,7 @@ class UtilisateurDao(metaclass=Singleton):
     """Classe contenant différentes méthodes d'accès aux données des utilisateurs dans la base de donnée."""
 
     @log
-    def create(self, user) -> bool:
+    def create_utilisateur(self, utilisateur) -> bool:
         """Créer un utilisateur dans la base de donnée
         Arguments :
             user (Utilisateur) : Utilisateur à créer
@@ -27,9 +28,9 @@ class UtilisateurDao(metaclass=Singleton):
                         "(%(mot_de_passe)s, %(name)s, %(email)s) "
                         "RETURNING id;",
                         {
-                            "mot_de_passe": user.mot_de_passe,
-                            "name": user.name,
-                            "email": user.email,
+                            "mot_de_passe": utilisateur.mot_de_passe,
+                            "name": utilisateur.name,
+                            "email": utilisateur.email,
                         },
                     )
                     res = cursor.fetchone()
@@ -39,13 +40,13 @@ class UtilisateurDao(metaclass=Singleton):
 
         created = False
         if res:
-            user.id = res["id"]
+            utilisateur.id = res["id"]
             created = True
 
         return created
 
     @log
-    def find_by_id(self, id_user: int) -> Utilisateur:
+    def find_utilisateur(self, id_utilisateur: int) -> Utilisateur:
         """Trouve un utilisateur par son id.
         Arguments :
             id_user (int): L'ID de l'utilisateur à trouver
@@ -59,7 +60,7 @@ class UtilisateurDao(metaclass=Singleton):
                         "SELECT *                                 "
                         "  FROM utilisateurs                      "
                         " WHERE id = %(id_user)s;   ",
-                        {"id_user": id_user},
+                        {"id_user": id_utilisateur},
                     )
                     res = cursor.fetchone()
         except Exception as e:
@@ -69,7 +70,8 @@ class UtilisateurDao(metaclass=Singleton):
         utilisateur = None
         if res:
             utilisateur = Utilisateur(
-                id=id_user,
+                id=id_utilisateur,
+                name=res["name"],
                 email=res["email"],
                 mot_de_passe=res["mot_de_passe"],
             )
@@ -77,41 +79,41 @@ class UtilisateurDao(metaclass=Singleton):
         return utilisateur
 
     @log
-    def find_all(self) -> list[Utilisateur]:
-        """List all players in the database.
+    def find_utilisateur_by_name(self, nom_utilisateur: int) -> list[Utilisateur]:
+        """Trouve tous les utilisateur ayant le nom recherché.
+        Arguments :
+            nom_utilisateur (str): Le nom de(s) l'utilisateur à rechercher
         Returns:
-            list[Utilisateur] sorted by username
+            Liste d'utilisateur avec le nom correspondant
         """
-
         try:
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT *                                "
-                        "  FROM player                           "
-                        " ORDER BY username;                     "
+                        "SELECT *                                 "
+                        "  FROM utilisateurs                      "
+                        " WHERE name = %(name_user)s;   ",
+                        {"name_user": nom_utilisateur},
                     )
                     res = cursor.fetchall()
         except Exception as e:
             logger.error(e)
             raise
 
-        players_list = []
-
+        utilisateurs = []
         if res:
             for row in res:
-                player = Utilisateur(
-                    id_player=row["id_player"],
-                    username=row["username"],
-                    password=row["password"],
-                    elo=row["elo"],
-                    email=row["email"],
-                    pokemon_fan=row["pokemon_fan"],
-                )
+                historique = HistoriqueDao.find_by_utilisateur(row["id"])
+                utilisateurs.append(Utilisateur(
+                    id=row["id"],
+                    name=nom_utilisateur,
+                    email=res["email"],
+                    mot_de_passe=res["mot_de_passe"],
+                    historique=historique
+                ))
 
-                players_list.append(player)
+        return utilisateurs
 
-        return players_list
 
     @log
     def update(self, player) -> bool:
