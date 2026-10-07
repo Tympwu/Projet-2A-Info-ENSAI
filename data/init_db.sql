@@ -14,7 +14,7 @@ CREATE TABLE Utilisateurs (
 -- Historique
 -----------------------------------------------------
 CREATE TABLE Historique(
-	id SERIAL PRIMARY KEY,
+	id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     utilisateur_id INTEGER,
 CONSTRAINT fk_Historique 
 FOREIGN KEY (utilisateur_id) 
@@ -25,7 +25,7 @@ REFERENCES Utilisateurs(id) ON DELETE CASCADE
 -- Audit
 -----------------------------------------------------
 CREATE TABLE Audit (
-    id SERIAL PRIMARY KEY,
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     historique_id INTEGER,
     date_audit DATE NOT NULL,
     statut BOOLEAN DEFAULT FALSE,
@@ -41,7 +41,7 @@ REFERENCES Historique(id) ON DELETE CASCADE
 -- Fichier
 -----------------------------------------------------
 CREATE TABLE Fichier (
-    id SERIAL PRIMARY KEY,
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     audit_id INTEGER,
     chemin VARCHAR UNIQUE NOT NULL,
     extension VARCHAR(20),
