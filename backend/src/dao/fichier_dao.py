@@ -46,6 +46,7 @@ class FichierDao(metaclass=Singleton):
 
         return created
 
+    @log
     def update_fichier(self, fichier: Fichier) -> bool:
         """Met à jour un fichier dans la base de donnée
         Arguments:
@@ -82,11 +83,34 @@ class FichierDao(metaclass=Singleton):
 
         return nb_affected_rows == 1
 
+    @log
     def remove_fichier(self, id_fichier: int) -> bool:
+        """Supprime un fichier cible de la base de donnée
+        Arguments:
+            id_fichier (int) : Indice du fichier à supprimer
+        Returns :
+            True si la suppression est réussie, False sinon
+        """
         pass
 
-    def find_fichier(self, id_fichier: int) -> bool:
+    @log
+    def find_fichier(self, id_fichier: int) -> Fichier | None:
+        """Trouve un fichier cible de la base de donnée
+        Arguments:
+            id_fichier (int) : Indice du fichier à trouver
+        Returns :
+            Fichier | None: fichier correspondant, None sinon
+        """
         pass
 
+    @log
     def find_by_utilisateur(self, id_utilisateur: int) -> list[Fichier]:
+        """Trouve les fichiers dans la base de donnée liés à un utilisateur
+        Arguments:
+            id_utilisateur (int) : Indice de l'utilisateur pour lequel nous cherchons les fichiers
+        Returns :
+            list[Fichier]: Liste des fichiers correspondant, la liste peut être vide si aucun fichier n'est trouvé
+        Raise:
+            ValueError : L'id renseignée ne correspond pas à un utilisateur
+        """
         pass

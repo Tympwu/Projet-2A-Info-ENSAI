@@ -114,7 +114,6 @@ class UtilisateurDao(metaclass=Singleton):
 
         return utilisateurs
 
-
     @log
     def update(self, player) -> bool:
         """Update a player in the database.
