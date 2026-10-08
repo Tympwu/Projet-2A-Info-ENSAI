@@ -1,4 +1,5 @@
 import ast
+
 from .fichier import Fichier
 
 
@@ -11,11 +12,11 @@ class Analyse_énergétique:
 
     def analyser_complexite_code(self, fichier: Fichier) -> str:
         """Analyse la complexité du code Python du fichier."""
-        
+
         if fichier.extension != ".py":
             raise ValueError("Le fichier doit être un fichier Python.")
 
-        with open(fichier.chemin, "r", encoding="utf-8") as f:
+        with open(fichier.chemin, encoding="utf-8") as f:
             contenu = f.read()
 
         self.AST_analyse = ast.parse(contenu)
@@ -44,27 +45,21 @@ class Analyse_énergétique:
         # Détection des boucles imbriquées
         for node in ast.walk(ast_analyse):
             if isinstance(node, (ast.For, ast.While)):
-
                 for enfant in ast.walk(node):
-                    if enfant is not node and isinstance(
-                        enfant, (ast.For, ast.While)
-                    ):
+                    if enfant is not node and isinstance(enfant, (ast.For, ast.While)):
                         anti_patterns.append("Boucle imbriquée")
                         break
 
         # Détection de la récursion
         for node in ast.walk(ast_analyse):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-
                 for appel in ast.walk(node):
                     if (
                         isinstance(appel, ast.Call)
                         and isinstance(appel.func, ast.Name)
                         and appel.func.id == node.name
                     ):
-                        anti_patterns.append(
-                            f"Récursion dans la fonction {node.name}"
-                        )
+                        anti_patterns.append(f"Récursion dans la fonction {node.name}")
                         break
 
         return anti_patterns
@@ -84,14 +79,9 @@ class Analyse_énergétique:
         # de la machine de référence.
         puissance_machine_w = 100
 
-        temps_execution_h = (
-            complexite * 0.000001
-            + len(anti_patterns) * 0.000001
-        )
+        temps_execution_h = complexite * 0.000001 + len(anti_patterns) * 0.000001
 
-        self.consommation_estimee_kWh = (
-            puissance_machine_w / 1000
-        ) * temps_execution_h
+        self.consommation_estimee_kWh = (puissance_machine_w / 1000) * temps_execution_h
 
         return self.consommation_estimee_kWh
 
@@ -104,9 +94,7 @@ class Analyse_énergétique:
         # Facteur d'émission utilisé pour l'estimation
         facteur_carbone = 50  # gCO2e / kWh
 
-        self.emissionCO2 = (
-            self.consommation_estimee_kWh * facteur_carbone
-        )
+        self.emissionCO2 = self.consommation_estimee_kWh * facteur_carbone
 
         self.fichier_cible.emissionCO2 = self.emissionCO2
 
