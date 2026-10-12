@@ -10,10 +10,11 @@ class FichierDao(metaclass=Singleton):
     """Classe contenant différentes méthodes d'accès aux données des fichiers dans la base de donnée."""
 
     @log
-    def create_fichier(self, fichier: Fichier) -> bool:
+    def create_fichier(self, fichier: Fichier, audit_id: int) -> bool:
         """Créer un fichier et le stocke localement
         Arguments :
             fichier (Fichier) : Fichier à créer
+            audit_id (int) : ID de l'audit contenant le fichier
         Returns:
             True si la création réussie, False sinon
         """
@@ -23,10 +24,11 @@ class FichierDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "INSERT INTO Fichier(chemin, extension, complexite, score, emissionCO2) VALUES "
-                        "(%(chemin)s, %(extension)s, %(complexite)s, %(score)s, %(emissionCO2)s) "
+                        "INSERT INTO Fichier(audit_id, chemin, extension, complexite, score, emissionCO2) VALUES "
+                        "(%(audit_id)s%(chemin)s, %(extension)s, %(complexite)s, %(score)s, %(emissionCO2)s) "
                         "RETURNING id;",
                         {
+                            "audit_id": audit_id,
                             "chemin": fichier.chemin,
                             "extension": fichier.extension,
                             "complexite": fichier.complexite,
@@ -91,7 +93,19 @@ class FichierDao(metaclass=Singleton):
         Returns :
             True si la suppression est réussie, False sinon
         """
-        pass
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM fichier WHERE id = %(id)s ",
+                        {"id": id_fichier},
+                    )
+                    res = cursor.rowcount
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        return res > 0
 
     @log
     def find_fichier(self, id_fichier: int) -> Fichier | None:
@@ -101,7 +115,29 @@ class FichierDao(metaclass=Singleton):
         Returns :
             Fichier | None: fichier correspondant, None sinon
         """
-        pass
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor as cursor:
+                    cursor.execute(
+                        "SELECT * FROM fichierWHERE id = %(id)s    ",
+                        {"id": id_fichier},
+                    )
+                    res = cursor.fetchone()
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        fichier = None
+        if res:
+            fichier = Fichier(
+                id=res["id"],
+                nom=res["extension"],
+                chemin=res["chemin"],
+                complexite=res["complexite"],
+                score=res["score"],
+                emissionCO2=res["emissionCO2"],
+            )
+        return fichier
 
     @log
     def find_by_utilisateur(self, id_utilisateur: int) -> list[Fichier]:
@@ -113,4 +149,34 @@ class FichierDao(metaclass=Singleton):
         Raise:
             ValueError : L'id renseignée ne correspond pas à un utilisateur
         """
-        pass
+        try:
+            with DBConnection.connection as connection:
+                with connection.cursor as cursor:
+                    cursor.excecute(
+                        "SELECT f.* FROM project.utilisateurs u"
+                        "JOIN project.historique h ON h.utilisateur_id=u.id"
+                        "JOIN project.audit a ON a.historique_id=h.id"
+                        "JOIN project.fichier f ON f.audit_id=a.id"
+                        "WHERE u.id=%(id_user)s",
+                        {"id_user": id_utilisateur},
+                    )
+                    res = cursor.fetchall()
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        fichiers = []
+        if res:
+            for row in res:
+                fichiers.append(
+                    Fichier(
+                        id=row["id"],
+                        nom=row["extension"],
+                        chemin=row["chemin"],
+                        complexite=row["complexite"],
+                        score=row["score"],
+                        emissionCO2=row["emissionCO2"],
+                    )
+                )
+
+        return fichiers
