@@ -81,3 +81,27 @@ classDiagram
     AuthController ..> PlayerService : calls
     GameController ..> GameService : calls
 ```
+# Database diagram
+
+```mermaid
+erDiagram
+    UTILISATEUR ||--|| HISTORIQUE : own
+    UTILISATEUR {
+        int id PK
+        string mot_de_passe
+        string name
+        string email
+    }
+    HISTORIQUE ||--o{ AUDIT : list
+    HISTORIQUE {
+        int id PK
+        int utilisateur_id FK
+    }
+    AUDIT ||--o{ FICHIER : contain
+    AUDIT {
+        int id PK
+        int historique_id FK
+        date date_audit
+    }
+
+```
