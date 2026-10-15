@@ -35,5 +35,6 @@
     "strings": true
   },
   "python.languageServer": "Jedi",
-  "terminal.integrated.defaultProfile.linux": "bash"
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "python-envs.defaultEnvManager": "ms-python.python:system"
 }
