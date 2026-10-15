@@ -2,6 +2,7 @@ import ast
 from collections import Counter
 from pathlib import Path
 
+from business_object.dépendance import Dependances
 from business_object.vulnerabilite import Vulnerabilite
 
 
@@ -17,10 +18,11 @@ class Fichier:
     Attributes:
         id (int): Identifiant unique du fichier.
         chemin (str): Chemin d'accès au fichier.
-        nom (str): Nom du fichier.
         extension (str): Extension du fichier, par exemple ".py"
             (déduite du chemin).
         liste_vulnerabilites (list[Vulnerabilite] | None): Vulnérabilités
+            détectées, ou None tant que l'analyse n'a pas eu lieu.
+        liste_dependances (list[Dependances] | None): Dépendances
             détectées, ou None tant que l'analyse n'a pas eu lieu.
         complexite (str | None): Niveau de complexité du code, ou None
             avant analyse.
@@ -32,21 +34,23 @@ class Fichier:
     def __init__(
         self,
         id: int,
-        nom: str,
         chemin: str,
         liste_vulnerabilites: list[Vulnerabilite] | None = None,
+        liste_dependances: list[Dependances] | None = None,
         complexite: str | None = None,
         score: float | None = None,
         emissionCO2: float | None = None,
+        AST_analyse: ast.Tree | None = None,
     ) -> None:
         self.id = id
         self.chemin = chemin
-        self.nom = Path(chemin).name
         self.extension = Path(chemin).suffix
         self.liste_vulnerabilites = liste_vulnerabilites
+        self.liste_dependances = liste_dependances
         self.complexite = complexite
         self.score = score
         self.emissionCO2 = emissionCO2
+        self.AST_analyse = AST_analyse
 
     def lire_contenu(self) -> str:
         """Retourne le contenu complet du fichier.
