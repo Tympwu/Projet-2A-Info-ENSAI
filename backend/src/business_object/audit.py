@@ -131,3 +131,12 @@ class Audit:
         )
         self.statut = True
         return True
+
+    def __repr__(self) -> str:
+        """
+        Représentation str de l'audit
+        """
+        return (
+            f"Audit(id={self.id}, date={self.date:%d/%m/%Y}, statut={self.statut}, "
+            f"score={self.score}, emissionCO2_total={self.emissionCO2_total})"
+        )
