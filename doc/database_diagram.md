@@ -15,22 +15,17 @@ Pour afficher ce diagramme dans VScode :
 
 ```mermaid
 erDiagram
-    UTILISATEUR ||--|| HISTORIQUE : own
+    UTILISATEUR ||--o{ AUDIT : own
     UTILISATEUR {
         int id PK
         string mot_de_passe
         string name
         string email
     }
-    HISTORIQUE ||--o{ AUDIT : list
-    HISTORIQUE {
-        int id PK
-        int utilisateur_id FK
-    }
-    AUDIT ||--o{ FICHIER : contain
+    AUDIT ||--|{ FICHIER : contain
     AUDIT {
         int id PK
-        int historique_id FK
+        int utilisateur_id FK
         date date_audit
         bool statut "default FALSE"
         numeric(4) score "default NULL"

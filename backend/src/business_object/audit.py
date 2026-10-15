@@ -124,14 +124,13 @@ class Audit:
         ------
         ValueError: Si le score global ne peut pas être calculé (voir `calculer_score`).
         """
-        self.statut = "en cours"
         try:
             self.calculer_score()
         except ValueError:
-            self.statut = "échoué"
+            self.statut = False
             raise
         self.emissionCO2_total = sum(
             f.emissionCO2 for f in self.dossier.obtenir_fichiers()
             if f.emissionCO2 is not None
         )
-        self.statut = "terminé"
+        self.statut = True
