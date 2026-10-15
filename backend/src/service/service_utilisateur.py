@@ -14,13 +14,13 @@ class Utilisateur_service:
 
     @log
     def verif_hash_mdp(self, mdp: str, name: str) -> str:
-        """Génère le hash SHA-256 du mot de passe avec le nom comme sel[cite: 2]."""
+        """Génère le hash SHA-256 du mot de passe avec le nom comme sel."""
         salted_mdp = f"{name}{mdp}"
         return hashlib.sha256(salted_mdp.encode()).hexdigest()
 
     @log
     def connexion(self, hash_mdp: str, id_user: int) -> Utilisateur | None:
-        """Vérifie le hash du mot de passe pour l'utilisateur spécifié[cite: 2]."""
+        """Vérifie le hash du mot de passe pour l'utilisateur spécifié."""
         utilisateur = self.utilisateur_dao.find_utilisateur(id_user)
         if utilisateur and utilisateur.mot_de_passe == hash_mdp:
             return utilisateur
@@ -36,7 +36,7 @@ class Utilisateur_service:
 
     @log
     def update_utilisateur(self, hash_mdp: str, name: str, id: int) -> bool:
-        """Met à jour le nom et le mot de passe d'un utilisateur[cite: 2]."""
+        """Met à jour le nom et le mot de passe d'un utilisateur."""
         utilisateur = self.utilisateur_dao.find_utilisateur(id)
         if not utilisateur:
             return False
@@ -47,7 +47,7 @@ class Utilisateur_service:
 
     @log
     def remove_utilisateur(self, id: int) -> bool:
-        """Supprime un utilisateur via son identifiant[cite: 2]."""
+        """Supprime un utilisateur via son identifiant."""
         utilisateur = self.utilisateur_dao.find_utilisateur(id)
         if not utilisateur:
             return False
@@ -56,10 +56,10 @@ class Utilisateur_service:
 
     @log
     def find_utilisateur(self, id: int) -> Utilisateur:
-        """Recherche et retourne un utilisateur par son ID[cite: 2]."""
+        """Recherche et retourne un utilisateur par son ID."""
         return self.utilisateur_dao.find_utilisateur(id)
 
     @log
     def find_utilisateur_by_name(self, name: str) -> list[Utilisateur]:
-        """Recherche les utilisateurs correspondant à un nom[cite: 2]."""
+        """Recherche les utilisateurs correspondant à un nom."""
         return self.utilisateur_dao.find_utilisateur_by_name(name)
