@@ -108,30 +108,26 @@ class Audit:
                     pass
         return complexites
 
-    def lancer(self) -> None:
+    def lancer(self) -> bool:
         """
         Exécute l'audit.
 
-        Passe le statut à "en cours", calcule le score global et les émissions
-        de CO2 totales, puis passe le statut à "terminé". Si le calcul échoue,
-        le statut passe à "échoué" et l'erreur est relancée.
+        Calcule le score global et les émissions de CO2 totales. Le statut passe
+        à True si l'audit s'est terminé correctement, et reste False si le
+        calcul a échoué.
 
         Returns
         -------
-        None
-
-        Raises
-        ------
-        ValueError: Si le score global ne peut pas être calculé (voir `calculer_score`).
+        bool: True si l'audit est réalisé, False si le calcul a échoué.
         """
-        self.statut = "en cours"
+        self.statut = False
         try:
             self.calculer_score()
         except ValueError:
-            self.statut = "échoué"
-            raise
+            return False
         self.emissionCO2_total = sum(
             f.emissionCO2 for f in self.dossier.obtenir_fichiers()
             if f.emissionCO2 is not None
         )
-        self.statut = "terminé"
+        self.statut = True
+        return True
