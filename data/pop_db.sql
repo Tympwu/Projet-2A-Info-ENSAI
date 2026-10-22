@@ -3,12 +3,7 @@ INSERT INTO Utilisateurs(mot_de_passe, name, email) VALUES
 ('admin' , 'admin'  , 'admin@ensai.fr'  ),
 ('a'     , 'jean'   , 'jean@ensai.fr'   );
 
-INSERT INTO Historique(utilisateur_id) VALUES
-(1),
-(2),
-(3);
-
-INSERT INTO Audit(historique_id, date_audit, statut, score, emissionCO2) VALUES
+INSERT INTO Audit(utilisateur_id, date_audit, statut, score, emissionCO2) VALUES
 (1, '01/01/1997', FALSE, NULL , NULL ),
 (1, '02/01/1997', TRUE , 98.9 , NULL ),
 (2, '12/10/2004', FALSE, 50.42, 800  ),

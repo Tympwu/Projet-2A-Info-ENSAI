@@ -11,29 +11,18 @@ CREATE TABLE Utilisateurs (
 );
 
 -----------------------------------------------------
--- Historique
------------------------------------------------------
-CREATE TABLE Historique(
-	id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    utilisateur_id INTEGER,
-CONSTRAINT fk_Historique 
-FOREIGN KEY (utilisateur_id) 
-REFERENCES Utilisateurs(id) ON DELETE CASCADE
-);
-
------------------------------------------------------
 -- Audit
 -----------------------------------------------------
 CREATE TABLE Audit (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    historique_id INTEGER,
+    utilisateur_id INTEGER,
     date_audit DATE NOT NULL,
     statut BOOLEAN DEFAULT FALSE,
     score NUMERIC(4) DEFAULT NULL,
     emissionCO2 NUMERIC(4) DEFAULT NULL,
 CONSTRAINT fk_Audit
-FOREIGN KEY (historique_id)
-REFERENCES Historique(id) ON DELETE CASCADE
+FOREIGN KEY (utilisateur_id)
+REFERENCES Utilisateurs(id) ON DELETE CASCADE
 );
 
 
