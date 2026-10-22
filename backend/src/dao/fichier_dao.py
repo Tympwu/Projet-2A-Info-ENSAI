@@ -119,7 +119,7 @@ class FichierDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor as cursor:
                     cursor.execute(
-                        "SELECT * FROM fichierWHERE id = %(id)s    ",
+                        "SELECT * FROM Fichier WHERE id = %(id)s    ",
                         {"id": id_fichier},
                     )
                     res = cursor.fetchone()
@@ -153,12 +153,51 @@ class FichierDao(metaclass=Singleton):
             with DBConnection.connection as connection:
                 with connection.cursor as cursor:
                     cursor.excecute(
-                        "SELECT f.* FROM project.utilisateurs u"
-                        "JOIN project.historique h ON h.utilisateur_id=u.id"
-                        "JOIN project.audit a ON a.historique_id=h.id"
-                        "JOIN project.fichier f ON f.audit_id=a.id"
+                        "SELECT f.* FROM utilisateurs u"
+                        "JOIN audit a ON a.utilisateurs_id=u.id"
+                        "JOIN fichier f ON f.audit_id=a.id"
                         "WHERE u.id=%(id_user)s",
                         {"id_user": id_utilisateur},
+                    )
+                    res = cursor.fetchall()
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        fichiers = []
+        if res:
+            for row in res:
+                fichiers.append(
+                    Fichier(
+                        id=row["id"],
+                        nom=row["extension"],
+                        chemin=row["chemin"],
+                        complexite=row["complexite"],
+                        score=row["score"],
+                        emissionCO2=row["emissionCO2"],
+                    )
+                )
+
+        return fichiers
+
+    @log
+    def find_by_audit(self, id_audit: int) -> list[Fichier]:
+        """Trouve les fichiers dans la base de donnée liés à un audit
+        Arguments:
+            id_audit (int) : Indice de l'audit pour lequel nous cherchons les fichiers
+        Returns :
+            list[Fichier]: Liste des fichiers correspondant, la liste peut être vide si aucun fichier n'est trouvé
+        Raise:
+            ValueError : L'id renseignée ne correspond pas à un audit
+        """
+        try:
+            with DBConnection.connection as connection:
+                with connection.cursor as cursor:
+                    cursor.excecute(
+                        "SELECT f.* FROM audit a"
+                        "JOIN fichier f ON f.audit_id=a.id"
+                        "WHERE a.id=%(id_audit)s",
+                        {"id_audit": id_audit},
                     )
                     res = cursor.fetchall()
         except Exception as e:
