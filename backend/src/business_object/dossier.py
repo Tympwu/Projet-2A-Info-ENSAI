@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from business_object.dépendance import Dependances
 from business_object.fichier import Fichier
 
 
@@ -56,10 +57,29 @@ class Dossier:
         """
         return self.liste_fichiers
 
-    # def obtenir_dependances_dossiers() pas compris si on voulait rassembler toutes les
-    # dépendances présentes dans le dossier ?
-    # -> Pour moi oui, faut checker toutes les dépendances des fichiers dans le dosier et renvoyer l'ensemble avec un
-    # format sympa (genre {"dependance1" : version, ...})
+    def obtenir_dependances_dossier(self) -> list[Dependances]:
+        """
+        Rassemble les dépendances de tous les fichiers du dossier.
+
+        Parcourt les dépendances de chaque fichier et les regroupe dans une
+        seule liste. Une dépendance utilisée par plusieurs fichiers n'apparaît
+        qu'une fois (deux dépendances sont identiques si leur nom et leur
+        version sont identiques).
+
+        Returns
+        -------
+        list[Dependances]: Dépendances du dossier, sans doublons
+        (vide si aucun fichier n'a de dépendance).
+        """
+        vues = set()
+        resultat: list[Dependances] = []
+        for fichier in self.liste_fichiers:
+            for dep in fichier.obtenir_dependances_fichier():
+                cle = (dep.nom, dep.version)
+                if cle not in vues:
+                    vues.add(cle)
+                    resultat.append(dep)
+        return resultat
 
     def __repr__(self) -> str:
         """
