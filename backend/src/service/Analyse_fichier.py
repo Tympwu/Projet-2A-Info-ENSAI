@@ -1,6 +1,9 @@
+import ast
 import os
 
 from dotenv import load_dotenv
+
+from business_object.fichier import Fichier
 
 
 class Analyse_fichier:
@@ -54,6 +57,81 @@ class Analyse_fichier:
         self.api_url_OSV = os.getenv("OSV_API_URL", self.URL_OSV_PAR_DEFAUT)
 
         # Pour l'instant, on met pas  consommation_estimee_kWh et emissionCO2e.
-        # Ce sont des résultats propres à chaque fichier (Fichier.emissionCO2 existe déjà),
+        # C'est des résultats propres à chaque fichier (Fichier.emissionCO2 existe déjà),
         # donc ils ne doivent pas être stockés ici. Les coefficients de configuration nécessaires
         # au calcul du CO2 seront ajoutés ici plus tard, quand on saura quel calcul faire
+
+    NOEUDS_DECISION = (
+        ast.If, ast.IfExp, ast.For, ast.AsyncFor, ast.While, ast.ExceptHandler,
+    )
+
+    def analyser_complexite_code(self, fichier: Fichier) -> str | None:
+        """
+        Calcule la complexité cyclomatique d'un fichier Python.
+
+        La complexité cyclomatique compte le nombre de chemins d'exécution
+        indépendants : elle vaut 1 pour un code sans aucune branche, puis
+        augmente de 1 à chaque condition, boucle, gestionnaire d'exception,
+        opérateur `and` / `or` ou clause de compréhension de liste.
+        Le résultat est écrit dans `fichier.complexite` et retourné.
+
+        Paramètres
+        ----------
+        fichier (Fichier): Fichier à analyser.
+
+        Returns
+        -------
+        str | None: Complexité sous forme de texte (par exemple "7"), ou None
+        si le fichier n'est pas analysable (autre langage que Python, syntaxe
+        invalide ou encodage illisible).
+        """
+        # complexité cyclomatique : mesure standard de complexité d'un code, donc
+        # plus simple à expliquer et à calculer.
+
+        resultat: str | None = None
+
+        # `ast` ne sait lire que du Python : pour tout autre type de fichier,
+        # la mesure n'a pas de sens, on laisse la complexité à None.
+        if fichier.extension.lower() == ".py":
+            try:
+                # On réutilise la lecture déjà écrite dans l'objet métier
+                # plutôt que d'ouvrir le fichier une deuxième fois ici.
+                arbre = ast.parse(fichier.lire_contenu())
+                resultat = str(1 + self._compter_points_de_decision(arbre))
+            except (SyntaxError, UnicodeDecodeError):
+                # Un fichier soumis peut contenir du code invalide : ce n'est
+                # pas une erreur du programme, juste un fichier non analysable.
+
+                resultat = None
+
+        # Le Service remplit le business object et Audit lira ensuite fichier.complexite
+        fichier.complexite = resultat
+        return resultat
+
+    @staticmethod
+    def _compter_points_de_decision(arbre: ast.AST) -> int:
+        """
+        Compte les points de décision d'un arbre syntaxique.
+
+        Paramètres
+        ----------
+        arbre (ast.AST): Arbre syntaxique d'un fichier Python.
+
+        Returns
+        -------
+        int: Nombre de points de décision (conditions, boucles, exceptions,
+        opérateurs and/or, clauses de compréhension).
+        """
+        total = 0
+        # ast.walk parcourt tous les nœuds de l'arbre, y compris ceux qui sont
+        # imbriqués dans des fonctions ou des classes.
+        for noeud in ast.walk(arbre):
+            if isinstance(noeud, Analyse_fichier.NOEUDS_DECISION):
+                total += 1
+            elif isinstance(noeud, ast.BoolOp):
+                # `a and b and c` contient 2 opérateurs, donc 2 chemins en plus.
+                total += len(noeud.values) - 1
+            elif isinstance(noeud, ast.comprehension):
+                # `for x in liste if cond` : 1 boucle + 1 par condition.
+                total += 1 + len(noeud.ifs)
+        return total
