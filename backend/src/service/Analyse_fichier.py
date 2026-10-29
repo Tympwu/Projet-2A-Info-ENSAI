@@ -53,8 +53,7 @@ class Analyse_fichier:
         # pas d'erreur, pas de plantage au démarrage.
         self.api_url_OSV = os.getenv("OSV_API_URL", self.URL_OSV_PAR_DEFAUT)
 
-        # Pour l'instant, on met pas  consommation_estimee_kWh et
-        # emissionCO2e. Ce sont des résultats propres à chaque fichier
-        # (Fichier.emissionCO2 existe déjà), donc ils ne doivent pas être
-        # stockés ici. Les coefficients de configuration nécessaires au calcul
-        # du CO2 seront ajoutés ici plus tard, quand on saura quel calcul faire.
+        # Pour l'instant, on met pas  consommation_estimee_kWh et emissionCO2e.
+        # Ce sont des résultats propres à chaque fichier (Fichier.emissionCO2 existe déjà),
+        # donc ils ne doivent pas être stockés ici. Les coefficients de configuration nécessaires
+        # au calcul du CO2 seront ajoutés ici plus tard, quand on saura quel calcul faire
