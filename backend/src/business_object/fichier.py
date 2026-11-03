@@ -37,7 +37,7 @@ class Fichier:
 
     def __init__(
         self,
-        id: int,
+        id: int | None = None,
         chemin: str,
         liste_vulnerabilites: list[Vulnerabilite] | None = None,
         liste_dependances: list[Dependances] | None = None,
