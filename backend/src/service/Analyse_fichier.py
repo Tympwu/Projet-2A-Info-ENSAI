@@ -62,7 +62,12 @@ class Analyse_fichier:
         # au calcul du CO2 seront ajoutés ici plus tard, quand on saura quel calcul faire
 
     NOEUDS_DECISION = (
-        ast.If, ast.IfExp, ast.For, ast.AsyncFor, ast.While, ast.ExceptHandler,
+        ast.If,
+        ast.IfExp,
+        ast.For,
+        ast.AsyncFor,
+        ast.While,
+        ast.ExceptHandler,
     )
 
     def analyser_complexite_code(self, fichier: Fichier) -> str | None:
@@ -135,3 +140,45 @@ class Analyse_fichier:
                 # `for x in liste if cond` : 1 boucle + 1 par condition.
                 total += 1 + len(noeud.ifs)
         return total
+
+
+"""
+class ComplexityAnalyzer(ast.NodeVisitor):
+    def __init__(self):
+        self.loop_depth = 0
+        self.total_operations = 0
+        self.has_nested_loops = False
+        self.max_nesting = 0
+        
+    def visit_For(self, node):
+        # Incrémenter la profondeur de boucle
+        self.loop_depth += 1
+        self.max_nesting = max(self.max_nesting, self.loop_depth)
+        
+        # Analyser le corps de la boucle
+        self.generic_visit(node)
+        
+        # Décrémenter après analyse
+        self.loop_depth -= 1
+        
+    def visit_While(self, node):
+        self.loop_depth += 1
+        self.max_nesting = max(self.max_nesting, self.loop_depth)
+        self.generic_visit(node)
+        self.loop_depth -= 1
+        
+    def visit_Call(self, node):
+        # Compter chaque appel comme une opération (simplification)
+        self.total_operations += 1
+        self.generic_visit(node)
+        
+    def visit_BinOp(self, node):
+        # Compter les opérations binaires (+, -, *, /)
+        self.total_operations += 1
+        self.generic_visit(node)
+
+def analyze_complexity(source_code):
+    tree = ast.parse(source_code)
+    analyzer = ComplexityAnalyzer()
+    analyzer.visit(tree)
+"""
