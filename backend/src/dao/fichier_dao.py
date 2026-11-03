@@ -25,7 +25,7 @@ class FichierDao(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "INSERT INTO Fichier(audit_id, chemin, extension, complexite, score, emissionCO2) VALUES "
-                        "(%(audit_id)s%(chemin)s, %(extension)s, %(complexite)s, %(score)s, %(emissionCO2)s) "
+                        "(%(audit_id)s,%(chemin)s, %(extension)s, %(complexite)s, %(score)s, %(emissionCO2)s) "
                         "RETURNING id;",
                         {
                             "audit_id": audit_id,
