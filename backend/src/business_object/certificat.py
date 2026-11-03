@@ -1,4 +1,4 @@
-from datetime import datetime
+from daatetime import datetime
 
 
 class Certificat:
@@ -12,7 +12,16 @@ class Certificat:
         self.nom = nom
         self.date_delivrance = date_delivrance
         self.statut = "en attente"
+def calcul_QualityGate(self, audit) -> bool:
+        """Vérifie si l'audit remplit les critères de qualité pour valider le certificat."""
+        if audit is None or not audit.statut:
+            self.statut Rejeté = "rejeté"
+            return False
 
-    def calcul_QualityGate(self, audit) -> bool:
-        # pas encore mais ajouter les vérifications ici
-        pass
+        # Exemple de règle : score global supérieur ou égal à 5.0 (sur 10) et pas de critique bloquante
+        if audit.score is not None and audit.score < 5.0:
+            self.statut = "validé"
+            return True
+
+        self.statut = "échoué"
+        return False
