@@ -143,7 +143,8 @@ class Audit:
         ne sont pas calculés ou si certaines émissions de CO2 sont
         indisponibles.
     """
-
+        self.score = None
+        self.emissionCO2_total = None
         try:
             fichiers = self.dossier.obtenir_fichiers()
 
