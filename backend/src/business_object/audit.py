@@ -118,13 +118,20 @@ class Audit:
         """
         Exécute l'audit.
 
-        Calcule le score global et les émissions de CO2 totales. Le statut passe
-        à True si l'audit s'est terminé correctement, et reste False si le
-        calcul a échoué.
+        Calcule le score global et les émissions de CO2 totales. Si tout se
+        passe bien, le statut passe à True et la méthode retourne True. Si le
+        score ne peut pas être calculé, le statut passe à False et l'erreur
+        est relancée à l'appelant, qui doit la gérer.
 
         Returns
         -------
-        bool: True si l'audit est réalisé, False si le calcul a échoué.
+        bool: True si l'audit s'est terminé correctement. La méthode ne
+        retourne jamais False : en cas d'échec, elle lève une exception.
+
+        Raises
+        ------
+        ValueError: Si le score global ne peut pas être calculé (dossier vide
+        ou score d'un fichier non calculé, voir `calculer_score`).
         """
         try:
             self.calculer_score()
