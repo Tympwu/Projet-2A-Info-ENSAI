@@ -1,4 +1,4 @@
-from business_object.vulnerabilites import Vulnerabilites
+from business_object.vulnerabilite import Vulnerabilite
 
 
 class Dependances:
@@ -7,6 +7,6 @@ class Dependances:
         self.auteur = auteur
         self.version = version
 
-    def a_vulnerabilite(self, data_api: dict) -> Vulnerabilites | None:
+    def a_vulnerabilite(self, data_api: dict) -> Vulnerabilite | None:
         """Vérifie via les données de l'API si la dépendance présente une vulnérabilité."""
         pass
