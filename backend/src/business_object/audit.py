@@ -1,8 +1,7 @@
 from datetime import datetime
 
 from business_object.dossier import Dossier
-
-from .fichier import Fichier
+from business_object.fichier import Fichier
 
 
 class Audit:
@@ -42,7 +41,7 @@ class Audit:
         score (int | None): Score de l'audit (par défaut : None).
         emissionCO2_total (float | None): emission de CO2 cumulé de l'audit (par défaut : None)
         date (datetime | None): Date de l'audit (par défaut : maintenant).
-        statut (str): Statut initial (par défaut : "créé").
+        statut (str): Statut initial (par défaut : "créé"). Peut valoir "créé", "échoué", "validé", "refusé"
 
         """
         self.id = id
