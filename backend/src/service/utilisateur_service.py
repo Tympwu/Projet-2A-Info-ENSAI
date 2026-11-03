@@ -63,3 +63,8 @@ class Utilisateur_service:
     def find_utilisateur_by_name(self, name: str) -> list[Utilisateur]:
         """Recherche les utilisateurs correspondant à un nom."""
         return self.utilisateur_dao.find_utilisateur_by_name(name)
+
+    @log
+    def find_all(self) -> list[Utilisateur]:
+        """Renvoie tous les utilisateurs de la base de donnée"""
+        return self.utilisateur_dao.find_all()
