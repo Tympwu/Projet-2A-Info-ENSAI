@@ -75,9 +75,7 @@ class Audit:
         """
         Donne la pire complexité algorithmique des fichiers du dossier, sous forme de rang.
 
-        Une moyenne de complexités (O(n) et O(n²)) n'aurait pas de sens : c'est le
-        fichier le plus coûteux qui détermine le comportement du dossier. Le rang
-        est la position dans `Fichier.ECHELLE_COMPLEXITE`, à partir de 1, ce qui
+        Le rang est la position dans `Fichier.ECHELLE_COMPLEXITE`, à partir de 1, ce qui
         permet de comparer simplement (plus le rang est grand, plus c'est coûteux).
 
         Returns
@@ -93,8 +91,7 @@ class Audit:
         """
         Donne la complexité de chaque fichier, dans un format facile à réutiliser.
 
-        Complète `calculer_complexite()` : le rang résume, ce détail permet
-        de repérer les fichiers les plus coûteux.
+        Complète `calculer_complexite()` et permet de repérer les fichiers les plus coûteux.
 
         Returns
         -------
