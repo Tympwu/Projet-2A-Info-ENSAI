@@ -6,6 +6,66 @@ from dotenv import load_dotenv
 from business_object.fichier import Fichier
 
 
+class AnalyseurComplexite(ast.NodeVisitor):
+    """
+    Mesure l'imbrication des boucles `for` et `while` d'un arbre syntaxique Python.
+
+    On crée un analyseur par fichier : ses compteurs sont propres à ce fichier. Python appelle
+    automatiquement `visit_For` et `visit_While` quand il rencontre ces types de nœuds.Du code 
+    placé dans `d` boucles imbriquées s'exécute environ n^d fois.
+    La complexité estimée est donc la profondeur maximale d'imbrication.
+
+    Attributs
+    ---------
+    profondeur (int): Nombre de boucles qui enveloppent le nœud en cours de visite.
+    max_imbrication (int): Profondeur maximale de boucles imbriquées dans le fichier (résultat).
+    boucles_imbriquees (bool): True si le fichier contient au moins deux boucles imbriquées.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initialise un analyseur vierge.
+
+        Returns
+        -------
+        None
+        """
+        self.profondeur: int = 0
+        self.max_imbrication: int = 0
+        # Cette information servira aussi à detecter_anti_patterns : un seul
+        # parcours de l'arbre suffit pour la complexité et les boucles imbriquées.
+        self.boucles_imbriquees: bool = False
+
+    def _visiter_boucle(self, noeud: ast.AST) -> None:
+        """
+        Visite une boucle `for` ou `while` : son corps est répété environ n fois.
+
+        Paramètres
+        ----------
+        noeud (ast.For | ast.While): Nœud de la boucle.
+
+        Returns
+        -------
+        None
+        """
+
+        self.profondeur += 1
+        self.max_imbrication = max(self.max_imbrication, self.profondeur)
+        if self.profondeur >= 2:
+            self.boucles_imbriquees = True
+
+        for instruction in noeud.body:
+            self.visit(instruction)
+
+        self.profondeur -= 1
+
+        for instruction in noeud.orelse:
+            self.visit(instruction)
+
+    visit_For = _visiter_boucle
+    visit_While = _visiter_boucle
+
+
 class Analyse_fichier:
     """
     Analyse les fichiers d'un dossier (complexité, dépendances, vulnérabilités...).
@@ -19,10 +79,22 @@ class Analyse_fichier:
     ---------
     URL_OSV_PAR_DEFAUT (str): Adresse de l'API OSV utilisée si aucune n'est configurée.
     (Valeur de secours : l'application fonctionne même si aucune configuration n'est fournie)
+    LIBELLES_PAR_PROFONDEUR (dict[int, str]): Complexité associée à chaque profondeur de boucles.
+    LIBELLE_AU_DELA (str): Complexité utilisée au-delà de trois boucles imbriquées.
     api_url_OSV (str): Adresse de l'API OSV utilisée pour chercher les vulnérabilités.
     """
 
     URL_OSV_PAR_DEFAUT = "https://api.osv.dev/v1/query"
+
+    # Libellés produits par l'estimation. Ils doivent tous exister dans
+    # Fichier.ECHELLE_COMPLEXITE (vérifié dans _libelle).
+    LIBELLES_PAR_PROFONDEUR = {
+        0: "O(1)",
+        1: "O(n)",
+        2: "O(n²)",
+        3: "O(n³)",
+    }
+    LIBELLE_AU_DELA = "O(n^k), k > 3"
 
     def __init__(self) -> None:
         """
@@ -32,8 +104,6 @@ class Analyse_fichier:
         -------
         None
         """
-        # On donne d'abord une valeur par défaut, puis on charge la configuration.
-        # Donc l'attribut existe toujours, même si le chargement ne trouve rien.
         self.api_url_OSV: str = self.URL_OSV_PAR_DEFAUT
         self.load_environment_variables()
 
@@ -52,8 +122,6 @@ class Analyse_fichier:
 
         load_dotenv()
 
-        # os.getenv(nom, défaut) renvoie le défaut si la variable n'existe pas :
-        # pas d'erreur, pas de plantage au démarrage.
         self.api_url_OSV = os.getenv("OSV_API_URL", self.URL_OSV_PAR_DEFAUT)
 
         # Pour l'instant, on met pas  consommation_estimee_kWh et emissionCO2e.
@@ -61,24 +129,19 @@ class Analyse_fichier:
         # donc ils ne doivent pas être stockés ici. Les coefficients de configuration nécessaires
         # au calcul du CO2 seront ajoutés ici plus tard, quand on saura quel calcul faire
 
-    NOEUDS_DECISION = (
-        ast.If,
-        ast.IfExp,
-        ast.For,
-        ast.AsyncFor,
-        ast.While,
-        ast.ExceptHandler,
-    )
-
     def analyser_complexite_code(self, fichier: Fichier) -> str | None:
         """
-        Calcule la complexité cyclomatique d'un fichier Python.
+        Estime la complexité algorithmique d'un fichier Python.
 
-        La complexité cyclomatique compte le nombre de chemins d'exécution
-        indépendants : elle vaut 1 pour un code sans aucune branche, puis
-        augmente de 1 à chaque condition, boucle, gestionnaire d'exception,
-        opérateur `and` / `or` ou clause de compréhension de liste.
+        L'estimation est une heuristique simple : elle lit le code sans l'exécuter
+        et retient la profondeur maximale d'imbrication des boucles `for` et
+        `while` (aucune boucle : O(1), une : O(n), deux imbriquées : O(n²)...).
         Le résultat est écrit dans `fichier.complexite` et retourné.
+
+        Limites : seules les boucles `for` et `while` sont comptées. Les tris,
+        les compréhensions de liste, les boucles `async for`, les fonctions comme
+        `sum` ou `max` et la récursion ne sont pas détectés : l'estimation peut
+        donc être inférieure à la vraie complexité, mais pas supérieure.
 
         Paramètres
         ----------
@@ -86,99 +149,54 @@ class Analyse_fichier:
 
         Returns
         -------
-        str | None: Complexité sous forme de texte (par exemple "7"), ou None
-        si le fichier n'est pas analysable (autre langage que Python, syntaxe
-        invalide ou encodage illisible).
+        str | None: Une valeur de `Fichier.ECHELLE_COMPLEXITE` (par exemple
+        "O(n²)"), ou None si le fichier n'est pas analysable (autre langage que
+        Python, syntaxe invalide ou encodage illisible).
+
+        Raises
+        ------
+        FileNotFoundError: Si le fichier n'existe pas au chemin indiqué.
+        ValueError: Si un libellé produit par l'estimation n'est pas dans
+        `Fichier.ECHELLE_COMPLEXITE` (erreur de configuration à corriger).
         """
-        # complexité cyclomatique : mesure standard de complexité d'un code, donc
-        # plus simple à expliquer et à calculer.
 
         resultat: str | None = None
 
-        # `ast` ne sait lire que du Python : pour tout autre type de fichier,
-        # la mesure n'a pas de sens, on laisse la complexité à None.
-        if fichier.extension.lower() == ".py":
-            try:
-                # On réutilise la lecture déjà écrite dans l'objet métier
-                # plutôt que d'ouvrir le fichier une deuxième fois ici.
-                arbre = ast.parse(fichier.lire_contenu())
-                resultat = str(1 + self._compter_points_de_decision(arbre))
-            except (SyntaxError, UnicodeDecodeError):
-                # Un fichier soumis peut contenir du code invalide : ce n'est
-                # pas une erreur du programme, juste un fichier non analysable.
+        # Fichier.obtenir_ast() construit l'arbre une seule fois et le garde dans
+        # fichier.AST_analyse : les autres analyses (anti-patterns...) le réutilisent.
+        try:
+            arbre = fichier.obtenir_ast()
+        except (ValueError, SyntaxError, UnicodeDecodeError):
+            arbre = None
 
-                resultat = None
+        if arbre is not None:
+            # Un nouvel analyseur par fichier
+            analyseur = AnalyseurComplexite()
+            analyseur.visit(arbre)
+            resultat = self._libelle(analyseur)
 
         # Le Service remplit le business object et Audit lira ensuite fichier.complexite
         fichier.complexite = resultat
         return resultat
 
-    @staticmethod
-    def _compter_points_de_decision(arbre: ast.AST) -> int:
+    def _libelle(self, analyseur: AnalyseurComplexite) -> str:
         """
-        Compte les points de décision d'un arbre syntaxique.
+        Convertit la profondeur de boucles mesurée en libellé de l'échelle.
 
         Paramètres
         ----------
-        arbre (ast.AST): Arbre syntaxique d'un fichier Python.
+        analyseur (AnalyseurComplexite): Analyseur qui a déjà parcouru le fichier.
 
         Returns
         -------
-        int: Nombre de points de décision (conditions, boucles, exceptions,
-        opérateurs and/or, clauses de compréhension).
+        str: Libellé de la complexité (valeur de Fichier.ECHELLE_COMPLEXITE).
+
+        Raises
+        ------
+        ValueError: Si le libellé n'existe pas dans Fichier.ECHELLE_COMPLEXITE.
         """
-        total = 0
-        # ast.walk parcourt tous les nœuds de l'arbre, y compris ceux qui sont
-        # imbriqués dans des fonctions ou des classes.
-        for noeud in ast.walk(arbre):
-            if isinstance(noeud, Analyse_fichier.NOEUDS_DECISION):
-                total += 1
-            elif isinstance(noeud, ast.BoolOp):
-                # `a and b and c` contient 2 opérateurs, donc 2 chemins en plus.
-                total += len(noeud.values) - 1
-            elif isinstance(noeud, ast.comprehension):
-                # `for x in liste if cond` : 1 boucle + 1 par condition.
-                total += 1 + len(noeud.ifs)
-        return total
+        libelle = self.LIBELLES_PAR_PROFONDEUR.get(analyseur.max_imbrication, self.LIBELLE_AU_DELA)
 
-
-"""
-class ComplexityAnalyzer(ast.NodeVisitor):
-    def __init__(self):
-        self.loop_depth = 0
-        self.total_operations = 0
-        self.has_nested_loops = False
-        self.max_nesting = 0
-        
-    def visit_For(self, node):
-        # Incrémenter la profondeur de boucle
-        self.loop_depth += 1
-        self.max_nesting = max(self.max_nesting, self.loop_depth)
-        
-        # Analyser le corps de la boucle
-        self.generic_visit(node)
-        
-        # Décrémenter après analyse
-        self.loop_depth -= 1
-        
-    def visit_While(self, node):
-        self.loop_depth += 1
-        self.max_nesting = max(self.max_nesting, self.loop_depth)
-        self.generic_visit(node)
-        self.loop_depth -= 1
-        
-    def visit_Call(self, node):
-        # Compter chaque appel comme une opération (simplification)
-        self.total_operations += 1
-        self.generic_visit(node)
-        
-    def visit_BinOp(self, node):
-        # Compter les opérations binaires (+, -, *, /)
-        self.total_operations += 1
-        self.generic_visit(node)
-
-def analyze_complexity(source_code):
-    tree = ast.parse(source_code)
-    analyzer = ComplexityAnalyzer()
-    analyzer.visit(tree)
-"""
+        if libelle not in Fichier.ECHELLE_COMPLEXITE:
+            raise ValueError(f"Libellé de complexité absent de l'échelle de Fichier : {libelle!r}")
+        return libelle
