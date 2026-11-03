@@ -33,7 +33,7 @@ class FichierDao(metaclass=Singleton):
                             "extension": fichier.extension,
                             "complexite": fichier.complexite,
                             "score": fichier.score,
-                            "emissionCO2": fichier.emissionCO2,
+                            "emissionco2": fichier.emissionCO2,
                         },
                     )
                     res = cursor.fetchone()
@@ -74,7 +74,7 @@ class FichierDao(metaclass=Singleton):
                             "extension": fichier.extension,
                             "score": fichier.score,
                             "complexite": fichier.complexite,
-                            "emissionCO2": fichier.emissionCO2,
+                            "emissionco2": fichier.emissionCO2,
                             "id_fichier": fichier.id,
                         },
                     )
@@ -131,11 +131,11 @@ class FichierDao(metaclass=Singleton):
         if res:
             fichier = Fichier(
                 id=res["id"],
-                nom=res["extension"],
+                extension=res["extension"],
                 chemin=res["chemin"],
                 complexite=res["complexite"],
                 score=res["score"],
-                emissionCO2=res["emissionCO2"],
+                emissionCO2=res["emissionco2"],
             )
         return fichier
 
@@ -150,12 +150,12 @@ class FichierDao(metaclass=Singleton):
             ValueError : L'id renseignée ne correspond pas à un utilisateur
         """
         try:
-            with DBConnection.connection as connection:
+            with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT f.* FROM utilisateurs u"
-                        "JOIN audit a ON a.utilisateurs_id=u.id"
-                        "JOIN fichier f ON f.audit_id=a.id"
+                        "SELECT f.* FROM utilisateurs u "
+                        "JOIN audit a ON a.utilisateurs_id=u.id "
+                        "JOIN fichier f ON f.audit_id=a.id "
                         "WHERE u.id=%(id_user)s",
                         {"id_user": id_utilisateur},
                     )
@@ -170,11 +170,11 @@ class FichierDao(metaclass=Singleton):
                 fichiers.append(
                     Fichier(
                         id=row["id"],
-                        nom=row["extension"],
+                        extension=row["extension"],
                         chemin=row["chemin"],
                         complexite=row["complexite"],
                         score=row["score"],
-                        emissionCO2=row["emissionCO2"],
+                        emissionCO2=row["emissionco2"],
                     )
                 )
 
@@ -191,11 +191,11 @@ class FichierDao(metaclass=Singleton):
             ValueError : L'id renseignée ne correspond pas à un audit
         """
         try:
-            with DBConnection.connection as connection:
+            with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT f.* FROM audit a"
-                        "JOIN fichier f ON f.audit_id=a.id"
+                        "SELECT f.* FROM audit a "
+                        "JOIN fichier f ON f.audit_id=a.id "
                         "WHERE a.id=%(id_audit)s",
                         {"id_audit": id_audit},
                     )
@@ -210,11 +210,11 @@ class FichierDao(metaclass=Singleton):
                 fichiers.append(
                     Fichier(
                         id=row["id"],
-                        nom=row["extension"],
+                        extension=row["extension"],
                         chemin=row["chemin"],
                         complexite=row["complexite"],
                         score=row["score"],
-                        emissionCO2=row["emissionCO2"],
+                        emissionCO2=row["emissionco2"],
                     )
                 )
 
@@ -227,7 +227,7 @@ class FichierDao(metaclass=Singleton):
             list[Fichier]: Liste des fichiers, la liste peut être vide si aucun fichier n'est trouvé
         """
         try:
-            with DBConnection.connection as connection:
+            with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT * FROM fichier ;",
@@ -243,11 +243,11 @@ class FichierDao(metaclass=Singleton):
                 fichiers.append(
                     Fichier(
                         id=row["id"],
-                        nom=row["extension"],
+                        extension=row["extension"],
                         chemin=row["chemin"],
                         complexite=row["complexite"],
                         score=row["score"],
-                        emissionCO2=row["emissionCO2"],
+                        emissionCO2=row["emissionco2"],
                     )
                 )
 

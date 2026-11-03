@@ -58,9 +58,7 @@ class UtilisateurDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT *                                 "
-                        "  FROM utilisateurs                      "
-                        " WHERE id = %(id_user)s;   ",
+                        "SELECT * FROM utilisateurs  WHERE id = %(id_user)s;   ",
                         {"id_user": id_utilisateur},
                     )
                     res = cursor.fetchone()
@@ -96,9 +94,7 @@ class UtilisateurDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT *                                 "
-                        "  FROM utilisateurs                      "
-                        " WHERE name = %(name_user)s;   ",
+                        "SELECT * FROM utilisateurs      WHERE name = %(name_user)s;   ",
                         {"name_user": nom_utilisateur},
                     )
                     res = cursor.fetchall()
@@ -208,7 +204,7 @@ class UtilisateurDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "DELETE FROM Utilisateurs            WHERE id = %(id_utilisateur)s;   ",
+                        "DELETE FROM Utilisateurs WHERE id = %(id_utilisateur)s;   ",
                         {
                             "id_utilisateur": utilisateur.id,
                         },

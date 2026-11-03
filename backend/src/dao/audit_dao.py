@@ -33,7 +33,7 @@ class AuditDao(metaclass=Singleton):
                             "date_audit": audit.date,
                             "statut": audit.statut,
                             "score": audit.score,
-                            "emissionCO2": audit.emissionCO2_total,
+                            "emissionco2": audit.emissionCO2_total,
                         },
                     )
                     res = cursor.fetchone()
@@ -72,7 +72,7 @@ class AuditDao(metaclass=Singleton):
                             "date_audit": audit.date,
                             "statut": audit.statut,
                             "score": audit.score,
-                            "emissionCO2": audit.emissionCO2_total,
+                            "emissionco2": audit.emissionCO2_total,
                         },
                     )
                     nb_affected_rows = cursor.rowcount
@@ -143,7 +143,7 @@ class AuditDao(metaclass=Singleton):
                 date=res["date_audit"],
                 statut=res["statut"],
                 score=res["score"],
-                emissionCO2_total=res["emissionCO2"],
+                emissionCO2_total=res["emissionco2"],
                 dossier=dossier,
             )
 
@@ -159,11 +159,11 @@ class AuditDao(metaclass=Singleton):
             ValueError : L'id renseignée ne correspond pas à un utilisateur
         """
         try:
-            with DBConnection.connection as connection:
+            with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT a.* FROM utilisateurs u"
-                        "JOIN audit a ON a.utilisateur_id=u.id"
+                        "SELECT a.* FROM utilisateurs u "
+                        "JOIN audit a ON a.utilisateur_id=u.id "
                         "WHERE u.id=%(id_utilisateur)s",
                         {"id_utilisateur": id_utilisateur},
                     )
@@ -188,7 +188,7 @@ class AuditDao(metaclass=Singleton):
                         date=row["date_audit"],
                         statut=row["statut"],
                         score=row["score"],
-                        emissionCO2_total=row["emissionCO2"],
+                        emissionCO2_total=row["emissionco2"],
                         dossier=dossier,
                     )
                 )
@@ -226,7 +226,7 @@ class AuditDao(metaclass=Singleton):
                         date=row["date_audit"],
                         statut=row["statut"],
                         score=row["score"],
-                        emissionCO2_total=row["emissionCO2"],
+                        emissionCO2_total=row["emissionco2"],
                         dossier=dossier,
                     )
                 )
