@@ -194,6 +194,7 @@ class AuditDao(metaclass=Singleton):
                 )
         return audits
 
+    @log
     def find_all(self) -> list[Audit]:
         """Recherche tous les Audit de la base de donnée
         Returns:

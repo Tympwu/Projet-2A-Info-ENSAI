@@ -220,6 +220,7 @@ class FichierDao(metaclass=Singleton):
 
         return fichiers
 
+    @log
     def find_all(self) -> list[Fichier]:
         """Trouve les fichiers dans la base de donnée
         Returns :
