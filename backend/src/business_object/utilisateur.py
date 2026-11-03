@@ -3,7 +3,7 @@ from business_object.historique import Historique
 
 class Utilisateur:
     def __init__(
-        self, id: int | None = None, name: str, email: str, mot_de_passe: str, historique: Historique
+        self, name: str, email: str, mot_de_passe: str, historique: Historique, id: int | None = None
     ) -> None:
 
         self.id: int = id

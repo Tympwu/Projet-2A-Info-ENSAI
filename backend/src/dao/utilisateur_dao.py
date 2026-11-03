@@ -1,6 +1,7 @@
+from business_object.historique import Historique
 from business_object.utilisateur import Utilisateur
+from dao.audit_dao import AuditDao
 from dao.db_connection import DBConnection
-from dao.historique_dao import HistoriqueDao
 from utils.log_utils import get_logger, log
 from utils.singleton import Singleton
 
@@ -69,11 +70,16 @@ class UtilisateurDao(metaclass=Singleton):
 
         utilisateur = None
         if res:
+            historique = Historique(
+                id=id_utilisateur,
+                audits=AuditDao().find_by_utilisateur(id_utilisateur),
+            )
             utilisateur = Utilisateur(
                 id=id_utilisateur,
                 name=res["name"],
                 email=res["email"],
                 mot_de_passe=res["mot_de_passe"],
+                historique=historique,
             )
 
         return utilisateur
@@ -103,24 +109,29 @@ class UtilisateurDao(metaclass=Singleton):
         utilisateurs = []
         if res:
             for row in res:
-                historique = HistoriqueDao.find_by_utilisateur(row["id"])
-                utilisateurs.append(Utilisateur(
+                historique = Historique(
                     id=row["id"],
-                    name=nom_utilisateur,
-                    email=res["email"],
-                    mot_de_passe=res["mot_de_passe"],
-                    historique=historique
-                ))
+                    audits=AuditDao().find_by_utilisateur(row["id"]),
+                )
+                utilisateurs.append(
+                    Utilisateur(
+                        id=row["id"],
+                        name=nom_utilisateur,
+                        email=res["email"],
+                        mot_de_passe=res["mot_de_passe"],
+                        historique=historique,
+                    )
+                )
 
         return utilisateurs
 
     @log
-    def update(self, player) -> bool:
-        """Update a player in the database.
-        Args:
-            Utilisateur to be updated
-        Returns:
-            True if update is successful, False otherwise
+    def update_utilisateur(self, utilisateur):
+        """Met à jour un utilisateur dans la base de données
+        Arguments:
+            utilisateur (Utilisateur) : Utilisateur à mettre à jour
+        Returns :
+            True si la mise à jour est réussie, False sinon
         """
         nb_affected_rows = 0
 
@@ -128,22 +139,16 @@ class UtilisateurDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "UPDATE player                                                  "
-                        "   SET username = %(username)s,                                "
-                        "       password = COALESCE(%(password)s, password),            "
-                        "       elo = %(elo)s,                                          "
-                        "       email = %(email)s,                                      "
-                        "       pokemon_fan = %(pokemon_fan)s,                          "
-                        "       access_token = COALESCE(%(access_token)s, access_token) "
-                        " WHERE id_player = %(id_player)s;                              ",
+                        "UPDATE Utilisateurs                      "
+                        "   SET mot_de_passe = %(mot_de_passe)s,  "
+                        "       name = %(name)s,                  "
+                        "       email = %(email)s                 "
+                        " WHERE id = %(id_utilisateur)s;         ",
                         {
-                            "username": player.username,
-                            "password": player.password,
-                            "elo": player.elo,
-                            "email": player.email,
-                            "pokemon_fan": player.pokemon_fan,
-                            "access_token": player.access_token,
-                            "id_player": player.id_player,
+                            "mot_de_passe": utilisateur.mot_de_passe,
+                            "name": utilisateur.name,
+                            "email": utilisateur.email,
+                            "id_utilisateur": utilisateur.id,
                         },
                     )
                     nb_affected_rows = cursor.rowcount
@@ -154,36 +159,39 @@ class UtilisateurDao(metaclass=Singleton):
         return nb_affected_rows == 1
 
     @log
-    def delete(self, player) -> bool:
-        """Delete a player from the database.
-        Args:
-            Utilisateur to delete from the database
-        Returns:
-            True if the player was successfully deleted, False otherwise
+    def remove_utilisateur(self, utilisateur):
+        """Supprime un utilisateur de la base de données
+        Arguments:
+            utilisateur (Utilisateur) : Utilisateur à supprimer
+        Returns :
+            True si la suppression est réussie, False sinon
         """
+        nb_affected_rows = 0
+
         try:
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "DELETE FROM player                               "
-                        " WHERE id_player = %(id_player)s                 ",
-                        {"id_player": player.id_player},
+                        "DELETE FROM Utilisateurs            WHERE id = %(id_utilisateur)s;   ",
+                        {
+                            "id_utilisateur": utilisateur.id,
+                        },
                     )
-                    res = cursor.rowcount
+                    nb_affected_rows = cursor.rowcount
         except Exception as e:
             logger.error(e)
             raise
 
-        return res > 0
+        return nb_affected_rows == 1
 
     @log
-    def login(self, username: str, password: str) -> Utilisateur:
-        """Login using username and password.
+    def login_utilisateur(self, nom: str, mot_de_passe: str) -> Utilisateur | None:
+        """Permet à l'utilisateur de se connecter.
         Args:
-            username (str)
-            password (str)
+            nom (str) : nom de l'utilisateur
+            mot_de_passe (str) : mot de passe de l'utilisateur
         Returns:
-            Utilisateur or None
+            Utilisateur ou None
         """
         res = None
         try:
@@ -191,10 +199,10 @@ class UtilisateurDao(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT *                               "
-                        "  FROM player                          "
-                        " WHERE username = %(username)s         "
-                        "   AND password = %(password)s;        ",
-                        {"username": username, "password": password},
+                        "  FROM Utilisateurs                    "
+                        " WHERE name = %(name)s                 "
+                        "   AND mot_de_passe = %(mot_de_passe)s;",
+                        {"name": nom, "mot_de_passe": mot_de_passe},
                     )
                     res = cursor.fetchone()
         except Exception as e:
@@ -204,54 +212,13 @@ class UtilisateurDao(metaclass=Singleton):
         player = None
 
         if res:
+            historique = Historique(id=res["id"], audits=AuditDao().find_by_utilisateur(res["id"]))
             player = Utilisateur(
-                username=res["username"],
-                password=res["password"],
-                elo=res["elo"],
+                name=res["name"],
+                mot_de_passe=res["mot_de_passe"],
+                id=res["id"],
                 email=res["email"],
-                pokemon_fan=res["pokemon_fan"],
-                access_token=res["access_token"],
-                id_player=res["id_player"],
-            )
-
-        return player
-
-    @log
-    def find_by_token(self, access_token: str) -> Utilisateur:
-        """Find a player by their access token.
-        Args:
-            access_token (str): The token to search for.
-        Returns:
-            Utilisateur object if found, otherwise None.
-        """
-        if not access_token:
-            return None
-
-        res = None
-        try:
-            with DBConnection().connection as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT *                                "
-                        "  FROM player                           "
-                        " WHERE access_token = %(token)s;        ",
-                        {"token": access_token},
-                    )
-                    res = cursor.fetchone()
-        except Exception as e:
-            logger.error(f"Error finding player by token: {e}")
-            raise
-
-        player = None
-        if res:
-            player = Utilisateur(
-                id_player=res["id_player"],
-                username=res["username"],
-                password=res["password"],
-                elo=res["elo"],
-                email=res["email"],
-                pokemon_fan=res["pokemon_fan"],
-                access_token=res["access_token"],
+                historique=historique,
             )
 
         return player
