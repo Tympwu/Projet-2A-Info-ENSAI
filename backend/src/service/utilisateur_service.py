@@ -1,12 +1,15 @@
 import hashlib
+
 from business_object.utilisateur import Utilisateur
 from dao.utilisateur_dao import UtilisateurDao
+from service.historique_service import Historique_service
 from utils.log_utils import get_logger, log
+from utils.security import hash_password
 
 logger = get_logger(__name__)
 
 
-class Utilisateur_service:
+class UtilisateurService:
     """Classe de service gérant la logique métier liée aux utilisateurs."""
 
     def __init__(self) -> None:
@@ -19,31 +22,37 @@ class Utilisateur_service:
         return hashlib.sha256(salted_mdp.encode()).hexdigest()
 
     @log
-    def connexion(self, hash_mdp: str, id_user: int) -> Utilisateur | None:
-        """Vérifie le hash du mot de passe pour l'utilisateur spécifié."""
-        utilisateur = self.utilisateur_dao.find_utilisateur(id_user)
-        if utilisateur and utilisateur.mot_de_passe == hash_mdp:
-            return utilisateur
+    def connexion(self, name: str, mdp: str) -> Utilisateur | None:
+        """Permet de connecter un utilisateur en vérifiant son nom et son mot de passe haché."""
+        hash_mdp = self.verif_hash_mdp(mdp, name)
+        # On utilise directement la méthode login_utilisateur du DAO
+        return self.utilisateur_dao.login_utilisateur(name, hash_mdp)
+
+    @log
+    def create_utilisateur(self, mot_de_passe: str, email: str, name: str) -> bool:
+        """Crée un nouvel utilisateur en base de données."""
+        nouveau_user = Utilisateur(
+            name=name, email=email, mot_de_passe=hash_password(mot_de_passe, name)
+        )
+        if self.utilisateur_dao.create_utilisateur(nouveau_user):
+            nouveau_user.historique = Historique_service().create_historique(nouveau_user.id)
+            return nouveau_user
         return None
 
     @log
-    def create_utilisateur(self, hash_mdp: str, name: str) -> bool:
-        """Crée un nouvel utilisateur en base de données[cite: 2]."""
-        nouveau_user = Utilisateur(
-            name=name, email="", mot_de_passe=hash_mdp
-        )
-        return self.utilisateur_dao.create_utilisateur(nouveau_user)
-
-    @log
-    def update_utilisateur(self, hash_mdp: str, name: str, id: int) -> bool:
-        """Met à jour le nom et le mot de passe d'un utilisateur."""
+    def update_utilisateur(self, id: int, name: str, mdp: str, email: str) -> bool:
+        """Met à jour les informations d'un utilisateur."""
         utilisateur = self.utilisateur_dao.find_utilisateur(id)
         if not utilisateur:
             return False
 
+        hash_mdp = self.verif_hash_mdp(mdp, name)
         utilisateur.name = name
         utilisateur.mot_de_passe = hash_mdp
-        return self.utilisateur_dao.update(utilisateur)
+        utilisateur.email = email
+        
+        # CORRIGÉ : update_utilisateur au lieu de update
+        return self.utilisateur_dao.update_utilisateur(utilisateur)
 
     @log
     def remove_utilisateur(self, id: int) -> bool:
@@ -52,10 +61,11 @@ class Utilisateur_service:
         if not utilisateur:
             return False
 
-        return self.utilisateur_dao.delete(utilisateur)
+        # CORRIGÉ : remove_utilisateur au lieu de delete
+        return self.utilisateur_dao.remove_utilisateur(utilisateur)
 
     @log
-    def find_utilisateur(self, id: int) -> Utilisateur:
+    def find_utilisateur(self, id: int) -> Utilisateur | None:
         """Recherche et retourne un utilisateur par son ID."""
         return self.utilisateur_dao.find_utilisateur(id)
 
@@ -66,5 +76,5 @@ class Utilisateur_service:
 
     @log
     def find_all(self) -> list[Utilisateur]:
-        """Renvoie tous les utilisateurs de la base de donnée"""
+        """Renvoie tous les utilisateurs de la base de données."""
         return self.utilisateur_dao.find_all()
