@@ -4,8 +4,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from schema.player_model import PlayerModel, PlayerReadModel
-from schema.utilisateur_model import UtilisateurReadModel, UtilisateurModel, UtilisateurLoginModel
-from service.utilisateur_service import Utilisateur_service
+from schema.utilisateur_model import UtilisateurModel, UtilisateurReadModel
+from service.utilisateur_service import UtilisateurService
 from utils.log_utils import get_logger
 
 router = APIRouter()
@@ -15,28 +15,30 @@ logger = get_logger(__name__)
 
 def get_utilisateur_service():
     """Fonction permettant de récupérer les dépendances pour Utilisateur_service"""
-    return Utilisateur_service()
+    return UtilisateurService()
 
 
-@router.get("/", response_model=list[UtilisateurModel], tags=["Utilisateurs"])
+@router.get("/", response_model=list[UtilisateurReadModel], tags=["Utilisateurs"])
 async def find_all_utilisateurs(utilisateur_service=Depends(get_utilisateur_service)):
     """Liste tous les utilisateurs.
     Returns:
-        list[UtilisateurModel]: Une liste de tous les utilisateurs enregistrés.
+        list[UtilisateurReadModel]: Une liste de tous les utilisateurs enregistrés.
     """
     logger.info("Liste tous les utilisateurs")
     utilisateur_list = utilisateur_service.find_all()
     return utilisateur_list
 
 
-@router.get("/{id_utilisateur}", response_model=UtilisateurModel, tags=["Utilisateurs"])
-async def find_utilisateur(id_utilisateur: int, utilisateur_service=Depends(get_utilisateur_service)):
+@router.get("/{id_utilisateur}", response_model=UtilisateurReadModel, tags=["Utilisateurs"])
+async def find_utilisateur(
+    id_utilisateur: int, utilisateur_service=Depends(get_utilisateur_service)
+):
     """Trouve un utilisateur en fonction de son ID.
     Args:
         id_utilisateur (int)
-        utilisateur_service (Utilisateur_service): Le service utilisé pour intéragir avec les données de l'utilisateur
+        utilisateur_service (UtilisateurService): Le service utilisé pour intéragir avec les données de l'utilisateur
     Returns:
-        UtilisateurModel: Les données de l'utilisateur si trouvé
+        UtilisateurReadModel: Les données de l'utilisateur si trouvé
     Raises:
         HTTPException: Erreur 404 si l'utilisateur n'est pas trouvé
     """
@@ -48,24 +50,20 @@ async def find_utilisateur(id_utilisateur: int, utilisateur_service=Depends(get_
 
 
 @router.post("/", response_model=UtilisateurReadModel, tags=["Utilisateurs"])
-async def create_player(u: UtilisateurReadModel, utilisateur_service=Depends(get_utilisateur_service)):
-    """Créer un nouveau utilisateur.
+async def create_player(u: UtilisateurModel, utilisateur_service=Depends(get_utilisateur_service)):
+    """Créer un nouvel utilisateur.
     Args:
-        p (PlayerModel): The player data to create.
-        utilisateur_service (PlayerService): The service used to interact with player data.
+        u (UtilisateurReadModel): Les données de l'utilisateur à créer.
+        utilisateur_service (UtilisateurService): Le service utilisé pour intéragir avec les données de l'utilisateur.
     Returns:
-        PlayerReadModel: The newly created player data.
+        UtilisateurReadModel: Les données de l'utilisateur nouvellement créé.
     Raises:
-        HTTPException: 400 error if the username is already taken.
-        HTTPException: 500 error if the creation process fails.
+        HTTPException: 500 error s'il y a une erreur de création.
     """
-    logger.info("Create a player")
-    if utilisateur_service.username_already_used(p.username):
-        raise HTTPException(status_code=400, detail="Username already used.")
-
-    player = utilisateur_service.create(p.username, p.password, p.elo, p.email, p.pokemon_fan)
+    logger.info("Création d'un utilisateur")
+    player = utilisateur_service.create_utilisateur(u.name, u.mot_de_passe, u.email)
     if not player:
-        raise HTTPException(status_code=500, detail="Error while creating player.")
+        raise HTTPException(status_code=500, detail="Erreur lors de la création.")
 
     return player
 

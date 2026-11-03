@@ -29,7 +29,7 @@ class UtilisateurService:
         return self.utilisateur_dao.login_utilisateur(name, hash_mdp)
 
     @log
-    def create_utilisateur(self, mot_de_passe: str, email: str, name: str) -> bool:
+    def create_utilisateur(self, name: str, mot_de_passe: str, email: str) -> bool:
         """Crée un nouvel utilisateur en base de données."""
         nouveau_user = Utilisateur(
             name=name, email=email, mot_de_passe=hash_password(mot_de_passe, name)
@@ -50,7 +50,7 @@ class UtilisateurService:
         utilisateur.name = name
         utilisateur.mot_de_passe = hash_mdp
         utilisateur.email = email
-        
+
         # CORRIGÉ : update_utilisateur au lieu de update
         return self.utilisateur_dao.update_utilisateur(utilisateur)
 
