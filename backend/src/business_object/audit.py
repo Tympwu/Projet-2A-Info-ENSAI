@@ -26,7 +26,7 @@ class Audit:
         self,
         id: int,
         dossier: Dossier,
-        score: int | None = None,
+        score: float | None = None,
         emissionCO2_total: float | None = None,
         date: datetime = None,
         statut: str = "créé",
@@ -41,7 +41,8 @@ class Audit:
         score (int | None): Score de l'audit (par défaut : None).
         emissionCO2_total (float | None): emission de CO2 cumulé de l'audit (par défaut : None)
         date (datetime | None): Date de l'audit (par défaut : maintenant).
-        statut (str): Statut initial (par défaut : "créé"). Peut valoir "créé", "échoué", "validé", "refusé"
+        statut (str): Statut initial (par défaut : "créé"). Peut valoir "créé", "échoué", "validé",
+        "refusé"
 
         """
         self.id = id
