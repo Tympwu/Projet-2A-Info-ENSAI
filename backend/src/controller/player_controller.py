@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from schema.player_model import PlayerModel, PlayerReadModel
+from schema.utilisateur_model import UtilisateurReadModel
 from service.player_service import PlayerService
 from utils.log_utils import get_logger
 
@@ -17,7 +18,7 @@ def get_player_service():
     return PlayerService()
 
 
-@router.get("/", response_model=list[PlayerReadModel], tags=["Players"])
+@router.get("/", response_model=list[UtilisateurReadModel], tags=["Players"])
 async def find_all_players(player_service=Depends(get_player_service)):
     """List all players.
     Returns:

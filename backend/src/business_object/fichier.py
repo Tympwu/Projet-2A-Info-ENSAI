@@ -56,7 +56,7 @@ class Fichier:
         liste_vulnerabilites: list[Vulnerabilite] | None = None,
         liste_dependances: list[Dependances] | None = None,
         complexite: str | None = None,
-        score: float | None = None,
+        score: int | None = None,
         emissionCO2: float | None = None,
         AST_analyse: ast.Module | None = None,
     ) -> None:
