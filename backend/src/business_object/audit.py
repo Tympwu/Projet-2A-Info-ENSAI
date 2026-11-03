@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from business_object.dossier import Dossier
@@ -24,8 +23,15 @@ class Audit:
     dossier (Dossier): Dossier audité.
     """
 
-    def __init__(self, id: int, dossier: Dossier,
-                 date: datetime = None, statut: str = "créé") -> None:
+    def __init__(
+        self,
+        id: int,
+        dossier: Dossier,
+        score: int | None = None,
+        emissionCO2_total: float | None = None,
+        date: datetime = None,
+        statut: str = "créé",
+    ) -> None:
         """
         Initialise un audit.
 
@@ -33,6 +39,8 @@ class Audit:
         ----------
         id (int): Identifiant unique de l'audit.
         dossier (Dossier): Dossier à auditer.
+        score (int | None): Score de l'audit (par défaut : None).
+        emissionCO2_total (float | None): emission de CO2 cumulé de l'audit (par défaut : None)
         date (datetime | None): Date de l'audit (par défaut : maintenant).
         statut (str): Statut initial (par défaut : "créé").
 
@@ -40,8 +48,8 @@ class Audit:
         self.id = id
         self.date = date or datetime.now()
         self.statut = statut
-        self.score = None
-        self.emissionCO2_total = None
+        self.score = score
+        self.emissionCO2_total = emissionCO2_total
         self.dossier = dossier
 
     def calculer_score(self) -> float:
@@ -63,11 +71,12 @@ class Audit:
         fichiers = self.dossier.obtenir_fichiers()
         if not fichiers:
             raise ValueError(
-                "Impossible de calculer le score : le dossier ne contient aucun fichier.")
+                "Impossible de calculer le score : le dossier ne contient aucun fichier."
+            )
         if any(f.score is None for f in fichiers):
             raise ValueError(
                 "Impossible de calculer le score : le score de certains fichiers n'est pas calculé."
-                )
+            )
         self.score = sum(f.score for f in fichiers) / len(fichiers)
         return self.score
 
@@ -83,8 +92,9 @@ class Audit:
         int: Rang de la pire complexité (1 = O(1), 2 = O(n), 3 = O(n log n)...),
         ou 0 si aucun fichier n'a de complexité exploitable.
         """
-        rangs = [Fichier.ECHELLE_COMPLEXITE.index(c) + 1
-                 for c in self.obtenir_complexites().values()]
+        rangs = [
+            Fichier.ECHELLE_COMPLEXITE.index(c) + 1 for c in self.obtenir_complexites().values()
+        ]
         return max(rangs, default=0)
 
     def obtenir_complexites(self) -> dict[int, str]:
@@ -130,8 +140,7 @@ class Audit:
             self.statut = False
             raise
         self.emissionCO2_total = sum(
-            f.emissionCO2 for f in self.dossier.obtenir_fichiers()
-            if f.emissionCO2 is not None
+            f.emissionCO2 for f in self.dossier.obtenir_fichiers() if f.emissionCO2 is not None
         )
         self.statut = True
         return True

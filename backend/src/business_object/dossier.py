@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from business_object.dépendance import Dependances
+from business_object.dependance import Dependances
 from business_object.fichier import Fichier
 
 
