@@ -132,7 +132,7 @@ class AuditDao(metaclass=Singleton):
         audit = None
         if res:
             dossier = Dossier(
-                nom="",
+                nom="",  # A VOIR
                 chemin="",
                 signature_HMAC="",
                 liste_fichiers=FichierDao().find_by_audit(id_audit),
@@ -148,3 +148,48 @@ class AuditDao(metaclass=Singleton):
             )
 
         return audit
+
+    def find_by_utilisateur(self, id_utilisateur: int) -> list[Audit]:
+        """Recherche des Audits par l'ID d'un utilisateur
+        Arguments :
+            id (int) : ID de l'utilisateur pour lequel on recherche les audits
+        Returns:
+            list[Audit] : liste d'audit correspondant, liste vide sinon
+        Raise:
+            ValueError : L'id renseignée ne correspond pas à un utilisateur
+        """
+        try:
+            with DBConnection.connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT a.* FROM utilisateurs u"
+                        "JOIN audit a ON a.utilisateur_id=u.id"
+                        "WHERE u.id=%(id_utilisateur)s",
+                        {"id_utilisateur": id_utilisateur},
+                    )
+                    res = cursor.fetchall()
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        audits = []
+        if res:
+            for row in res:
+                dossier = Dossier(
+                    nom="",  # A VOIR
+                    chemin="",
+                    signature_HMAC="",
+                    liste_fichiers=FichierDao().find_by_audit(row["id"]),
+                    date_soumission=row["date_audit"],
+                )
+                audits.append(
+                    Audit(
+                        id=row["id"],
+                        date=row["date_audit"],
+                        statut=row["statut"],
+                        score=row["score"],
+                        emissionCO2_total=row["emissionCO2"],
+                        dossier=dossier,
+                    )
+                )
+        return audits

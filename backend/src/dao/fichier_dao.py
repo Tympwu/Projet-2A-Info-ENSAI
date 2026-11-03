@@ -117,7 +117,7 @@ class FichierDao(metaclass=Singleton):
         """
         try:
             with DBConnection().connection as connection:
-                with connection.cursor as cursor:
+                with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT * FROM Fichier WHERE id = %(id)s    ",
                         {"id": id_fichier},
@@ -151,8 +151,8 @@ class FichierDao(metaclass=Singleton):
         """
         try:
             with DBConnection.connection as connection:
-                with connection.cursor as cursor:
-                    cursor.excecute(
+                with connection.cursor() as cursor:
+                    cursor.execute(
                         "SELECT f.* FROM utilisateurs u"
                         "JOIN audit a ON a.utilisateurs_id=u.id"
                         "JOIN fichier f ON f.audit_id=a.id"
@@ -192,8 +192,8 @@ class FichierDao(metaclass=Singleton):
         """
         try:
             with DBConnection.connection as connection:
-                with connection.cursor as cursor:
-                    cursor.excecute(
+                with connection.cursor() as cursor:
+                    cursor.execute(
                         "SELECT f.* FROM audit a"
                         "JOIN fichier f ON f.audit_id=a.id"
                         "WHERE a.id=%(id_audit)s",
