@@ -3,6 +3,8 @@ from datetime import datetime
 
 from business_object.dossier import Dossier
 
+from .fichier import Fichier
+
 
 class Audit:
     """
@@ -71,42 +73,40 @@ class Audit:
 
     def calculer_complexite(self) -> int:
         """
-        Calcule la complexité moyenne des fichiers du dossier.
+        Donne la pire complexité algorithmique des fichiers du dossier, sous forme de rang.
 
-        Seules les complexités numériques sont prises en compte ; celles qui
-        sont absentes ou non convertibles en nombre sont ignorées.
-
-        Returns
-        -------
-        int: Complexité moyenne arrondie à l'entier le plus proche
-        (0 si aucun fichier n'a de complexité exploitable).
-        """
-        valeurs = list(self.obtenir_complexites().values())
-        if not valeurs:
-            return 0
-        return round(sum(valeurs) / len(valeurs))
-
-    def obtenir_complexites(self) -> dict[int, float]:
-        """
-        Donne la complexité de chaque fichier (dans un format facile à réutiliser ?)
-
-        Complète `calculer_complexite()` : la moyenne résume, le fait de détailler permet
-         de repérer les fichiers les plus complexes.
+        Une moyenne de complexités (O(n) et O(n²)) n'aurait pas de sens : c'est le
+        fichier le plus coûteux qui détermine le comportement du dossier. Le rang
+        est la position dans `Fichier.ECHELLE_COMPLEXITE`, à partir de 1, ce qui
+        permet de comparer simplement (plus le rang est grand, plus c'est coûteux).
 
         Returns
         -------
-        dict[int, float]: Complexité de chaque fichier, sous la forme
-        {id du fichier: complexité}. Les fichiers sans complexité numérique
-        sont absents.
+        int: Rang de la pire complexité (1 = O(1), 2 = O(n), 3 = O(n log n)...),
+        ou 0 si aucun fichier n'a de complexité exploitable.
         """
-        complexites: dict[int, float] = {}
-        for f in self.dossier.obtenir_fichiers():
-            if f.complexite is not None:
-                try:
-                    complexites[f.id] = float(f.complexite)
-                except ValueError:
-                    pass
-        return complexites
+        rangs = [Fichier.ECHELLE_COMPLEXITE.index(c) + 1
+                 for c in self.obtenir_complexites().values()]
+        return max(rangs, default=0)
+
+    def obtenir_complexites(self) -> dict[int, str]:
+        """
+        Donne la complexité de chaque fichier, dans un format facile à réutiliser.
+
+        Complète `calculer_complexite()` : le rang résume, ce détail permet
+        de repérer les fichiers les plus coûteux.
+
+        Returns
+        -------
+        dict[int, str]: Complexité de chaque fichier, sous la forme
+        {id du fichier: "O(n²)"}. Les fichiers sans complexité reconnue
+        (None ou valeur hors échelle) sont absents.
+        """
+        return {
+            f.id: f.complexite
+            for f in self.dossier.obtenir_fichiers()
+            if f.complexite in Fichier.ECHELLE_COMPLEXITE
+        }
 
     def lancer(self) -> bool:
         """
