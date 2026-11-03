@@ -51,8 +51,7 @@ class UtilisateurService:
         utilisateur.mot_de_passe = hash_mdp
         utilisateur.email = email
 
-        # CORRIGÉ : update_utilisateur au lieu de update
-        return self.utilisateur_dao.update_utilisateur(utilisateur)
+        return utilisateur if self.utilisateur_dao.update_utilisateur(utilisateur) else None
 
     @log
     def remove_utilisateur(self, id: int) -> bool:
