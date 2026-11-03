@@ -19,11 +19,9 @@ class UtilisateurModel(BaseModel):
     assurant une forme de donnée constante et valide durant les échanges avec l'API
     """
 
-    id: int | None = None
     name: str
     mot_de_passe: str
-    email: EmailStr
-    historique: HistoriqueSchema
+    email: EmailStr | None = None
 
     @field_validator("mot_de_passe")
     @classmethod

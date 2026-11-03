@@ -1,7 +1,10 @@
 import hashlib
+
 from business_object.utilisateur import Utilisateur
 from dao.utilisateur_dao import UtilisateurDao
+from service.historique_service import Historique_service
 from utils.log_utils import get_logger, log
+from utils.security import hash_password
 
 logger = get_logger(__name__)
 
@@ -26,13 +29,15 @@ class UtilisateurService:
         return self.utilisateur_dao.login_utilisateur(name, hash_mdp)
 
     @log
-    def create_utilisateur(self, name: str, mdp: str, email: str = "") -> bool:
-        """Crée un nouvel utilisateur en base de données après hachage du mot de passe."""
-        hash_mdp = self.verif_hash_mdp(mdp, name)
+    def create_utilisateur(self, name: str, mot_de_passe: str, email: str) -> bool:
+        """Crée un nouvel utilisateur en base de données."""
         nouveau_user = Utilisateur(
-            name=name, email=email, mot_de_passe=hash_mdp
+            name=name, email=email, mot_de_passe=hash_password(mot_de_passe, name)
         )
-        return self.utilisateur_dao.create_utilisateur(nouveau_user)
+        if self.utilisateur_dao.create_utilisateur(nouveau_user):
+            nouveau_user.historique = Historique_service().create_historique(nouveau_user.id)
+            return nouveau_user
+        return None
 
     @log
     def update_utilisateur(self, id: int, name: str, mdp: str, email: str) -> bool:
@@ -45,7 +50,7 @@ class UtilisateurService:
         utilisateur.name = name
         utilisateur.mot_de_passe = hash_mdp
         utilisateur.email = email
-        
+
         # CORRIGÉ : update_utilisateur au lieu de update
         return self.utilisateur_dao.update_utilisateur(utilisateur)
 
