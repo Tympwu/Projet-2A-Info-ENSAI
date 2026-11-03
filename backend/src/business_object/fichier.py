@@ -39,14 +39,14 @@ class Fichier:
     ENCODAGE = "utf-8"
 
     ECHELLE_COMPLEXITE = (
-        "O(1)", "O(n)", "O(n log n)", "O(n²)", "O(n² log n)",
+        "O(1)", "O(n)", "O(n²)",
         "O(n³)", "O(n^k), k > 3", "O(2^n)",
     )
 
     def __init__(
         self,
-        id: int | None = None,
         chemin: str,
+        id: int | None = None,
         liste_vulnerabilites: list[Vulnerabilite] | None = None,
         liste_dependances: list[Dependances] | None = None,
         complexite: str | None = None,
