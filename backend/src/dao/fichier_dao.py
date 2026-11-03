@@ -131,7 +131,6 @@ class FichierDao(metaclass=Singleton):
         if res:
             fichier = Fichier(
                 id=res["id"],
-                extension=res["extension"],
                 chemin=res["chemin"],
                 complexite=res["complexite"],
                 score=res["score"],

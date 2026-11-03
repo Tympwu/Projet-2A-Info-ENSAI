@@ -43,7 +43,7 @@ class AuditDao(metaclass=Singleton):
 
         created = False
         if res:
-            Audit.id = res["id"]
+            audit.id = res["id"]
             created = True
 
         return created
@@ -164,7 +164,7 @@ class AuditDao(metaclass=Singleton):
                     cursor.execute(
                         "SELECT a.* FROM utilisateurs u "
                         "JOIN audit a ON a.utilisateur_id=u.id "
-                        "WHERE u.id=%(id_utilisateur)s",
+                        "WHERE u.id = %(id_utilisateur)s;",
                         {"id_utilisateur": id_utilisateur},
                     )
                     res = cursor.fetchall()
