@@ -60,7 +60,6 @@ class UtilisateurService:
         if not utilisateur:
             return False
 
-        # CORRIGÉ : remove_utilisateur au lieu de delete
         return self.utilisateur_dao.remove_utilisateur(utilisateur)
 
     @log

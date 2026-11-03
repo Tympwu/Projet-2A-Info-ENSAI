@@ -3,7 +3,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from schema.utilisateur_model import UtilisateurModel, UtilisateurReadModel
+from schema.utilisateur_model import UtilisateurModel, UtilisateurReadModel, UtilisateurLoginModel
 from service.utilisateur_service import UtilisateurService
 from utils.log_utils import get_logger
 
@@ -49,7 +49,7 @@ async def find_utilisateur(
 
 
 @router.post("/", response_model=UtilisateurReadModel, tags=["Utilisateurs"])
-async def create_player(u: UtilisateurModel, utilisateur_service=Depends(get_utilisateur_service)):
+async def create_utilisateur(u: UtilisateurModel, utilisateur_service=Depends(get_utilisateur_service)):
     """Créer un nouvel utilisateur.
     Args:
         u (UtilisateurReadModel): Les données de l'utilisateur à créer.
@@ -68,7 +68,7 @@ async def create_player(u: UtilisateurModel, utilisateur_service=Depends(get_uti
 
 
 @router.put("/{id_utilisateur}", response_model=UtilisateurReadModel, tags=["Utilisateurs"])
-async def update_player(
+async def update_utilisateur(
     id_utilisateur: int, u: UtilisateurModel, utilisateur_service=Depends(get_utilisateur_service)
 ):
     """Met à jour un utilisateur.
@@ -87,7 +87,9 @@ async def update_player(
     if not utilisateur:
         raise HTTPException(status_code=404, detail="Utilisateur (id={id_player}) introuvable.")
 
-    utilisateur = utilisateur_service.update_utilisateur(id_utilisateur, u.name, u.mot_de_passe, u.email)
+    utilisateur = utilisateur_service.update_utilisateur(
+        id_utilisateur, u.name, u.mot_de_passe, u.email
+    )
     if not utilisateur:
         raise HTTPException(status_code=500, detail="Erreur lors de la mise à jour des données.")
 
@@ -95,20 +97,48 @@ async def update_player(
 
 
 @router.delete("/{id_utilisateur}", tags=["Utilisateurs"])
-async def delete_player(id_utilisateur: int, utilisateur_service=Depends(get_utilisateur_service)):
-    """Delete a player from the system.
+async def remove_utilisateur(id_utilisateur: int, utilisateur_service=Depends(get_utilisateur_service)):
+    """Supprime un utilisateur du système.
     Args:
-        id_player (int)
-        utilisateur_service (PlayerService): The service used to interact with player data.
+        id_utilisateur (int)
+        utilisateur_service (UtilisateurService): Le service utilisé pour intéragir avec les données de l'utilisateur.
     Returns:
-        str: A confirmation message indicating the player was deleted.
+        str: Un message de confirmation indiquant que l'utilisateur a bien été supprimé.
     Raises:
-        HTTPException: 404 error if the player is not found.
+        HTTPException: Erreur 404 si l'utilisateur n'est pas trouvé.
+        HTTPException: Erreur 500 si le processus échoue
     """
-    logger.info("Delete a player")
-    player = utilisateur_service.find_by_id(id_player)
-    if not player:
-        raise HTTPException(status_code=404, detail="Player (id={id_player}) not found.")
+    logger.info("Retrait un utilisateur")
+    utilisateur = utilisateur_service.find_utilisateur(id_utilisateur)
+    if not utilisateur:
+        raise HTTPException(
+            status_code=404, detail="Utilisateur (id={id_utilisateur}) introuvable."
+        )
 
-    utilisateur_service.delete(player)
-    return f"Player {player.username} deleted"
+    success = utilisateur_service.remove_utilisateur(id_utilisateur)
+    if not success:
+        raise HTTPException(
+            status_code=500, detail="Erreur lors de la suppression de l'utilisateur"
+        )
+    else:
+        return f"Player {utilisateur.name} deleted"
+
+
+@router.post("/", tags=["Login"])
+def login(credentials: UtilisateurLoginModel, service=Depends(get_utilisateur_service)):
+    """Authenticates a user.
+    Args:
+        credentials: username and password.
+    Returns:
+        dict: containing id_player and username
+    Raises:
+        HTTPException: 401 error if the credentials are invalid or the user does not exist."""
+    logger.info("Login")
+    player = service.login(credentials.username, credentials.password)
+    if player:
+        return {
+            "id_player": player.id_player,
+            "username": player.username,
+            "access_token": player.access_token,
+        }
+    raise HTTPException(status_code=401, detail="Invalid credentials")
