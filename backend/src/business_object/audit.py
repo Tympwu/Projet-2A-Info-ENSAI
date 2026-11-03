@@ -16,7 +16,7 @@ class Audit:
     ---------
     id (int): Identifiant unique de l'audit.
     date (datetime): Date et heure de création de l'audit.
-    statut (str): État de l'audit ("créé", "en cours", "terminé" ou "échoué").
+    statut (str): État de l'audit ("créé", "échoué", "validé", "refusé").
     score (float | None): Score global (None tant qu'il n'est pas calculé).
     emissionCO2_total (float | None): Émissions de CO2 totales (None avant le lancement).
     dossier (Dossier): Dossier audité.
@@ -26,7 +26,7 @@ class Audit:
         self,
         id: int,
         dossier: Dossier,
-        score: int | None = None,
+        score: float | None = None,
         emissionCO2_total: float | None = None,
         date: datetime = None,
         statut: str = "créé",
@@ -41,7 +41,8 @@ class Audit:
         score (int | None): Score de l'audit (par défaut : None).
         emissionCO2_total (float | None): emission de CO2 cumulé de l'audit (par défaut : None)
         date (datetime | None): Date de l'audit (par défaut : maintenant).
-        statut (str): Statut initial (par défaut : "créé"). Peut valoir "créé", "échoué", "validé", "refusé"
+        statut (str): Statut initial (par défaut : "créé"). Peut valoir "créé", "échoué", "validé",
+        "refusé"
 
         """
         self.id = id
@@ -116,33 +117,58 @@ class Audit:
 
     def lancer(self) -> bool:
         """
-        Exécute l'audit.
+        Exécute l'audit du dossier.
 
-        Calcule le score global et les émissions de CO2 totales. Si tout se
-        passe bien, le statut passe à True et la méthode retourne True. Si le
-        score ne peut pas être calculé, le statut passe à False et l'erreur
-        est relancée à l'appelant, qui doit la gérer.
+        Calcule le score global du dossier à partir des scores de ses fichiers,
+     puis détermine si l'audit est validé ou refusé.
 
-        Returns
-        -------
-        bool: True si l'audit s'est terminé correctement. La méthode ne
-        retourne jamais False : en cas d'échec, elle lève une exception.
+        Un audit est :
+        - "validé" si le score global est strictement inférieur à 5.
+        - "refusé" si le score global est supérieur ou égal à 5.
+        - "échoué" si une erreur empêche le calcul du score.
 
-        Raises
-        ------
-        ValueError: Si le score global ne peut pas être calculé (dossier vide
-        ou score d'un fichier non calculé, voir `calculer_score`).
-        """
+    Les émissions de CO2 totales sont également calculées si tous les
+    fichiers possèdent une valeur d'émission.
+
+    Returns
+    -------
+    bool:
+        True si l'audit a été correctement exécuté, qu'il soit validé
+        ou refusé.
+
+    Raises
+    ------
+    ValueError:
+        Si le dossier ne contient aucun fichier, si certains scores
+        ne sont pas calculés ou si certaines émissions de CO2 sont
+        indisponibles.
+    """
+
         try:
+            fichiers = self.dossier.obtenir_fichiers()
+
             self.calculer_score()
+
+            if self.score < 5:
+                self.statut = "validé"
+            else:
+                self.statut = "refusé"
+
+            if any(f.emissionCO2 is None for f in fichiers):
+                raise ValueError(
+                    "Impossible de calculer les émissions totales : "
+                    "les émissions de certains fichiers ne sont pas calculées."
+                )
+
+            self.emissionCO2_total = sum(
+                f.emissionCO2 for f in fichiers
+            )
+
+            return True
+
         except ValueError:
-            self.statut = False
+            self.statut = "échoué"
             raise
-        self.emissionCO2_total = sum(
-            f.emissionCO2 for f in self.dossier.obtenir_fichiers() if f.emissionCO2 is not None
-        )
-        self.statut = True
-        return True
 
     def __repr__(self) -> str:
         """
