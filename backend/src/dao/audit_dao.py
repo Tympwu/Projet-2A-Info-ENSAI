@@ -188,7 +188,7 @@ class AuditDao(metaclass=Singleton):
                         date=row["date_audit"],
                         statut=row["statut"],
                         score=row["score"],
-                        emissionCO2_total=row["emissionCO2"],
+                        emissionCO2_total=row["emissionco2"],
                         dossier=dossier,
                     )
                 )
