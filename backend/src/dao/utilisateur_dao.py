@@ -58,9 +58,7 @@ class UtilisateurDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT *                                 "
-                        "  FROM utilisateurs                      "
-                        " WHERE id = %(id_user)s;   ",
+                        "SELECT * FROM utilisateurs  WHERE id = %(id_user)s;   ",
                         {"id_user": id_utilisateur},
                     )
                     res = cursor.fetchone()
@@ -85,7 +83,7 @@ class UtilisateurDao(metaclass=Singleton):
         return utilisateur
 
     @log
-    def find_utilisateur_by_name(self, nom_utilisateur: int) -> list[Utilisateur]:
+    def find_utilisateur_by_name(self, nom_utilisateur: str) -> list[Utilisateur]:
         """Trouve tous les utilisateur ayant le nom recherché.
         Arguments :
             nom_utilisateur (str): Le nom de(s) l'utilisateur à rechercher
@@ -96,9 +94,7 @@ class UtilisateurDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT *                                 "
-                        "  FROM utilisateurs                      "
-                        " WHERE name = %(name_user)s;   ",
+                        "SELECT * FROM utilisateurs      WHERE name = %(name_user)s;   ",
                         {"name_user": nom_utilisateur},
                     )
                     res = cursor.fetchall()
@@ -117,8 +113,8 @@ class UtilisateurDao(metaclass=Singleton):
                     Utilisateur(
                         id=row["id"],
                         name=nom_utilisateur,
-                        email=res["email"],
-                        mot_de_passe=res["mot_de_passe"],
+                        email=row["email"],
+                        mot_de_passe=row["mot_de_passe"],
                         historique=historique,
                     )
                 )
@@ -153,8 +149,8 @@ class UtilisateurDao(metaclass=Singleton):
                     Utilisateur(
                         id=row["id"],
                         name=row["name"],
-                        email=res["email"],
-                        mot_de_passe=res["mot_de_passe"],
+                        email=row["email"],
+                        mot_de_passe=row["mot_de_passe"],
                         historique=historique,
                     )
                 )
@@ -208,7 +204,7 @@ class UtilisateurDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "DELETE FROM Utilisateurs            WHERE id = %(id_utilisateur)s;   ",
+                        "DELETE FROM Utilisateurs WHERE id = %(id_utilisateur)s;   ",
                         {
                             "id_utilisateur": utilisateur.id,
                         },

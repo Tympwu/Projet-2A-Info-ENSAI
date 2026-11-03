@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 
 from business_object.dependance import Dependances
-
 from business_object.vulnerabilite import Vulnerabilite
 
 
@@ -39,18 +38,25 @@ class Fichier:
     ENCODAGE = "utf-8"
 
     ECHELLE_COMPLEXITE = (
-        "O(1)", "O(n)", "O(n log n)", "O(n²)", "O(n² log n)",
-        "O(n³)", "O(n^k), k > 3", "O(2^n)",
+        "O(1)",
+        "O(n)",
+        "O(n log n)",
+        "O(n²)",
+        "O(n² log n)",
+        "O(n³)",
+        "O(n^k), k > 3",
+        "O(2^n)",
     )
 
     def __init__(
         self,
-        id: int | None = None,
         chemin: str,
+        id: int | None = None,
+        extension: str | None = None,
         liste_vulnerabilites: list[Vulnerabilite] | None = None,
         liste_dependances: list[Dependances] | None = None,
         complexite: str | None = None,
-        score: float | None = None,
+        score: int | None = None,
         emissionCO2: float | None = None,
         AST_analyse: ast.Module | None = None,
     ) -> None:
@@ -71,7 +77,7 @@ class Fichier:
         """
         self.id = id
         self.chemin = chemin
-        self.extension = Path(chemin).suffix
+        self.extension = extension if extension else Path(chemin).suffix
         self.liste_vulnerabilites = liste_vulnerabilites
         self.liste_dependances = liste_dependances
         self.complexite = complexite
@@ -116,9 +122,7 @@ class Fichier:
                 if numero == ligne_voulue:
                     return ligne.rstrip("\n")
 
-        raise IndexError(
-            f"La ligne {ligne_voulue} n'existe pas dans {self.chemin}"
-        )
+        raise IndexError(f"La ligne {ligne_voulue} n'existe pas dans {self.chemin}")
 
     def obtenir_ast(self) -> ast.Module:
         """Retourne l'arbre syntaxique du fichier, en le construisant si besoin.
@@ -132,14 +136,9 @@ class Fichier:
             SyntaxError: Si le code Python du fichier est invalide.
         """
         if self.extension != ".py":
-            raise ValueError(
-                f"{self.chemin} n'est pas un fichier Python : "
-                "pas d'arbre syntaxique"
-            )
+            raise ValueError(f"{self.chemin} n'est pas un fichier Python : pas d'arbre syntaxique")
         if self.AST_analyse is None:
-            self.AST_analyse = ast.parse(
-                self.lire_contenu(), filename=self.chemin
-            )
+            self.AST_analyse = ast.parse(self.lire_contenu(), filename=self.chemin)
         return self.AST_analyse
 
     def obtenir_dependances_fichier(self) -> list[Dependances]:
@@ -168,8 +167,7 @@ class Fichier:
 
         externes = sorted(noms - sys.stdlib_module_names)
         self.liste_dependances = [
-            Dependances(nom=nom, auteur=None, version=None)
-            for nom in externes
+            Dependances(nom=nom, auteur=None, version=None) for nom in externes
         ]
         return self.liste_dependances
 
@@ -186,7 +184,6 @@ class Fichier:
         """
         if self.liste_vulnerabilites is None:
             raise ValueError(
-                f"{self.chemin} n'a pas encore été analysé : "
-                "impossible d'évaluer le risque"
+                f"{self.chemin} n'a pas encore été analysé : impossible d'évaluer le risque"
             )
         return any(v.est_critique() for v in self.liste_vulnerabilites)
