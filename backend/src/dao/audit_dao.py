@@ -193,3 +193,40 @@ class AuditDao(metaclass=Singleton):
                     )
                 )
         return audits
+
+    def find_all(self) -> list[Audit]:
+        """Recherche tous les Audit de la base de donnée
+        Returns:
+            list[Audit] : liste contenant tous les audits de la base de donnée,
+                        liste vide si elle ne contient aucun audit.
+        """
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT id, date_audit, statut, score, emissionCO2 FROM audit;")
+                    res = cursor.fetchall()
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        audits = []
+        if res:
+            for row in res:
+                dossier = Dossier(
+                    nom="",  # A VOIR
+                    chemin="",
+                    signature_HMAC="",
+                    liste_fichiers=FichierDao().find_by_audit(row["id"]),
+                    date_soumission=row["date_audit"],
+                )
+                audits.append(
+                    Audit(
+                        id=row["id"],
+                        date=row["date_audit"],
+                        statut=row["statut"],
+                        score=row["score"],
+                        emissionCO2_total=row["emissionCO2"],
+                        dossier=dossier,
+                    )
+                )
+        return audits

@@ -126,7 +126,43 @@ class UtilisateurDao(metaclass=Singleton):
         return utilisateurs
 
     @log
-    def update_utilisateur(self, utilisateur):
+    def find_all(self) -> list[Utilisateur]:
+        """Trouve tous les utilisateur de la base de donnée.
+        Returns:
+            list[Utilisateur] : Liste d'utilisateurs de la base de donnée
+        """
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT * FROM utilisateurs;",
+                    )
+                    res = cursor.fetchall()
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        utilisateurs = []
+        if res:
+            for row in res:
+                historique = Historique(
+                    id=row["id"],
+                    audits=AuditDao().find_by_utilisateur(row["id"]),
+                )
+                utilisateurs.append(
+                    Utilisateur(
+                        id=row["id"],
+                        name=row["name"],
+                        email=res["email"],
+                        mot_de_passe=res["mot_de_passe"],
+                        historique=historique,
+                    )
+                )
+
+        return utilisateurs
+
+    @log
+    def update_utilisateur(self, utilisateur) -> bool:
         """Met à jour un utilisateur dans la base de données
         Arguments:
             utilisateur (Utilisateur) : Utilisateur à mettre à jour
@@ -159,7 +195,7 @@ class UtilisateurDao(metaclass=Singleton):
         return nb_affected_rows == 1
 
     @log
-    def remove_utilisateur(self, utilisateur):
+    def remove_utilisateur(self, utilisateur) -> bool:
         """Supprime un utilisateur de la base de données
         Arguments:
             utilisateur (Utilisateur) : Utilisateur à supprimer

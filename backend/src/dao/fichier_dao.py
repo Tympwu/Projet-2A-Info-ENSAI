@@ -219,3 +219,35 @@ class FichierDao(metaclass=Singleton):
                 )
 
         return fichiers
+
+    def find_all(self) -> list[Fichier]:
+        """Trouve les fichiers dans la base de donnée
+        Returns :
+            list[Fichier]: Liste des fichiers, la liste peut être vide si aucun fichier n'est trouvé
+        """
+        try:
+            with DBConnection.connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT * FROM fichier ;",
+                    )
+                    res = cursor.fetchall()
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        fichiers = []
+        if res:
+            for row in res:
+                fichiers.append(
+                    Fichier(
+                        id=row["id"],
+                        nom=row["extension"],
+                        chemin=row["chemin"],
+                        complexite=row["complexite"],
+                        score=row["score"],
+                        emissionCO2=row["emissionCO2"],
+                    )
+                )
+
+        return fichiers
