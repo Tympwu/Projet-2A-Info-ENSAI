@@ -33,7 +33,7 @@ class AuditDao(metaclass=Singleton):
                             "date_audit": audit.date,
                             "statut": audit.statut,
                             "score": audit.score,
-                            "emissionco2": audit.emissionCO2_total,
+                            "emissionCO2": audit.emissionCO2_total,
                         },
                     )
                     res = cursor.fetchone()
@@ -43,7 +43,7 @@ class AuditDao(metaclass=Singleton):
 
         created = False
         if res:
-            Audit.id = res["id"]
+            audit.id = res["id"]
             created = True
 
         return created
@@ -65,14 +65,14 @@ class AuditDao(metaclass=Singleton):
                         "date_audit = %(date_audit)s, "
                         "statut = %(statut)s, "
                         "score = %(score)s, "
-                        "emissionCO2 = %(emissionCO2)s "
+                        "emissionco2 = %(emissionCO2)s "
                         "WHERE id = %(id)s;",
                         {
                             "id": audit.id,
                             "date_audit": audit.date,
                             "statut": audit.statut,
                             "score": audit.score,
-                            "emissionco2": audit.emissionCO2_total,
+                            "emissionCO2": audit.emissionCO2_total,
                         },
                     )
                     nb_affected_rows = cursor.rowcount
@@ -118,7 +118,7 @@ class AuditDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT id, date_audit, statut, score, emissionCO2 "
+                        "SELECT id, date_audit, statut, score, emissionco2 "
                         "FROM audit WHERE id = %(id)s;",
                         {
                             "id": id_audit,
@@ -143,7 +143,7 @@ class AuditDao(metaclass=Singleton):
                 date=res["date_audit"],
                 statut=res["statut"],
                 score=res["score"],
-                emissionCO2_total=res["emissionco2"],
+                emissionCO2_total=res["emissionCO2"],
                 dossier=dossier,
             )
 
@@ -164,7 +164,7 @@ class AuditDao(metaclass=Singleton):
                     cursor.execute(
                         "SELECT a.* FROM utilisateurs u "
                         "JOIN audit a ON a.utilisateur_id=u.id "
-                        "WHERE u.id=%(id_utilisateur)s",
+                        "WHERE u.id = %(id_utilisateur)s;",
                         {"id_utilisateur": id_utilisateur},
                     )
                     res = cursor.fetchall()
@@ -188,7 +188,7 @@ class AuditDao(metaclass=Singleton):
                         date=row["date_audit"],
                         statut=row["statut"],
                         score=row["score"],
-                        emissionCO2_total=row["emissionco2"],
+                        emissionCO2_total=row["emissionCO2"],
                         dossier=dossier,
                     )
                 )
