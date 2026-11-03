@@ -126,19 +126,18 @@ async def remove_utilisateur(id_utilisateur: int, utilisateur_service=Depends(ge
 
 @router.post("/", tags=["Login"])
 def login(credentials: UtilisateurLoginModel, service=Depends(get_utilisateur_service)):
-    """Authenticates a user.
+    """Identifie un utilisateur.
     Args:
-        credentials: username and password.
+        credentials: nom et mot de passe.
     Returns:
-        dict: containing id_player and username
+        dict: dictionnaire contenant le nom et l'id du joueur
     Raises:
-        HTTPException: 401 error if the credentials are invalid or the user does not exist."""
+        HTTPException: Erreur 401 si les informations sont incorrectes ou l'utilisateur n'existe pas."""
     logger.info("Login")
-    player = service.login(credentials.username, credentials.password)
-    if player:
+    utilisateur = service.login(credentials.name, credentials.mot_de_passe) # Pas implémenté dans la classe service
+    if utilisateur:
         return {
-            "id_player": player.id_player,
-            "username": player.username,
-            "access_token": player.access_token,
+            "id_utilisateur": utilisateur.id,
+            "name": utilisateur.name,
         }
     raise HTTPException(status_code=401, detail="Invalid credentials")
