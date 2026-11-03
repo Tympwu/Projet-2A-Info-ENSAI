@@ -29,11 +29,19 @@ class Fichier:
         score (float | None): Score du fichier, ou None avant analyse.
         emissionCO2 (float | None): Émissions de CO2 estimées, ou None
             avant analyse.
+        ECHELLE_COMPLEXITE (tuple[str, ...]): Complexités algorithmiques
+        possibles, de la plus faible à la plus forte (l'ordre sert à
+        comparer deux fichiers).
         AST_analyse (ast.Module | None): Arbre syntaxique du fichier,
             ou None tant qu'il n'a pas été construit.
     """
 
     ENCODAGE = "utf-8"
+
+    ECHELLE_COMPLEXITE = (
+        "O(1)", "O(n)", "O(n log n)", "O(n²)", "O(n² log n)",
+        "O(n³)", "O(n^k), k > 3", "O(2^n)",
+    )
 
     def __init__(
         self,
