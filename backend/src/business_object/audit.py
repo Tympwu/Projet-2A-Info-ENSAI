@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from business_object.dossier import Dossier
-from business_object.fichier import Fichier
 
 
 class Audit:
@@ -80,39 +79,30 @@ class Audit:
         self.score = sum(f.score for f in fichiers) / len(fichiers)
         return self.score
 
-    def calculer_complexite(self) -> int:
+    def calculer_complexite(self) -> int | None:
         """
-        Donne la pire complexité algorithmique des fichiers du dossier, sous forme de rang.
-
-        Le rang est la position dans `Fichier.ECHELLE_COMPLEXITE`, à partir de 1, ce qui
-        permet de comparer simplement (plus le rang est grand, plus c'est coûteux).
+        Donne la pire complexité des fichiers du dossier, sous forme de l'exposant k.
 
         Returns
         -------
-        int: Rang de la pire complexité (1 = O(1), 2 = O(n), 3 = O(n log n)...),
-        ou 0 si aucun fichier n'a de complexité exploitable.
+        int | None: Le plus grand exposant k (0 pour O(1), 1 pour O(n), 2 pour O(n^2)...),
+        ou None si aucun fichier n'a de complexité exploitable.
         """
-        rangs = [
-            Fichier.ECHELLE_COMPLEXITE.index(c) + 1 for c in self.obtenir_complexites().values()
-        ]
-        return max(rangs, default=0)
+        return max(self.obtenir_complexites().values(), default=None)
 
-    def obtenir_complexites(self) -> dict[int, str]:
+    def obtenir_complexites(self) -> dict[int, int]:
         """
         Donne la complexité de chaque fichier, dans un format facile à réutiliser.
 
-        Complète `calculer_complexite()` et permet de repérer les fichiers les plus coûteux.
-
         Returns
         -------
-        dict[int, str]: Complexité de chaque fichier, sous la forme
-        {id du fichier: "O(n²)"}. Les fichiers sans complexité reconnue
-        (None ou valeur hors échelle) sont absents.
+        dict[int, int]: {id du fichier: exposant k}. Les fichiers sans complexité
+        (None) sont absents.
         """
         return {
             f.id: f.complexite
             for f in self.dossier.obtenir_fichiers()
-            if f.complexite in Fichier.ECHELLE_COMPLEXITE
+            if f.complexite is not None
         }
 
     def lancer(self) -> bool:
