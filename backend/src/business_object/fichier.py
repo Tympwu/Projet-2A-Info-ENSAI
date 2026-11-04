@@ -1,5 +1,7 @@
 import ast
+import re
 import sys
+import tomllib
 from pathlib import Path
 
 from business_object.dependance import Dependances
@@ -48,6 +50,11 @@ class Fichier:
         "O(2^n)",
     )
 
+    MOTIF_EXIGENCE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:\[[^\]]*\])?\s*(.*)$")
+
+    MOTIF_VERSION_EXACTE = re.compile(r"(?<![<>!~=])===?\s*([^\s,;]+)") 
+    # utile pour extraire les versions
+
     def __init__(
         self,
         chemin: str,
@@ -56,7 +63,7 @@ class Fichier:
         liste_vulnerabilites: list[Vulnerabilite] | None = None,
         liste_dependances: list[Dependances] | None = None,
         complexite: str | None = None,
-        score: int | None = None,
+        score: float | None = None,
         emissionCO2: float | None = None,
         AST_analyse: ast.Module | None = None,
     ) -> None:
@@ -142,34 +149,109 @@ class Fichier:
         return self.AST_analyse
 
     def obtenir_dependances_fichier(self) -> list[Dependances]:
-        """Extrait les dépendances externes importées par le fichier.
+        """
+        Retourne les dépendances du fichier, en les extrayant au premier appel.
+
+        Si `liste_dependances` est déjà remplie (par un appel précédent à
+        `extraire_dependances`), elle est retournée telle quelle, sans être
+        recalculée ni écrasée.
 
         Returns:
-            list[Dependances]: Dépendances externes, triées par nom.
-            Liste vide si le fichier n'est pas Python ou n'importe rien
-            d'externe.
+            list[Dependances]: Dépendances du fichier. Liste vide si le fichier
+            n'est pas d'un type pris en charge, n'est pas lisible ou ne déclare
+            rien d'externe.
+
+        Raises:
+            FileNotFoundError: Si le fichier n'existe pas au chemin indiqué (et
+                que les dépendances n'avaient pas encore été extraites).
+        """
+
+        if self.liste_dependances is None:
+            self.extraire_dependances()
+        return self.liste_dependances or []
+
+    def extraire_dependances(self) -> bool:
+        """Extrait les dépendances déclarées par le fichier et les range dans `liste_dependances`.
+
+        Trois types de fichiers sont pris en charge :
+        - un fichier Python (`.py`) : modules importés qui ne font pas partie de la
+          bibliothèque standard (version inconnue, donc None) ;
+        - un fichier `requirements.txt` (ou `requirements-dev.txt`...) : une dépendance
+          par ligne ;
+        - un fichier `pyproject.toml` : la liste `dependencies` de la section `[project]`.
+
+        Une version n'est retenue que si elle est épinglée avec `==` (par exemple
+        `requests==2.31.0`). Avec `>=2.0`, la version installée est inconnue : None.
+
+        Returns:
+            bool: True si les dépendances ont pu être extraites (la liste peut être vide),
+            False si le fichier n'est pas d'un type pris en charge ou n'est pas lisible
+            (`liste_dependances` vaut alors None).
 
         Raises:
             FileNotFoundError: Si le fichier n'existe pas au chemin indiqué.
-            SyntaxError: Si le code Python du fichier est invalide.
         """
-        if self.extension != ".py":
-            self.liste_dependances = []
-            return self.liste_dependances  # Ecarter les fichiers non python
+        nom_fichier = Path(self.chemin).name.lower()
+        dependances: list[Dependances] | None = None
 
-        noms: set[str] = set()
-        for noeud in ast.walk(self.obtenir_ast()):  # ast.walk visite tous les noeuds
-            if isinstance(noeud, ast.Import):
-                noms.update(alias.name.split(".")[0] for alias in noeud.names)
-            elif isinstance(noeud, ast.ImportFrom):
-                if noeud.level == 0 and noeud.module:
-                    noms.add(noeud.module.split(".")[0])
+        try:
+            if self.extension == ".py":
+                # Un import ne contient pas de version : elle vaut None.
+                noms: set[str] = set()
+                for noeud in ast.walk(self.obtenir_ast()):  # ast.walk visite tous les noeuds
+                    if isinstance(noeud, ast.Import):
+                        noms.update(alias.name.split(".")[0] for alias in noeud.names)
+                    elif isinstance(noeud, ast.ImportFrom):
+                        if noeud.level == 0 and noeud.module:
+                            noms.add(noeud.module.split(".")[0])
+                externes = sorted(noms - sys.stdlib_module_names)
+                dependances = [Dependances(nom=nom, auteur=None, version=None) for nom in externes]
+            elif nom_fichier.startswith("requirements") and nom_fichier.endswith(".txt"):
+                dependances = self._lire_exigences(self.lire_contenu().splitlines())
+            elif nom_fichier == "pyproject.toml":
+                donnees = tomllib.loads(self.lire_contenu())
+                dependances = self._lire_exigences(donnees.get("project", {}).get(
+                    "dependencies", []))
+        except (SyntaxError, UnicodeDecodeError, tomllib.TOMLDecodeError):
+            dependances = None
+        self.liste_dependances = dependances
+        return dependances is not None
 
-        externes = sorted(noms - sys.stdlib_module_names)
-        self.liste_dependances = [
-            Dependances(nom=nom, auteur=None, version=None) for nom in externes
-        ]
-        return self.liste_dependances
+    def _lire_exigences(self, lignes: list[str]) -> list[Dependances]:
+        """
+        Convertit des lignes comme `requests[security]==2.31.0` en dépendances.
+        Cete methode permet de lire correctement les dépendances
+
+        Les lignes vides, les commentaires, les options (`-r autre.txt`), les chemins
+        locaux et les adresses directes (`git+https://...`) sont ignorés.
+
+        Args:
+            lignes (list[str]): Lignes d'un `requirements.txt`, ou entrées de la liste
+                `dependencies` d'un `pyproject.toml`.
+
+        Returns:
+            list[Dependances]: Dépendances triées par nom, sans doublon (même nom
+            et même version).
+        """
+        uniques: dict[tuple[str, str | None], Dependances] = {}
+        for ligne in lignes:
+            ligne = re.split(r"\s#", ligne, maxsplit=1)[0].split(";", 1)[0].strip()
+            if not ligne or ligne.startswith(("#", "-", ".", "/")):
+                continue
+
+            correspondance = self.MOTIF_EXIGENCE.match(ligne)
+            if correspondance is None:
+                continue
+            nom, reste = correspondance.groups()
+
+            if "://" in ligne and not reste.lstrip().startswith("@"):
+                continue
+
+            epinglee = self.MOTIF_VERSION_EXACTE.search(reste)
+            version = epinglee.group(1) if epinglee and "*" not in epinglee.group(1) else None
+            uniques[(nom.lower(), version)] = Dependances(nom=nom, auteur=None, version=version)
+
+        return [uniques[cle] for cle in sorted(uniques, key=lambda c: (c[0], c[1] or ""))]
 
     def est_a_risque(self) -> bool:
         """Indique si le fichier présente un risque.
