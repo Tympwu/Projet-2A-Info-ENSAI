@@ -72,6 +72,7 @@ class Fichier:
         self.extension = extension if extension else Path(chemin).suffix
         self.liste_vulnerabilites = liste_vulnerabilites
         self.liste_dependances = liste_dependances
+        self.liste_anti_pattern = None
         self.complexite = complexite
         self.score = score
         self.emissionCO2 = emissionCO2
@@ -268,8 +269,4 @@ class Fichier:
         """
         if k is None:
             return None
-        if k == 0:
-            return "O(1)"
-        if k == 1:
-            return "O(n)"
         return f"O(n^{k})"

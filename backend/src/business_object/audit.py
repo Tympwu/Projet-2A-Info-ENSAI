@@ -23,8 +23,8 @@ class Audit:
 
     def __init__(
         self,
-        id: int,
         dossier: Dossier,
+        id: int | None = None,
         score: float | None = None,
         emissionCO2_total: float | None = None,
         date: datetime = None,
