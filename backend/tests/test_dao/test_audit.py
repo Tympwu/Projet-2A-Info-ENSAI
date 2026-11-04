@@ -59,7 +59,7 @@ def ligne(id_audit=1):
         "date_audit": DATE,
         "statut": "TERMINE",
         "score": 85.0,
-        "emissionCO2": 1.2,
+        "emissionco2": 1.2,
     }
 
 
@@ -175,3 +175,14 @@ def test_erreur_bd_remontee(dao, curseur, audit, appel):
 
     with pytest.raises(RuntimeError):
         appel(dao, audit)
+
+
+def test_find_all_plusieurs_audits(dao, curseur, faux_fichier_dao):
+    curseur.fetchall.return_value = [ligne(1), ligne(2)]
+    audits = dao.find_all()
+    assert [a.id for a in audits] == [1, 2]
+
+
+def test_find_all_aucun_audit(dao, curseur, faux_fichier_dao):
+    curseur.fetchall.return_value = []
+    assert dao.find_all() == []
