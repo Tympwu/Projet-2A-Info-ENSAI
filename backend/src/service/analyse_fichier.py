@@ -11,7 +11,7 @@ class AnalyseurComplexite(ast.NodeVisitor):
     Mesure l'imbrication des boucles `for` et `while` d'un arbre syntaxique Python.
 
     On crée un analyseur par fichier : ses compteurs sont propres à ce fichier. Python appelle
-    automatiquement `visit_For` et `visit_While` quand il rencontre ces types de nœuds.Du code 
+    automatiquement `visit_For` et `visit_While` quand il rencontre ces types de nœuds.Du code
     placé dans `d` boucles imbriquées s'exécute environ n^d fois.
     La complexité estimée est donc la profondeur maximale d'imbrication.
 
