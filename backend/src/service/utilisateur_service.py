@@ -13,7 +13,13 @@ class UtilisateurService:
     """Classe de service gérant la logique métier liée aux utilisateurs."""
 
     def __init__(self) -> None:
+        """
+        Parameters:
+            utilisateur_dao (UtilisateurDao): Classe DAO lié à l'utilisateur
+            utilisateur_connecte (Utilisateur |None) = None : Utilisateur connecté à l'application, None si aucun
+        """
         self.utilisateur_dao = UtilisateurDao()
+        self.utilisateur_connecte = None
 
     @log
     def verif_hash_mdp(self, mdp: str, name: str) -> str:
@@ -76,3 +82,21 @@ class UtilisateurService:
     def find_all(self) -> list[Utilisateur]:
         """Renvoie tous les utilisateurs de la base de données."""
         return self.utilisateur_dao.find_all()
+
+    @log
+    def login(self, name: str, mot_de_passe: str) -> Utilisateur | None:
+        """Permet de se connecter à l'application
+
+        Args:
+            name (str): nom de l'utilisateur qui souhaite se connecter
+            mot_de_passe (str): mot de passe de l'utilisateur
+
+        Returns:
+            Utilisateur |None : Compte de l'utilisateur connecté si identifiants corrects, sinon None
+        """
+        utilisateur = self.utilisateur_dao.login_utilisateur(nom=name, mot_de_passe=mot_de_passe)
+        if utilisateur:
+            self.utilisateur_connecte = utilisateur
+        else:
+            self.utilisateur_connecte = None
+        return self.utilisateur_connecte

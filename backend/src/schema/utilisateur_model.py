@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr
 
 from schema.audit_model import AuditHistoriqueModel
 
@@ -23,15 +23,15 @@ class UtilisateurModel(BaseModel):
     mot_de_passe: str
     email: EmailStr | None = None
 
-    @field_validator("mot_de_passe")
-    @classmethod
-    def check_password_length(cls, v: str) -> str:
-        min_len = 8
-        if len(v) < min_len:
-            raise ValueError(
-                f"Le mot de passe doit être doit faire au minimum {min_len} caractères"
-            )
-        return v
+    # @field_validator("mot_de_passe")
+    # @classmethod
+    # def check_password_length(cls, v: str) -> str:
+    #     min_len = 8
+    #     if len(v) < min_len:
+    #         raise ValueError(
+    #             f"Le mot de passe doit être doit faire au minimum {min_len} caractères"
+    #         )
+    #     return v
 
 
 class UtilisateurReadModel(BaseModel):

@@ -3,7 +3,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from schema.utilisateur_model import UtilisateurModel, UtilisateurReadModel, UtilisateurLoginModel
+from schema.utilisateur_model import UtilisateurLoginModel, UtilisateurModel, UtilisateurReadModel
 from service.utilisateur_service import UtilisateurService
 from utils.log_utils import get_logger
 
@@ -49,7 +49,9 @@ async def find_utilisateur(
 
 
 @router.post("/", response_model=UtilisateurReadModel, tags=["Utilisateurs"])
-async def create_utilisateur(u: UtilisateurModel, utilisateur_service=Depends(get_utilisateur_service)):
+async def create_utilisateur(
+    u: UtilisateurModel, utilisateur_service=Depends(get_utilisateur_service)
+):
     """Créer un nouvel utilisateur.
     Args:
         u (UtilisateurReadModel): Les données de l'utilisateur à créer.
@@ -97,7 +99,9 @@ async def update_utilisateur(
 
 
 @router.delete("/{id_utilisateur}", tags=["Utilisateurs"])
-async def remove_utilisateur(id_utilisateur: int, utilisateur_service=Depends(get_utilisateur_service)):
+async def remove_utilisateur(
+    id_utilisateur: int, utilisateur_service=Depends(get_utilisateur_service)
+):
     """Supprime un utilisateur du système.
     Args:
         id_utilisateur (int)
@@ -124,20 +128,17 @@ async def remove_utilisateur(id_utilisateur: int, utilisateur_service=Depends(ge
         return f"Player {utilisateur.name} deleted"
 
 
-@router.post("/", tags=["Login"])
+@router.post("/login", response_model=UtilisateurReadModel, tags=["Utilisateurs"])
 def login(credentials: UtilisateurLoginModel, service=Depends(get_utilisateur_service)):
     """Identifie un utilisateur.
     Args:
         credentials: nom et mot de passe.
     Returns:
-        dict: dictionnaire contenant le nom et l'id du joueur
+        UtilisateurReadModel: Les données intéressantes de l'utilisateur connecté
     Raises:
         HTTPException: Erreur 401 si les informations sont incorrectes ou l'utilisateur n'existe pas."""
     logger.info("Login")
-    utilisateur = service.login(credentials.name, credentials.mot_de_passe) # Pas implémenté dans la classe service
+    utilisateur = service.login(credentials.name, credentials.mot_de_passe)
     if utilisateur:
-        return {
-            "id_utilisateur": utilisateur.id,
-            "name": utilisateur.name,
-        }
+        return utilisateur
     raise HTTPException(status_code=401, detail="Invalid credentials")
