@@ -138,10 +138,7 @@ class Analyse_fichier:
         `while` (aucune boucle : O(1), une : O(n), deux imbriquées : O(n²)...).
         Le résultat est écrit dans `fichier.complexite` et retourné.
 
-        Limites : seules les boucles `for` et `while` sont comptées. Les tris,
-        les compréhensions de liste, les boucles `async for`, les fonctions comme
-        `sum` ou `max` et la récursion ne sont pas détectés : l'estimation peut
-        donc être inférieure à la vraie complexité, mais pas supérieure.
+        Seules les boucles `for` et `while` sont comptées.
 
         Paramètres
         ----------
