@@ -30,25 +30,11 @@ class Fichier:
         score (float | None): Score du fichier, ou None avant analyse.
         emissionCO2 (float | None): Émissions de CO2 estimées, ou None
             avant analyse.
-        ECHELLE_COMPLEXITE (tuple[str, ...]): Complexités algorithmiques
-        possibles, de la plus faible à la plus forte (l'ordre sert à
-        comparer deux fichiers).
         AST_analyse (ast.Module | None): Arbre syntaxique du fichier,
             ou None tant qu'il n'a pas été construit.
     """
 
     ENCODAGE = "utf-8"
-
-    ECHELLE_COMPLEXITE = (
-        "O(1)",
-        "O(n)",
-        "O(n log n)",
-        "O(n²)",
-        "O(n² log n)",
-        "O(n³)",
-        "O(n^k), k > 3",
-        "O(2^n)",
-    )
 
     MOTIF_EXIGENCE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:\[[^\]]*\])?\s*(.*)$")
 
@@ -62,7 +48,7 @@ class Fichier:
         extension: str | None = None,
         liste_vulnerabilites: list[Vulnerabilite] | None = None,
         liste_dependances: list[Dependances] | None = None,
-        complexite: str | None = None,
+        complexite: int | None = None,
         score: float | None = None,
         emissionCO2: float | None = None,
         AST_analyse: ast.Module | None = None,
@@ -77,7 +63,7 @@ class Fichier:
                 qu'une liste vide signifie « analysé, rien trouvé ».
             liste_dependances (list[Dependances] | None): Dépendances
                 détectées (même convention que pour les vulnérabilités).
-            complexite (str | None): Niveau de complexité du code.
+            complexite (int | None): Niveau de complexité du code.
             score (float | None): Score du fichier.
             emissionCO2 (float | None): Émissions de CO2 estimées.
             AST_analyse (ast.Module | None): Arbre syntaxique déjà construit.
@@ -269,3 +255,22 @@ class Fichier:
                 f"{self.chemin} n'a pas encore été analysé : impossible d'évaluer le risque"
             )
         return any(v.est_critique() for v in self.liste_vulnerabilites)
+
+    @staticmethod
+    def formater_complexite(k: int | None) -> str | None:
+        """Écrit l'exposant d'une complexité sous la forme O(n^k), pour l'affichage.
+
+        Args:
+            k (int | None): Exposant de la complexité (0, 1, 2...), ou None.
+
+        Returns:
+            str | None: "O(1)" pour 0, "O(n)" pour 1, "O(n^k)" au-delà
+            (par exemple "O(n^2)"), ou None si `k` vaut None.
+        """
+        if k is None:
+            return None
+        if k == 0:
+            return "O(1)"
+        if k == 1:
+            return "O(n)"
+        return f"O(n^{k})"
