@@ -1,3 +1,7 @@
+import os
+from pathlib import Path
+
+from business_object.dossier import Dossier
 from business_object.fichier import Fichier
 from dao.db_connection import DBConnection
 from utils.log_utils import get_logger, log
@@ -251,3 +255,49 @@ class FichierDao(metaclass=Singleton):
                 )
 
         return fichiers
+
+    @log
+    def export_dossier(self, path: str) -> Dossier | None:
+        """Créer un objet dossier avec tous les fichiers selon un chemin d'accès
+        Arguments:
+            path (str): chemin d'accès du dossier que tous les fichiers vont partager
+        Returns:
+            Dossier | None : Objet dossier contenant tous les fichiers à l'adresse donnée, None si aucun fichier n'a été trouvé
+        """
+        dossier_nom = Path(path).name
+        path_normalise = path.rstrip(os.sep)
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT * FROM Fichier WHERE chemin LIKE %(path)s",
+                        {"path": f"{path_normalise}/%"},
+                    )
+                    res = cursor.fetchall()
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        fichiers = []
+        dossier = None
+        if res:
+            for row in res:
+                fichiers.append(
+                    Fichier(
+                        id=row["id"],
+                        extension=row["extension"],
+                        chemin=row["chemin"],
+                        complexite=row["complexite"],
+                        score=row["score"],
+                        emissionCO2=row["emissionco2"],
+                    )
+                )
+            dossier = Dossier(
+                nom=dossier_nom,
+                chemin=path,
+                signature_HMAC="",
+                liste_fichiers=fichiers,
+                date_soumission=None,
+            )
+            logger.warning("Le chemin indiqué ne contient aucun fichier")
+        return dossier

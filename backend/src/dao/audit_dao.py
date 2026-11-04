@@ -110,7 +110,7 @@ class AuditDao(metaclass=Singleton):
     def find_audit(self, id_audit: int) -> Audit | None:
         """Recherche un Audit par son ID
         Arguments :
-            id (int) : ID de l'Audit à rechercher
+            id_audit (int) : ID de l'Audit à rechercher
         Returns:
             Audit | None: audit correspondant, None sinon
         """
@@ -118,7 +118,7 @@ class AuditDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT id, date_audit, statut, score, emissionco2 "
+                        "SELECT id, date_audit, statut, score, emissionCO2 "
                         "FROM audit WHERE id = %(id)s;",
                         {
                             "id": id_audit,
@@ -142,10 +142,10 @@ class AuditDao(metaclass=Singleton):
                 id=res["id"],
                 date=res["date_audit"],
                 statut=res["statut"],
-                score=res["score"],
-                emissionCO2_total=res["emissionCO2"],
                 dossier=dossier,
             )
+            audit.score = res["score"]
+            audit.emissionCO2_total = res["emissionCO2"]
 
         return audit
 

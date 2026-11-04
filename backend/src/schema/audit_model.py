@@ -1,4 +1,5 @@
 from datetime import date
+
 from pydantic import BaseModel, EmailStr
 
 from schema.fichier_model import FichierAuditModel
@@ -30,12 +31,15 @@ class AuditModel(BaseModel):
 
 
 class AuditReadModel(BaseModel):
-    id: int
-    name: str
-    email: EmailStr
-    historique: str
+    id: int | None = None
+    score: float | None = None
+    statut: str = "créé"
+    date: date | None = None
+    emissionCO2_total: float | None = None
+    dossier: DossierSchema
 
 
 class AuditHistoriqueModel(BaseModel):
+    id: int
     statut: str
-    score: int | None = None
+    score: float | None = None

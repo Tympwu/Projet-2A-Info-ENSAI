@@ -1,15 +1,17 @@
 from business_object.historique import Historique
 from dao.audit_dao import AuditDao
+from service.utilisateur_service import UtilisateurService
 from utils.log_utils import log
 
 
-class Historique_service:
+class HistoriqueService:
     """Gère la consultation et la suppression de l'historique d'un utilisateur.
 
     L'historique n'est pas stocké comme tel : c'est l'ensemble des audits
     d'un utilisateur. Le service le reconstruit à partir de `AuditDao`,
     après avoir validé les arguments. Il ne contient aucune requête SQL.
     """
+
     def __init__(self):
         """
         Parameters:
@@ -105,3 +107,12 @@ class Historique_service:
         if not isinstance(id_utilisateur, int) or id_utilisateur < 0:
             raise ValueError("L'id_utilisateur n'est pas un entier positif")
         return Historique(id=id_utilisateur, audits=[])
+
+    @log
+    def find_all_historiques(self) -> list[Historique]:
+        """Renvoie tous les historiques de la base de données."""
+        utilisateurs = UtilisateurService().find_all_utilisateurs()
+        historiques = []
+        for utilisateur in utilisateurs:
+            historiques.append(utilisateur.historique)
+        return historiques
