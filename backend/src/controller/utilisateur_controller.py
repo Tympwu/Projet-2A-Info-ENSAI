@@ -44,7 +44,7 @@ async def find_utilisateur(
     logger.info("Recherche d'un utilisateur par ID")
     utilisateur = utilisateur_service.find_utilisateur(id_utilisateur)
     if not utilisateur:
-        raise HTTPException(status_code=404, detail="Utilisateur (id={id_utilisateur}) not found.")
+        raise HTTPException(status_code=404, detail=f"Utilisateur (id={id_utilisateur}) not found.")
     return utilisateur
 
 
@@ -87,7 +87,9 @@ async def update_utilisateur(
     logger.info("Mise à jour d'un utilisateur")
     utilisateur = utilisateur_service.find_utilisateur(id_utilisateur)
     if not utilisateur:
-        raise HTTPException(status_code=404, detail="Utilisateur (id={id_player}) introuvable.")
+        raise HTTPException(
+            status_code=404, detail=f"Utilisateur (id={id_utilisateur}) introuvable."
+        )
 
     utilisateur = utilisateur_service.update_utilisateur(
         id_utilisateur, u.name, u.mot_de_passe, u.email
@@ -116,7 +118,7 @@ async def remove_utilisateur(
     utilisateur = utilisateur_service.find_utilisateur(id_utilisateur)
     if not utilisateur:
         raise HTTPException(
-            status_code=404, detail="Utilisateur (id={id_utilisateur}) introuvable."
+            status_code=404, detail=f"Utilisateur (id={id_utilisateur}) introuvable."
         )
 
     success = utilisateur_service.remove_utilisateur(id_utilisateur)

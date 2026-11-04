@@ -1,4 +1,4 @@
-from datetime import date
+import datetime
 
 from pydantic import BaseModel, EmailStr
 
@@ -12,7 +12,7 @@ class DossierSchema(BaseModel):
 
     nom: str
     chemin: str
-    date_soumission: date | None = None
+    date_soumission: datetime.date | None = None
     liste_fichiers: list[FichierAuditModel] = []
 
 
@@ -34,7 +34,7 @@ class AuditReadModel(BaseModel):
     id: int | None = None
     score: float | None = None
     statut: str = "créé"
-    date: date | None = None
+    date: datetime.date | None = None
     emissionCO2_total: float | None = None
     dossier: DossierSchema
 
