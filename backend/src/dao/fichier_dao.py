@@ -14,11 +14,10 @@ class FichierDao(metaclass=Singleton):
     """Classe contenant différentes méthodes d'accès aux données des fichiers dans la base de donnée."""
 
     @log
-    def create_fichier(self, fichier: Fichier, audit_id: int) -> bool:
+    def create_fichier(self, fichier: Fichier) -> bool:
         """Créer un fichier et le stocke localement
         Arguments :
             fichier (Fichier) : Fichier à créer
-            audit_id (int) : ID de l'audit contenant le fichier
         Returns:
             True si la création réussie, False sinon
         """
@@ -29,10 +28,9 @@ class FichierDao(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "INSERT INTO Fichier(audit_id, chemin, extension, complexite, score, emissionCO2) VALUES "
-                        "(%(audit_id)s,%(chemin)s, %(extension)s, %(complexite)s, %(score)s, %(emissionCO2)s) "
+                        "(%(chemin)s, %(extension)s, %(complexite)s, %(score)s, %(emissionCO2)s) "
                         "RETURNING id;",
                         {
-                            "audit_id": audit_id,
                             "chemin": fichier.chemin,
                             "extension": fichier.extension,
                             "complexite": fichier.complexite,
@@ -53,10 +51,11 @@ class FichierDao(metaclass=Singleton):
         return created
 
     @log
-    def update_fichier(self, fichier: Fichier) -> bool:
+    def update_fichier(self, fichier: Fichier, id_audit: int | None = None) -> bool:
         """Met à jour un fichier dans la base de donnée
         Arguments:
             fichier (Fichier) : Fichier à mettre à jour
+            id_audit (int): ID de l'audit correspondant au fichier, reste None si la valeur n'est pas déterminé
         Returns :
             True si la mise à jour est réussie, False sinon
         """
@@ -68,6 +67,7 @@ class FichierDao(metaclass=Singleton):
                     cursor.execute(
                         "UPDATE fichier                        "
                         "   SET chemin = %(chemin)s,           "
+                        "       audit_id = %(audit_id)s,       "
                         "       extension = %(extension)s,     "
                         "       score = %(score)s,             "
                         "       complexite = %(complexite)s,   "
@@ -75,6 +75,7 @@ class FichierDao(metaclass=Singleton):
                         " WHERE id = %(id_fichier)s;           ",
                         {
                             "chemin": fichier.chemin,
+                            "audit_id": id_audit,
                             "extension": fichier.extension,
                             "score": fichier.score,
                             "complexite": fichier.complexite,
@@ -257,7 +258,7 @@ class FichierDao(metaclass=Singleton):
         return fichiers
 
     @log
-    def export_dossier(self, path: str) -> Dossier | None:
+    def read_dossier(self, path: str) -> Dossier | None:
         """Créer un objet dossier avec tous les fichiers selon un chemin d'accès
         Arguments:
             path (str): chemin d'accès du dossier que tous les fichiers vont partager
@@ -294,10 +295,64 @@ class FichierDao(metaclass=Singleton):
                 )
             dossier = Dossier(
                 nom=dossier_nom,
-                chemin=path,
+                chemin=path_normalise,
                 signature_HMAC="",
                 liste_fichiers=fichiers,
                 date_soumission=None,
             )
             logger.warning("Le chemin indiqué ne contient aucun fichier")
         return dossier
+
+    @log
+    def remove_dossier(self, path: str) -> bool:
+        """Supprime tous les fichiers concernés par un dossier
+        Arguments:
+            path (str): chemin d'accès du dossier que tous les fichiers vont partager
+        Returns:
+            bool : True si la suppression est réussie, False sinon
+        """
+        path_normalise = path.rstrip(os.sep)
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM Fichier WHERE chemin LIKE %(path)s",
+                        {"path": f"{path_normalise}/%"},
+                    )
+                    res = cursor.rowcount
+        except Exception as e:
+            logger.error(e)
+            raise
+
+        return res > 0
+
+    @log
+    def update_dossier(self, dossier_init: Dossier, dossier_nouv: Dossier) -> bool:
+        """Met à jour une liste de fichiers contenu dans un dossier
+        Arguments:
+            dossier_init (Dossier): Dossier initial à mettre à jour
+            dossier_nouv (Dossier): Nouveau dossier devant remplacer le précédent
+        Returns:
+            bool : True si la mise à jour est réussie, False sinon
+        """
+        path_normalise = dossier_init.chemin.rstrip(os.sep)
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT * FROM project.fichier WHERE (chemin LIKE %(path)s) "
+                        "AND (audit_id IS NOT NULL);",
+                        {"path": f"{path_normalise}/%"},
+                    )
+                    res = cursor.fetchall()
+        except Exception as e:
+            logger.error(e)
+            raise
+        if res:
+            logger.error("Tentative de modification de dossier déjà traité")
+            return False
+        else:
+            self.remove_dossier(dossier_init.chemin)
+            for fichier in dossier_nouv.liste_fichiers:
+                self.create_fichier(fichier)
+        return True
