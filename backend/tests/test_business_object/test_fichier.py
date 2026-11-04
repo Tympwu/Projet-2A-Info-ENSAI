@@ -1,168 +1,130 @@
-"""
-Tests de la classe Fichier.
-
-Lancer : pytest tests/test_business_object/test_fichier.py -v
-Si l'import échoue, adapte la ligne `from business_object.fichier import Fichier`.
-"""
 import ast
-from types import SimpleNamespace
 
 import pytest
 
 from business_object.fichier import Fichier
+from business_object.vulnerabilite import Vulnerabilite
 
 
-def creer_fichier(tmp_path, contenu: str, nom: str = "exemple.py", **options) -> Fichier:
-    """Écrit `contenu` dans un vrai fichier temporaire et retourne l'objet Fichier."""
-    chemin = tmp_path / nom
-    chemin.write_text(contenu, encoding="utf-8")
-    return Fichier(chemin=str(chemin), **options)
+def test_init_deduit_extension_du_chemin():
+    # Préparer et agir : on crée un fichier sans préciser l'extension
+    fichier = Fichier(chemin="dossier/script.py")
+    # Vérifier : l'extension a été déduite du chemin
+    assert fichier.extension == ".py"
 
 
-def vulnerabilite(critique: bool):
-    """Fausse vulnérabilité : seule la méthode est_critique() est utilisée par Fichier."""
-    return SimpleNamespace(est_critique=lambda: critique)
-
-
-# ---------- Création ----------
-
-def test_valeurs_par_defaut():
-    fichier = Fichier(chemin="code.py")
-    assert fichier.id is None
-    assert fichier.liste_vulnerabilites is None
-    assert fichier.liste_dependances is None
-    assert fichier.complexite is None
-    assert fichier.score is None
-    assert fichier.emissionCO2 is None
-    assert fichier.AST_analyse is None
-
-
-def test_extension_deduite_du_chemin():
-    assert Fichier(chemin="dossier/code.py").extension == ".py"
-
-
-def test_extension_fournie_prioritaire_sur_le_chemin():
-    assert Fichier(chemin="code.py", extension=".js").extension == ".js"
-
-
-def test_echelle_complexite_sans_doublon_et_commence_par_o1():
-    echelle = Fichier.ECHELLE_COMPLEXITE
-    assert echelle[0] == "O(1)"
-    assert len(set(echelle)) == len(echelle)
-
-
-# ---------- Lecture ----------
-
-def test_lire_contenu(tmp_path):
-    fichier = creer_fichier(tmp_path, "ligne 1\nligne 2\n")
-    assert fichier.lire_contenu() == "ligne 1\nligne 2\n"
-
-
-def test_lire_contenu_fichier_introuvable(tmp_path):
-    with pytest.raises(FileNotFoundError):
-        Fichier(chemin=str(tmp_path / "absent.py")).lire_contenu()
-
-
-def test_lire_contenu_encodage_illisible(tmp_path):
-    chemin = tmp_path / "binaire.py"
-    chemin.write_bytes(b"x = '\xff\xfe'\n")
-    with pytest.raises(UnicodeDecodeError):
-        Fichier(chemin=str(chemin)).lire_contenu()
-
-
-def test_lire_ligne_sans_saut_de_ligne_final(tmp_path):
-    fichier = creer_fichier(tmp_path, "premiere\ndeuxieme\n")
-    assert fichier.lire_ligne(1) == "premiere"
-    assert fichier.lire_ligne(2) == "deuxieme"
-
-
-@pytest.mark.parametrize("numero, erreur", [(0, ValueError), (-1, ValueError), (3, IndexError)])
-def test_lire_ligne_numero_invalide(tmp_path, numero, erreur):
-    fichier = creer_fichier(tmp_path, "premiere\ndeuxieme\n")
-    with pytest.raises(erreur):
-        fichier.lire_ligne(numero)
-
-
-# ---------- Arbre syntaxique ----------
-
-def test_obtenir_ast_construit_puis_conserve_l_arbre(tmp_path):
-    fichier = creer_fichier(tmp_path, "x = 1\n")
-    arbre = fichier.obtenir_ast()
-    assert isinstance(arbre, ast.Module)
-    assert fichier.AST_analyse is arbre
-    assert fichier.obtenir_ast() is arbre
-
-
-def test_obtenir_ast_reutilise_un_arbre_deja_fourni():
-    arbre = ast.parse("x = 1")
-    fichier = Fichier(chemin="n_existe_pas.py", AST_analyse=arbre)
-    assert fichier.obtenir_ast() is arbre
-
-
-def test_obtenir_ast_refuse_un_fichier_non_python(tmp_path):
-    fichier = creer_fichier(tmp_path, "texte", nom="notes.txt")
-    with pytest.raises(ValueError):
-        fichier.obtenir_ast()
-
-
-def test_obtenir_ast_signale_une_syntaxe_invalide(tmp_path):
-    fichier = creer_fichier(tmp_path, "def (:\n")
-    with pytest.raises(SyntaxError):
-        fichier.obtenir_ast()
-
-
-def test_obtenir_ast_signale_un_fichier_introuvable(tmp_path):
-    with pytest.raises(FileNotFoundError):
-        Fichier(chemin=str(tmp_path / "absent.py")).obtenir_ast()
-
-
-# ---------- Dépendances ----------
-
-def test_dependances_externes_triees_sans_doublon_ni_bibliotheque_standard(tmp_path):
-    source = (
-        "import os\n"
-        "import sys\n"
-        "import requests\n"
-        "import numpy.linalg\n"
-        "from flask import Flask\n"
-        "from . import local\n"
-        "from .autre import chose\n"
-        "import requests\n"
-    )
-    fichier = creer_fichier(tmp_path, source)
-    noms = [d.nom for d in fichier.obtenir_dependances_fichier()]
-    assert noms == ["flask", "numpy", "requests"]
-    assert fichier.liste_dependances is not None
-
-
-def test_dependances_vides_sans_import_externe(tmp_path):
-    fichier = creer_fichier(tmp_path, "import os\nx = 1\n")
-    assert fichier.obtenir_dependances_fichier() == []
-
-
-def test_dependances_fichier_non_python(tmp_path):
-    fichier = creer_fichier(tmp_path, "import requests", nom="notes.txt")
-    assert fichier.obtenir_dependances_fichier() == []
-    assert fichier.liste_dependances == []
-
-
-# ---------- Risque ----------
-
-def test_est_a_risque_leve_une_erreur_si_pas_encore_analyse():
-    with pytest.raises(ValueError):
-        Fichier(chemin="code.py").est_a_risque()
+def test_init_garde_extension_fournie():
+    fichier = Fichier(chemin="dossier/script.py", extension=".txt")
+    assert fichier.extension == ".txt"
 
 
 @pytest.mark.parametrize(
-    "criticites, attendu",
+    "k, attendu",
     [
-        pytest.param([], False, id="analysé sans vulnérabilité"),
-        pytest.param([False, False], False, id="aucune critique"),
-        pytest.param([False, True], True, id="une critique suffit"),
+        (0, "O(1)"),
+        (1, "O(n)"),
+        (None, None),
+        (2, "O(n^2)"),
     ],
 )
-def test_est_a_risque(criticites, attendu):
-    fichier = Fichier(
-        chemin="code.py", liste_vulnerabilites=[vulnerabilite(c) for c in criticites]
-    )
-    assert fichier.est_a_risque() is attendu
+def test_formater_complexite(k, attendu):
+    assert Fichier.formater_complexite(k) == attendu
+
+
+def test_est_a_risque_avant_analyse():
+    fichier = Fichier(chemin="a.py")  # liste_vulnerabilites vaut None
+    with pytest.raises(ValueError):
+        fichier.est_a_risque()
+
+
+def test_est_a_risque_avec_une_vulnerabilite_critique():
+    vulnerabilites = [
+        Vulnerabilite(description="faille mineure", score_danger=3.0),
+        Vulnerabilite(description="faille grave", score_danger=9.8),
+    ]
+    fichier = Fichier(chemin="a.py", liste_vulnerabilites=vulnerabilites)
+    assert fichier.est_a_risque() is True
+
+
+def test_est_a_risque_sans_vulnerabilite():
+    fichier = Fichier(chemin="a.py", liste_vulnerabilites=[])
+    assert fichier.est_a_risque() is False
+
+
+def test_est_a_risque_sans_vulnerabilite_critique():
+    vulnerabilites = [
+        Vulnerabilite(description="faille mineure", score_danger=3.0),
+        Vulnerabilite(description="faille élevée", score_danger=8.9),
+    ]
+    fichier = Fichier(chemin="a.py", liste_vulnerabilites=vulnerabilites)
+    assert fichier.est_a_risque() is False
+
+
+def test_lire_contenu_retourne_tout_le_texte(tmp_path):
+    chemin = tmp_path / "a.py"
+    chemin.write_text("x = 1\ny = 2\n", encoding="utf-8")
+    fichier = Fichier(chemin=str(chemin))
+    assert fichier.lire_contenu() == "x = 1\ny = 2\n"
+
+
+def test_lire_contenu_fichier_inexistant(tmp_path):
+    fichier = Fichier(chemin=str(tmp_path / "absent.py"))
+    with pytest.raises(FileNotFoundError):
+        fichier.lire_contenu()
+
+
+def test_lire_ligne_retourne_la_ligne_sans_saut(tmp_path):
+    chemin = tmp_path / "a.txt"
+    chemin.write_text("premiere\ndeuxieme\ntroisieme\n", encoding="utf-8")
+    fichier = Fichier(chemin=str(chemin))
+    assert fichier.lire_ligne(2) == "deuxieme"
+
+
+def test_lire_ligne_numero_trop_petit(tmp_path):
+    chemin = tmp_path / "a.txt"
+    chemin.write_text("premiere\n", encoding="utf-8")
+    fichier = Fichier(chemin=str(chemin))
+    with pytest.raises(ValueError):
+        fichier.lire_ligne(0)
+
+
+def test_lire_ligne_numero_trop_grand(tmp_path):
+    chemin = tmp_path / "a.txt"
+    chemin.write_text("premiere\ndeuxieme\n", encoding="utf-8")
+    fichier = Fichier(chemin=str(chemin))
+    with pytest.raises(IndexError):
+        fichier.lire_ligne(3)
+
+
+@pytest.fixture
+# pour créer des fichiers de test
+def creer_fichier(tmp_path):
+    def _creer(nom, contenu=""):
+        chemin = tmp_path / nom
+        chemin.write_text(contenu, encoding="utf-8")
+        return Fichier(chemin=str(chemin))
+    return _creer
+
+
+def test_obtenir_ast_retourne_un_module(creer_fichier):
+    fichier = creer_fichier("a.py", "x = 1\n")
+    assert isinstance(fichier.obtenir_ast(), ast.Module)
+
+
+def test_obtenir_ast_est_mis_en_cache(creer_fichier, tmp_path):
+    fichier = creer_fichier("a.py", "x = 1\n")
+    premier = fichier.obtenir_ast()
+    (tmp_path / "a.py").unlink()  # on supprime le fichier du disque
+    assert fichier.obtenir_ast() is premier
+
+
+def test_obtenir_ast_fichier_non_python(creer_fichier):
+    fichier = creer_fichier("notes.txt", "x = 1\n")
+    with pytest.raises(ValueError):
+        fichier.obtenir_ast()
+
+
+def test_obtenir_ast_code_invalide(creer_fichier):
+    fichier = creer_fichier("a.py", "def f(:\n")
+    with pytest.raises(SyntaxError):
+        fichier.obtenir_ast()

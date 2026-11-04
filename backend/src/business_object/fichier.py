@@ -25,7 +25,7 @@ class Fichier:
             détectées, ou None tant que l'analyse n'a pas eu lieu.
         liste_dependances (list[Dependances] | None): Dépendances
             détectées, ou None tant que l'analyse n'a pas eu lieu.
-        complexite (str | None): exposant k du niveau de complexité O(n^k)
+        complexite (int | None): exposant k du niveau de complexité O(n^k)
         score (float | None): Score du fichier, ou None avant analyse.
         emissionCO2 (float | None): Émissions de CO2 estimées, ou None
             avant analyse.
