@@ -44,7 +44,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-# app.include_router(player_controller.router, prefix="/player", tags=["Players"])
 app.include_router(utilisateur_controller.router, prefix="/user", tags=["Utilisateurs"])
 app.include_router(historique_controller.router, prefix="/historic", tags=["Historique"])
 app.include_router(game_controller.router, prefix="/game", tags=["Games"])
