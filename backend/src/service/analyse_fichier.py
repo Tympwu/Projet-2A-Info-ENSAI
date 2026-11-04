@@ -10,10 +10,8 @@ class AnalyseurComplexite(ast.NodeVisitor):
     """
     Mesure l'imbrication des boucles `for` et `while` d'un arbre syntaxique Python.
 
-    On crée un analyseur par fichier : ses compteurs sont propres à ce fichier. Python appelle
-    automatiquement `visit_For` et `visit_While` quand il rencontre ces types de nœuds.Du code
-    placé dans `d` boucles imbriquées s'exécute environ n^d fois.
-    La complexité estimée est donc la profondeur maximale d'imbrication.
+    On crée un analyseur par fichier. Python appelle automatiquement `visit_For` et `visit_While` 
+    quand il rencontre ces types de nœuds.
 
     Attributs
     ---------
@@ -79,22 +77,10 @@ class Analyse_fichier:
     ---------
     URL_OSV_PAR_DEFAUT (str): Adresse de l'API OSV utilisée si aucune n'est configurée.
     (Valeur de secours : l'application fonctionne même si aucune configuration n'est fournie)
-    LIBELLES_PAR_PROFONDEUR (dict[int, str]): Complexité associée à chaque profondeur de boucles.
-    LIBELLE_AU_DELA (str): Complexité utilisée au-delà de trois boucles imbriquées.
     api_url_OSV (str): Adresse de l'API OSV utilisée pour chercher les vulnérabilités.
     """
 
     URL_OSV_PAR_DEFAUT = "https://api.osv.dev/v1/query"
-
-    # Libellés produits par l'estimation. Ils doivent tous exister dans
-    # Fichier.ECHELLE_COMPLEXITE (vérifié dans _libelle).
-    LIBELLES_PAR_PROFONDEUR = {
-        0: "O(1)",
-        1: "O(n)",
-        2: "O(n²)",
-        3: "O(n³)",
-    }
-    LIBELLE_AU_DELA = "O(n^k), k > 3"
 
     def __init__(self) -> None:
         """
@@ -124,21 +110,13 @@ class Analyse_fichier:
 
         self.api_url_OSV = os.getenv("OSV_API_URL", self.URL_OSV_PAR_DEFAUT)
 
-        # Pour l'instant, on met pas  consommation_estimee_kWh et emissionCO2e.
-        # C'est des résultats propres à chaque fichier (Fichier.emissionCO2 existe déjà),
-        # donc ils ne doivent pas être stockés ici. Les coefficients de configuration nécessaires
-        # au calcul du CO2 seront ajoutés ici plus tard, quand on saura quel calcul faire
-
-    def analyser_complexite_code(self, fichier: Fichier) -> str | None:
+    def analyser_complexite_code(self, fichier: Fichier) -> int | None:
         """
         Estime la complexité algorithmique d'un fichier Python.
 
-        L'estimation est une heuristique simple : elle lit le code sans l'exécuter
-        et retient la profondeur maximale d'imbrication des boucles `for` et
-        `while` (aucune boucle : O(1), une : O(n), deux imbriquées : O(n²)...).
+        L'estimation retient la profondeur maximale d'imbrication des boucles `for` et
+        `while`. Cette profondeur est l'exposant k de la complexité O(n^k)
         Le résultat est écrit dans `fichier.complexite` et retourné.
-
-        Seules les boucles `for` et `while` sont comptées.
 
         Paramètres
         ----------
@@ -146,18 +124,15 @@ class Analyse_fichier:
 
         Returns
         -------
-        str | None: Une valeur de `Fichier.ECHELLE_COMPLEXITE` (par exemple
-        "O(n²)"), ou None si le fichier n'est pas analysable (autre langage que
-        Python, syntaxe invalide ou encodage illisible).
+        int | None: L'exposant k de la complexité estimée O(n^k), ou None si le fichier
+        n'est pas analysable
 
         Raises
         ------
         FileNotFoundError: Si le fichier n'existe pas au chemin indiqué.
-        ValueError: Si un libellé produit par l'estimation n'est pas dans
-        `Fichier.ECHELLE_COMPLEXITE` (erreur de configuration à corriger).
         """
 
-        resultat: str | None = None
+        resultat: int | None = None
 
         try:
             arbre = fichier.obtenir_ast()
@@ -165,32 +140,10 @@ class Analyse_fichier:
             arbre = None
 
         if arbre is not None:
+            # Un nouvel analyseur par fichier
             analyseur = AnalyseurComplexite()
             analyseur.visit(arbre)
-            resultat = self._libelle(analyseur)
+            resultat = analyseur.max_imbrication
 
-        # Le Service remplit le business object et Audit lira ensuite fichier.complexite
         fichier.complexite = resultat
         return resultat
-
-    def _libelle(self, analyseur: AnalyseurComplexite) -> str:
-        """
-        Convertit la profondeur de boucles mesurée en libellé de l'échelle.
-
-        Paramètres
-        ----------
-        analyseur (AnalyseurComplexite): Analyseur qui a déjà parcouru le fichier.
-
-        Returns
-        -------
-        str: Libellé de la complexité (valeur de Fichier.ECHELLE_COMPLEXITE).
-
-        Raises
-        ------
-        ValueError: Si le libellé n'existe pas dans Fichier.ECHELLE_COMPLEXITE.
-        """
-        libelle = self.LIBELLES_PAR_PROFONDEUR.get(analyseur.max_imbrication, self.LIBELLE_AU_DELA)
-
-        if libelle not in Fichier.ECHELLE_COMPLEXITE:
-            raise ValueError(f"Libellé de complexité absent de l'échelle de Fichier : {libelle!r}")
-        return libelle
