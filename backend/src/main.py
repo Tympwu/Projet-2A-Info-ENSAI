@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from controller import game_controller, login_controller, utilisateur_controller
+from controller import game_controller, historique_controller, utilisateur_controller
 from dao.manager_db import Manager_db
 from utils.env_variables import display_values, load_environment_variables
 from utils.log_utils import LogMiddleware, get_logger, initialize_logs
@@ -46,7 +46,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 # app.include_router(player_controller.router, prefix="/player", tags=["Players"])
 app.include_router(utilisateur_controller.router, prefix="/user", tags=["Utilisateurs"])
-app.include_router(login_controller.router, prefix="/login", tags=["Login"])
+app.include_router(historique_controller.router, prefix="/historic", tags=["Historique"])
 app.include_router(game_controller.router, prefix="/game", tags=["Games"])
 
 
