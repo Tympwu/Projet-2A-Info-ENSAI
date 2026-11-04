@@ -25,8 +25,7 @@ class Fichier:
             détectées, ou None tant que l'analyse n'a pas eu lieu.
         liste_dependances (list[Dependances] | None): Dépendances
             détectées, ou None tant que l'analyse n'a pas eu lieu.
-        complexite (str | None): Niveau de complexité du code, ou None
-            avant analyse.
+        complexite (str | None): exposant k du niveau de complexité O(n^k)
         score (float | None): Score du fichier, ou None avant analyse.
         emissionCO2 (float | None): Émissions de CO2 estimées, ou None
             avant analyse.
@@ -38,7 +37,7 @@ class Fichier:
 
     MOTIF_EXIGENCE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:\[[^\]]*\])?\s*(.*)$")
 
-    MOTIF_VERSION_EXACTE = re.compile(r"(?<![<>!~=])===?\s*([^\s,;]+)") 
+    MOTIF_VERSION_EXACTE = re.compile(r"(?<![<>!~=])===?\s*([^\s,;]+)")
     # utile pour extraire les versions
 
     def __init__(
