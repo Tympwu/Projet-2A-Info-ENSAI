@@ -12,11 +12,11 @@ class AuditDao(metaclass=Singleton):
     """Classe contenant différentes méthodes d'accès aux données des Audits dans la base de donnée."""
 
     @log
-    def create_audit(self, audit: Audit, utilisateur_id: int) -> bool:
+    def create_audit(self, audit: Audit, utilisateur_id: int | None = None) -> bool:
         """Créer un Audit et le stocke localement
         Arguments :
             audit (Audit) : Audit à créer
-            utilisateur_id (int) : ID de l'utilisateur créant l'audit
+            utilisateur_id (int | None) : ID de l'utilisateur créant l'audit, None si aucun utilisateur est connecté
         Returns:
             True si la création réussie, False sinon
         """
