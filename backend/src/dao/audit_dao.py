@@ -145,7 +145,7 @@ class AuditDao(metaclass=Singleton):
                 dossier=dossier,
             )
             audit.score = res["score"]
-            audit.emissionCO2_total = res["emissionCO2"]
+            audit.emissionCO2_total = res["emissionco2"]
 
         return audit
 
