@@ -1,8 +1,8 @@
 import hashlib
 
+from business_object.historique import Historique
 from business_object.utilisateur import Utilisateur
 from dao.utilisateur_dao import UtilisateurDao
-from service.historique_service import Historique_service
 from utils.log_utils import get_logger, log
 from utils.security import hash_password
 
@@ -41,7 +41,7 @@ class UtilisateurService:
             name=name, email=email, mot_de_passe=hash_password(mot_de_passe, name)
         )
         if self.utilisateur_dao.create_utilisateur(nouveau_user):
-            nouveau_user.historique = Historique_service().create_historique(nouveau_user.id)
+            nouveau_user.historique = Historique(id=nouveau_user.id, audits=[])
             return nouveau_user
         return None
 
