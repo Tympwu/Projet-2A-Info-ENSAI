@@ -88,25 +88,11 @@ class HistoriqueService:
             ValueError: Si `id_utilisateur` n'est pas un entier positif.
         """
         self.verifier_id(id_utilisateur, "id_utilisateur")
-        audits = self.audit_dao.find_audit(id_utilisateur)
-        if audits is None:
+        audits = self.audit_dao.find_by_utilisateur(id_utilisateur)
+        if audits == []:
             return False
         resultats = [self.audit_dao.remove_audit(audit) for audit in audits]
         return all(resultats)
-
-    @log
-    def create_historique(self, id_utilisateur: int) -> Historique:
-        """Créer un historique vide et le renvoie.
-
-        Returns:
-            Historique: Un historique vide avec une id spécifique
-
-        Raises:
-            ValueError: Si `id_utilisateur` n'est pas un entier positif.
-        """
-        if not isinstance(id_utilisateur, int) or id_utilisateur < 0:
-            raise ValueError("L'id_utilisateur n'est pas un entier positif")
-        return Historique(id=id_utilisateur, audits=[])
 
     @log
     def find_all_historiques(self) -> list[Historique]:
