@@ -23,6 +23,14 @@ class DossierService:
         self.audit_service = Analyse_fichier()
 
     @log
+    def find_all_fichier(self) -> list[Fichier]:
+        """Renvoie la liste de tous les Fichiers stockés
+        Returns:
+            list[Fichier]: Liste de fichiers contenus dans la base de données
+        """
+        return self.fichier_dao.find_all()
+
+    @log
     def find_fichier_by_id(self, id_fichier: int) -> Fichier | None:
         """Recherche et retourne un fichier par son identifiant unique via le DAO."""
         return self.fichier_dao.find_fichier(id_fichier)
