@@ -24,7 +24,7 @@ async def find_all_utilisateurs(utilisateur_service=Depends(get_utilisateur_serv
         list[UtilisateurReadModel]: Une liste de tous les utilisateurs enregistrés.
     """
     logger.info("Liste tous les utilisateurs")
-    utilisateur_list = utilisateur_service.find_all()
+    utilisateur_list = utilisateur_service.find_all_utilisateurs()
     return utilisateur_list
 
 
