@@ -159,15 +159,12 @@ class Analyse_fichier:
 
         resultat: str | None = None
 
-        # Fichier.obtenir_ast() construit l'arbre une seule fois et le garde dans
-        # fichier.AST_analyse : les autres analyses (anti-patterns...) le réutilisent.
         try:
             arbre = fichier.obtenir_ast()
         except (ValueError, SyntaxError, UnicodeDecodeError):
             arbre = None
 
         if arbre is not None:
-            # Un nouvel analyseur par fichier
             analyseur = AnalyseurComplexite()
             analyseur.visit(arbre)
             resultat = self._libelle(analyseur)
