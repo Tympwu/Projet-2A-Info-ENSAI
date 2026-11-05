@@ -35,7 +35,7 @@ CREATE TABLE Fichier (
     chemin VARCHAR UNIQUE NOT NULL,
     extension VARCHAR(20),
     score NUMERIC(4) DEFAULT NULL,
-    complexite VARCHAR DEFAULT NULL,
+    complexite INTEGER DEFAULT NULL,
     emissionCO2 NUMERIC(4) DEFAULT NULL,
 CONSTRAINT fk_Fichier
 FOREIGN KEY (audit_id)

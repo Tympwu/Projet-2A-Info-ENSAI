@@ -13,16 +13,16 @@ INSERT INTO Audit(utilisateur_id, date_audit, statut, score, emissionCO2) VALUES
 (3, '06/30/2031', 'validé', 2   , 82.67);
 
 INSERT INTO Fichier(audit_id, chemin, extension, score, complexite, emissionCO2) VALUES
-(1, 'a', '.py'  , NULL , NULL       , NULL ),
-(2, 'b', '.lock', 100  , NULL       , NULL ),
-(2, 'c', '.py'  , 97.8 , NULL       , NULL ),
-(3, 'd', '.py'  , 80.25, 'O(n^3)'   , 300  ),
-(3, 'e', '.py'  , 40.25, 'O(n^2)'   , 200  ),
-(3, 'f', '.py'  , 62.17, 'O(n^4)'   , 300  ),
-(4, 'g', '.lock', 60.89, NULL       , NULL ),
-(5, 'h', '.lock', 100  , NULL       , NULL ),
-(5, 'i', '.py'  , 50   , 'O(n)'     , 95.25),
-(6, 'j', '.lock', 75   , NULL       , NULL ),
-(6, 'k', '.py'  , 73.02, 'O(n)'     , 90.63),
-(7, 'l', '.lock', 95   , NULL       , NULL ),
-(7, 'm', '.py'  , 59.46, 'O(log(n))', 82.67);
+(1, 'a', '.py'  , NULL , NULL, NULL ),
+(2, 'b', '.lock', 100  , NULL, NULL ),
+(2, 'c', '.py'  , 97.8 , NULL, NULL ),
+(3, 'd', '.py'  , 80.25, 3   , 300  ),
+(3, 'e', '.py'  , 40.25, 2   , 200  ),
+(3, 'f', '.py'  , 62.17, 4   , 300  ),
+(4, 'g', '.lock', 60.89, NULL, NULL ),
+(5, 'h', '.lock', 100  , NULL, NULL ),
+(5, 'i', '.py'  , 50   , 1   , 95.25),
+(6, 'j', '.lock', 75   , NULL, NULL ),
+(6, 'k', '.py'  , 73.02, 1   , 90.63),
+(7, 'l', '.lock', 95   , NULL, NULL ),
+(7, 'm', '.py'  , 59.46, 1   , 82.67);
