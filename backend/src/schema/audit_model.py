@@ -12,7 +12,7 @@ class DossierSubmitSchema(BaseModel):
 
     nom: str
     chemin: str
-    liste_fichiers: list[FichierSubmitModel] = []
+    liste_fichiers: list[FichierSubmitModel]
 
 
 class DossierSchema(BaseModel):

@@ -62,6 +62,10 @@ class FichierReadModel(BaseModel):
 class FichierSubmitModel(BaseModel):
     chemin: str
     extension: str
+    complexite: int | None = None
+    score: float | None = None
+    emissionCO2: int | None = None
+
 
     @field_validator("extension")
     @classmethod

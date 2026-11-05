@@ -68,9 +68,7 @@ class FichierDao(metaclass=Singleton):
                     cursor.execute(
                         "SELECT * FROM fichier                       "
                         "WHERE id = %(id)s AND (audit_id IS NOT NULL);",
-                        {
-                            "id": fichier.id
-                        }
+                        {"id": fichier.id},
                     )
                     res = cursor.fetchall()
         except Exception as e:
@@ -319,6 +317,7 @@ class FichierDao(metaclass=Singleton):
                 )
         else:
             logger.warning("Le chemin indiqué ne contient aucun fichier")
+            return None
 
         dossier = Dossier(
             nom=dossier_nom,

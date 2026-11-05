@@ -189,12 +189,15 @@ async def update_dossier(
     if not dossier_init:
         raise HTTPException(status_code=404, detail=f"Dossier (path={chemin_dossier}) introuvable.")
 
+    liste_fichiers = []
+    for fichier in dossier.liste_fichiers:
+        liste_fichiers.append(Fichier(chemin=fichier.chemin, extension=fichier.extension, complexite=fichier.complexite, score=fichier.score, emissionCO2=fichier.emissionCO2))
     dossier_nouv = dossier_service.update_dossier(
         chemin_dossier,
         Dossier(
             nom=dossier.nom,
             chemin=dossier.chemin,
-            liste_fichiers=dossier.liste_fichiers,
+            liste_fichiers=liste_fichiers,
             date_soumission=datetime.today(),
         ),
     )
