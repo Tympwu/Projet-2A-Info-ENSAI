@@ -269,4 +269,8 @@ class Fichier:
         """
         if k is None:
             return None
+        if k == 0:
+            return "O(1)"
+        if k == 1:
+            return "O(n)"
         return f"O(n^{k})"
