@@ -414,11 +414,12 @@ class Analyse_fichier:
         return anti_patterns
 
     def analyse_dependances(self, fichier: Fichier) -> bool:
-        """Analyse les dépendances trouvés grâce à l'API et en déduis un score spécifique au fichier. Prends en compte aussi le nombre d'anti-pattern du fichier déjà calculé au préalable
-        Détermine aussi si ces dépendances sont des vulnérabilités ou pas, et dans le cas précédent le stocke dans la liste spécifique aux vulnérabilités
+        """Analyse les dépendances trouvés grâce à l'API et en déduis un score spécifique au
+        fichier. Détermine aussi si ces dépendances sont des vulnérabilités ou pas, et dans le
+        cas précédent le stocke dans la liste spécifique aux vulnérabilités
         Args:
             fichier (Fichier): Fichier à analyser
         Returns:
             bool : True si l'analyse à été réussie, False sinon
         """
-        pass
+
