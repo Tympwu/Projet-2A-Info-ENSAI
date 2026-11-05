@@ -7,6 +7,7 @@ from schema.fichier_model import FichierModel, FichierReadModel, FichierAuditMod
 from schema.audit_model import DossierSchema
 from service.dossier_service import DossierService
 from utils.log_utils import get_logger
+from business_object.fichier import Fichier
 
 router = APIRouter()
 
@@ -46,7 +47,7 @@ async def find_fichier(id_fichier: int, dossier_service=Depends(get_dossier_serv
     logger.info("Recherche d'un fichier par son ID")
     fichier = dossier_service.find_fichier_by_id(id_fichier)
     if not fichier:
-        raise HTTPException(status_code=500, details="Fichier introuvable")
+        raise HTTPException(status_code=500, detail="Fichier introuvable")
     return fichier
 
 
@@ -66,13 +67,41 @@ async def remove_fichier(
     """
     logger.info("Retrait d'un fichier")
     try:
-        success = dossier_service.delete_fichier(id_fichier)
+        success = dossier_service.remove_fichier(id_fichier)
     except ValueError:
         raise HTTPException(status_code=500, detail="Erreur lors de la suppression de l'historique")
     if not success:
         raise HTTPException(status_code=404, detail=f"Fichier(id={id_fichier}) introuvable")
     else:
         return "Fichier supprimé"
+
+@router.post("/{id_fichier}", tags=["Fichier"])
+async def update_fichier(id_fichier: int, fichier: FichierModel, dossier_service=Depends(get_dossier_service)):
+    """Met à jour un fichier du système en se basant sur son ID
+    Args:
+        id_fichier (int): ID du fichier à mettre à jour
+        fichier (FichierModel): Données utilisées pour mettre à jour le fichier voulu
+    Returns:
+        FichierReadModel : Fichier avec les données mise à jour
+    Raises:
+        HTTPException: Erreur 404 si le fichier n'est pas trouvé.
+        HTTPException: Erreur 500 si le processus échoue
+    """
+    logger.info("Mise à jour d'un fichier")
+    fichier = dossier_service.find_fichier_by_id(id_fichier)
+    if not fichier:
+        raise HTTPException(
+            status_code=404, detail=f"Fichier (id={id_fichier}) introuvable."
+        )
+
+    fichier = dossier_service.update_fichier(
+        Fichier(chemin=fichier.chemin, id=id_fichier, extension=fichier.extension, complexite=fichier.complexite, emissionCO2=fichier.emissionCO2, score=fichier.score)
+    )
+    if not fichier:
+        raise HTTPException(status_code=500, detail="Erreur lors de la mise à jour des données.")
+
+    return fichier
+
 
 """
 + create_dossier(fichiers : Fichier)
