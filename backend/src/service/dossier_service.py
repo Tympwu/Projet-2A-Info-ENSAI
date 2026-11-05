@@ -36,6 +36,31 @@ class DossierService:
         return self.fichier_dao.find_fichier(id_fichier)
 
     @log
+    def remove_fichier(self, id_fichier: int) -> bool:
+        """Supprime un fichier de la base de donnée
+        Args:
+            id_fichier (int): ID du fichier à supprimer
+        Returns:
+            bool : True si la supression est réussie, False sinon
+        """
+        return self.fichier_dao.remove_fichier(id_fichier)
+
+    @log
+    def update_fichier(self, fichier: Fichier, id_audit: int = None) -> Fichier | None:
+        """Met à jour un fichier en utilisant son ID et les données d'un autre objet fichier
+        Args:
+            id_audit (int) = None: ID de l'audit dans lequel est le fichier. Vaut None initialement
+            fichier (Fichier): Données à utiliser pour mettre le fichier à jour
+        Returns:
+            Fichier | None: Fichier modifié, None si échec de la modification
+        """
+        success = self.fichier_dao.update_fichier(fichier=fichier, id_audit=id_audit)
+        if not success:
+            return None
+        else:
+            return self.find_fichier_by_id(id_fichier=fichier.id)
+
+    @log
     def create_dossier(self, liste_fichier: list[Fichier]) -> bool:
         """Créer et enregistre les fichiers d'un dossier en base de données."""
         success = True
