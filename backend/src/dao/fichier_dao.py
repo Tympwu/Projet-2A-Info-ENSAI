@@ -71,7 +71,7 @@ class FichierDao(metaclass=Singleton):
                         "       extension = %(extension)s,     "
                         "       score = %(score)s,             "
                         "       complexite = %(complexite)s,   "
-                        "       emissionCO2 = %(emissionCO2)s, "
+                        "       emissionco2 = %(emissionco2)s, "
                         " WHERE id = %(id_fichier)s;           ",
                         {
                             "chemin": fichier.chemin,
