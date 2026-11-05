@@ -27,14 +27,11 @@ class FichierModel(BaseModel):
     assurant une forme de donnée constante et valide durant les échanges avec l'API
     """
 
-    id: int | None = None
     chemin: str
     extension: str
-    complexite: str | None = None
+    complexite: int | None = None
     score: int | None = None
     emissionCO2: float | None = None
-    liste_vulnerabilites: list[VulnerabiliteSchema] = []
-    liste_dependances: list[DependanceSchema] = []
 
     @field_validator("extension")
     @classmethod
@@ -46,7 +43,9 @@ class FichierModel(BaseModel):
     @field_validator("complexite")
     @classmethod
     def check_complexite(cls, v: str) -> str:
-        if len(v) != len("O(n^p)") or v[:4] != "O(n^":
+        if v is None:
+            return v
+        elif len(v) != len("O(n^p)") or v[:4] != "O(n^":
             raise ValueError("Le format de complexité n'est pas le bon")
         return v
 
