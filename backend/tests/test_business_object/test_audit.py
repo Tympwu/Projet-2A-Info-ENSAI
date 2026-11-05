@@ -10,13 +10,18 @@ from types import SimpleNamespace
 import pytest
 
 from business_object.audit import Audit
-from business_object.fichier import Fichier
 
 
-def creer_fichier(id=0, score=None, emission=None, complexite=None) -> Fichier:
-    """Fichier en mémoire : Audit n'a pas besoin qu'il existe sur le disque."""
-    return Fichier(
-        chemin=f"f{id}.py", id=id, score=score, emissionCO2=emission, complexite=complexite
+def creer_fichier(id=0, score=None, emission=None, complexite=None):
+    """Faux fichier : seulement les attributs que Audit lit.
+
+    `complexite` est l'exposant k (le fichier est en O(n^k)), ou None si inconnu.
+    """
+    return SimpleNamespace(
+        id=id,
+        score=score,
+        emissionCO2=emission,
+        complexite=complexite
     )
 
 
@@ -58,26 +63,44 @@ def test_calculer_score_refuse_un_score_manquant():
 
 # ---------- Complexité ----------
 
-def test_obtenir_complexites_ignore_les_valeurs_inconnues():
+def test_obtenir_complexites_ignore_les_valeurs_absentes():
     audit = creer_audit(
-        creer_fichier(0, complexite="O(n)"),
-        creer_fichier(1, complexite="O(n²)"),
+        creer_fichier(0, complexite=1),
+        creer_fichier(1, complexite=2),
         creer_fichier(2, complexite=None),
-        creer_fichier(3, complexite="inconnue"),
     )
-    assert audit.obtenir_complexites() == {0: "O(n)", 1: "O(n²)"}
+    assert audit.obtenir_complexites() == {0: 1, 1: 2}
 
 
-@pytest.mark.parametrize("complexites", [("O(n)", "O(n²)"), ("O(n²)", "O(n)")])
-def test_calculer_complexite_retourne_le_rang_de_la_pire(complexites):
-    """Le rang est la position dans l'échelle + 1, quel que soit l'ordre des fichiers."""
-    audit = creer_audit(*[creer_fichier(i, complexite=c) for i, c in enumerate(complexites)])
-    assert audit.calculer_complexite() == Fichier.ECHELLE_COMPLEXITE.index("O(n²)") + 1
+def test_obtenir_complexites_garde_zero():
+    """k = 0 signifie O(1) : c'est une vraie valeur, pas une absence."""
+    audit = creer_audit(creer_fichier(0, complexite=0), creer_fichier(1, complexite=None))
+    assert audit.obtenir_complexites() == {0: 0}
 
 
-def test_calculer_complexite_donne_zero_sans_complexite_exploitable():
-    audit = creer_audit(creer_fichier(0, complexite=None), creer_fichier(1, complexite="inconnue"))
+@pytest.mark.parametrize("ks", [(1, 2), (2, 1)], ids=["pire en dernier", "pire en premier"])
+def test_calculer_complexite_retourne_le_plus_grand_k(ks):
+    audit = creer_audit(*[creer_fichier(i, complexite=k) for i, k in enumerate(ks)])
+    assert audit.calculer_complexite() == max(ks)
+
+
+def test_calculer_complexite_ignore_les_inconnus():
+    audit = creer_audit(creer_fichier(0, complexite=None), creer_fichier(1, complexite=1))
+    assert audit.calculer_complexite() == 1
+
+
+def test_calculer_complexite_zero_est_une_valeur_valide():
+    audit = creer_audit(creer_fichier(0, complexite=0))
     assert audit.calculer_complexite() == 0
+
+
+def test_calculer_complexite_none_sans_complexite_exploitable():
+    audit = creer_audit(creer_fichier(0, complexite=None), creer_fichier(1, complexite=None))
+    assert audit.calculer_complexite() is None
+
+
+def test_calculer_complexite_dossier_vide():
+    assert creer_audit().calculer_complexite() is None
 
 
 # ---------- lancer() ----------
