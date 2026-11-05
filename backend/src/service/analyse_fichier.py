@@ -1,3 +1,4 @@
+
 import ast
 import os
 import timeit
@@ -6,12 +7,11 @@ from dotenv import load_dotenv
 
 from business_object.fichier import Fichier
 
-
 class AnalyseurComplexite(ast.NodeVisitor):
     """
     Mesure l'imbrication des boucles `for` et `while` d'un arbre syntaxique Python.
 
-    On crée un analyseur par fichier. Python appelle automatiquement `visit_For` et `visit_While`
+    On crée un analyseur par fichier. Python appelle automatiquement `visit_For` et `visit_While` 
     quand il rencontre ces types de nœuds.
 
     Attributs
@@ -52,8 +52,8 @@ class AnalyseurComplexite(ast.NodeVisitor):
         self.max_imbrication = max(self.max_imbrication, self.profondeur)
         if self.profondeur >= 2:
             self.boucles_imbriquees = True
-        # generic_visit() pour déléguer à NodeVisitor le parcours récursif de l'ensemble des sous-nœuds d'une boucle
-        # visite automatiquement tous les sous-nœuds du nœud courant.
+        #generic_visit() pour déléguer à NodeVisitor le parcours récursif de l'ensemble des sous-nœuds d'une boucle
+        #visite automatiquement tous les sous-nœuds du nœud courant.
         self.generic_visit(noeud)
 
         self.profondeur -= 1
@@ -68,7 +68,6 @@ class AnalyseurComplexite(ast.NodeVisitor):
 
     visit_For = _visiter_boucle
     visit_While = _visiter_boucle
-
 
 class AnalyseurAntiPatterns(ast.NodeVisitor):
     """
@@ -89,7 +88,6 @@ class AnalyseurAntiPatterns(ast.NodeVisitor):
         # Contient les noms des fonctions pour lesquelles on a trouvé
         # un appel récursif.
         self.fonctions_recursives = set()
-
     def _visiter_boucle(self, noeud: ast.AST) -> None:
         # On entre dans une boucle : on augmente la profondeur de 1.
         self.profondeur += 1
@@ -137,13 +135,17 @@ class AnalyseurAntiPatterns(ast.NodeVisitor):
     def visit_Call(self, noeud: ast.Call) -> None:
         # On vérifie les appels uniquement si on se trouve dans une fonction.
         if self.fonctions:
+
             # Nom de la fonction actuellement analysée.
             nom_fonction = self.fonctions[-1]
 
             # Cas 1 : appel direct, par exemple :
             # def calculer():
             #     calculer()
-            appel_recursif = isinstance(noeud.func, ast.Name) and noeud.func.id == nom_fonction
+            appel_recursif = (
+                isinstance(noeud.func, ast.Name)
+                and noeud.func.id == nom_fonction
+            )
 
             # Cas 2 : appel d'une méthode de la même classe, par exemple :
             # def calculer(self):
@@ -192,9 +194,9 @@ class Analyse_fichier:
         """
         self.api_url_OSV: str = self.URL_OSV_PAR_DEFAUT
         # Paramètres nécessaires à l'estimation des émissions.
-        self.puissance_machine: float = 15.0  # puissance de ma machine en watts intel corei5
-        self.pue: float = 1.0  # Power Usage Effectiveness.C'est un indicateur d'efficacité énergétique d'un centre de donnée (recommandé par le prof)
-        self.intensite_carbone: float = 29.0  # d'apres le bilan électrique 2025 de RTE
+        self.puissance_machine:  float = 15.0 # puissance de ma machine en watts intel corei5
+        self.pue: float = 1.0 #Power Usage Effectiveness.C'est un indicateur d'efficacité énergétique d'un centre de donnée (recommandé par le prof)
+        self.intensite_carbone: float = 29.0 # d'apres le bilan électrique 2025 de RTE 
         self.vitesse_machine: float | None = None
 
         self.load_environment_variables()
@@ -219,14 +221,18 @@ class Analyse_fichier:
         if puissance:
             try:
                 self.puissance_machine = float(puissance)
-            except ValueError:
-                raise ValueError("PUISSANCE_MACHINE_W doit être un nombre.")
-        intensite = os.getenv("INTENSITE_CARBONE_G_KWH")
+            except ValueError :
+                raise ValueError(
+                    "PUISSANCE_MACHINE_W doit être un nombre."
+                    )
+        intensite = os.getenv("INTENSITE_CARBONE_G_KWH")    
         if intensite:
             try:
                 self.intensite_carbone = float(intensite)
             except ValueError:
-                raise ValueError("INTENSITE_CARBONE_G_KWH doit être un nombre.")
+                raise ValueError(
+                    "INTENSITE_CARBONE_G_KWH doit être un nombre."
+                )
 
     def analyser_complexite_code(self, fichier: Fichier) -> int | None:
         """
@@ -266,7 +272,7 @@ class Analyse_fichier:
         fichier.complexite = resultat
         return resultat
 
-    def calculer_nombre_operations(self, fichier: Fichier, taille_reference: int) -> int:
+    def calculer_nombre_operations( self, fichier: Fichier,taille_reference: int) -> int:
         """
         Estime le nombre d'opérations à partir de l'exposant k
         et d'une taille de référence n.
@@ -275,18 +281,24 @@ class Analyse_fichier:
         """
 
         if taille_reference < 1:
-            raise ValueError("La taille de référence doit être positive.")
+            raise ValueError(
+                "La taille de référence doit être positive."
+            )
 
         if fichier.complexite is None:
-            raise ValueError("La complexité du fichier n'est pas disponible.")
+            raise ValueError(
+                "La complexité du fichier n'est pas disponible."
+            )
 
         if fichier.complexite < 0:
-            raise ValueError("La profondeur de complexité ne peut pas être négative.")
+            raise ValueError(
+                "La profondeur de complexité ne peut pas être négative."
+            )
 
-        nb_operations = taille_reference**fichier.complexite
+        nb_operations = taille_reference ** fichier.complexite
 
         return nb_operations
-
+    
     def mesurer_vitesse_machine(self) -> float:
         """
         ici il mesure une vitesse indicative de calcul en opérations par seconde
@@ -296,18 +308,23 @@ class Analyse_fichier:
 
         nombre_repetitions = 100_000
 
-        temps = timeit.timeit(stmt="sum(range(1000))", number=nombre_repetitions)
+        temps = timeit.timeit(
+            stmt="sum(range(1000))",
+            number=nombre_repetitions
+        )
 
         nombre_operations = 999 * nombre_repetitions
 
         if temps <= 0:
-            raise RuntimeError("Le temps de mesure est invalide.")
+            raise RuntimeError(
+                "Le temps de mesure est invalide."
+            )
 
         self.vitesse_machine = nombre_operations / temps
 
-        return self.vitesse_machine
+        return self.vitesse_machine 
 
-    def calculer_emissionCO2e(self, fichier: Fichier, nb_operations: int) -> float:
+    def calculer_emissionCO2e(self, fichier: Fichier,nb_operations: int) -> float:
         """
         on estime les émissions de CO2e en grammes.
 
@@ -322,28 +339,42 @@ class Analyse_fichier:
         """
 
         if nb_operations < 0:
-            raise ValueError("Le nombre d'opérations ne peut pas être négatif.")
+            raise ValueError(
+                "Le nombre d'opérations ne peut pas être négatif."
+            )
 
-        if self.puissance_machine is None or self.puissance_machine <= 0:
-            raise ValueError("La puissance de la machine doit être renseignée en watts.")
+        if (
+            self.puissance_machine is None
+            or self.puissance_machine <= 0
+        ):
+            raise ValueError(
+                "La puissance de la machine doit être renseignée en watts."
+            )
 
         if self.pue < 1:
-            raise ValueError("Le PUE doit être supérieur ou égal à 1.")
+            raise ValueError(
+                "Le PUE doit être supérieur ou égal à 1."
+            )
 
         if self.intensite_carbone < 0:
-            raise ValueError("L'intensité carbone ne peut pas être négative.")
+            raise ValueError(
+                "L'intensité carbone ne peut pas être négative."
+            )
 
         if self.vitesse_machine is None:
             self.mesurer_vitesse_machine()
 
         if self.vitesse_machine <= 0:
-            raise ValueError("La vitesse de la machine doit être positive.")
+            raise ValueError(
+                "La vitesse de la machine doit être positive."
+            )
 
         # Estimation du temps d'exécution en secondes.
         temps_execution = nb_operations / self.vitesse_machine
 
         # Estimation de l'énergie consommée en kWh.
-        energie_kWh = temps_execution * self.puissance_machine * self.pue / 3_600_000
+        energie_kWh = (
+            temps_execution  * self.puissance_machine * self.pue  / 3_600_000)
 
         # Estimation des émissions en grammes de CO2e.
         emission = energie_kWh * self.intensite_carbone
@@ -353,72 +384,72 @@ class Analyse_fichier:
 
         return emission
 
-    def estimer_emission_fichier(self, fichier: Fichier, taille_reference: int) -> float:
-        """
-        c'est pour réaliser l'estimation complète des émissions de CO2e d'un fichier.
-        """
+    def estimer_emission_fichier( self,fichier: Fichier, taille_reference: int) -> float:
+    """
+    c'est pour réaliser l'estimation complète des émissions de CO2e d'un fichier.
+    """
 
-        #  1 analyser la profondeur maximale des boucles.
-        complexite = self.analyser_complexite_code(fichier)
+    #  1 analyser la profondeur maximale des boucles.
+    complexite = self.analyser_complexite_code(fichier)
 
-        if complexite is None:
-            raise ValueError("Impossible d'analyser la complexité du fichier.")
+    if complexite is None:
+        raise ValueError(
+            "Impossible d'analyser la complexité du fichier."
+        )
 
-        # 2 : estimer le nombre d'opérations.
-        nb_operations = self.calculer_nombre_operations(fichier, taille_reference)
+    # 2 : estimer le nombre d'opérations.
+    nb_operations = self.calculer_nombre_operations(
+        fichier,
+        taille_reference
+    )
 
-        #  3 : calculer les émissions de CO2e.
-        emission = self.calculer_emissionCO2e(fichier, nb_operations)
+    #  3 : calculer les émissions de CO2e.
+    emission = self.calculer_emissionCO2e(
+        fichier,
+        nb_operations
+    )
 
-        return emission
+    return emission
+    
+def detecter_anti_patterns(self, fichier: Fichier) -> list[str] | None:
+    """
+    Recherche les anti-patterns dans un fichier Python.
 
-    def detecter_anti_patterns(self, fichier: Fichier) -> list[str] | None:
-        """
-        Recherche les anti-patterns dans un fichier Python.
+    Retourne une liste des problèmes détectés.
+    Retourne une liste vide si aucun problème n'est trouvé.
+    Retourne None si le fichier ne peut pas être analysé.
+    """
 
-        Retourne une liste des problèmes détectés.
-        Retourne une liste vide si aucun problème n'est trouvé.
-        Retourne None si le fichier ne peut pas être analysé.
-        """
+    try:
+        # On récupère l'arbre syntaxique du fichier.
+        # C'est cet arbre qui permet d'étudier la structure du code
+        # sans avoir besoin de l'exécuter.
+        arbre = fichier.obtenir_ast()
 
-        try:
-            # On récupère l'arbre syntaxique du fichier.
-            # C'est cet arbre qui permet d'étudier la structure du code
-            # sans avoir besoin de l'exécuter.
-            arbre = fichier.obtenir_ast()
+    except (ValueError, SyntaxError, UnicodeDecodeError):
+        # Si le fichier n'est pas Python, contient une erreur de syntaxe
+        # ou ne peut pas être lu, on ne peut pas faire l'analyse.
+        return None
 
-        except (ValueError, SyntaxError, UnicodeDecodeError):
-            # Si le fichier n'est pas Python, contient une erreur de syntaxe
-            # ou ne peut pas être lu, on ne peut pas faire l'analyse.
-            return None
+    # On crée un analyseur neuf pour ce fichier.
+    analyseur = AnalyseurAntiPatterns()
 
-        # On crée un analyseur neuf pour ce fichier.
-        analyseur = AnalyseurAntiPatterns()
+    # On lance le parcours de l'arbre syntaxique.
+    analyseur.visit(arbre)
 
-        # On lance le parcours de l'arbre syntaxique.
-        analyseur.visit(arbre)
+    # On prépare la liste qui contiendra les problèmes trouvés.
+    anti_patterns = []
 
-        # On prépare la liste qui contiendra les problèmes trouvés.
-        anti_patterns = []
+    # Si au moins deux boucles sont imbriquées, on ajoute ce problème.
+    if analyseur.boucles_imbriquees:
+        anti_patterns.append("Boucles imbriquées")
 
-        # Si au moins deux boucles sont imbriquées, on ajoute ce problème.
-        if analyseur.boucles_imbriquees:
-            anti_patterns.append("Boucles imbriquées")
+    # On ajoute les fonctions dans lesquelles une récursivité directe
+    # a été détectée.
+    for nom in sorted(analyseur.fonctions_recursives):
+        anti_patterns.append(
+            f"Récursivité directe dans la fonction {nom}" )
 
-        # On ajoute les fonctions dans lesquelles une récursivité directe
-        # a été détectée.
-        for nom in sorted(analyseur.fonctions_recursives):
-            anti_patterns.append(f"Récursivité directe dans la fonction {nom}")
+    # On retourne tous les problèmes détectés.
+    return anti_patterns 
 
-        # On retourne tous les problèmes détectés.
-        return anti_patterns
-
-    def analyse_dependances(self, fichier: Fichier) -> bool:
-        """Analyse les dépendances trouvés grâce à l'API et en déduis un score spécifique au fichier. Prends en compte aussi le nombre d'anti-pattern du fichier déjà calculé au préalable
-        Détermine aussi si ces dépendances sont des vulnérabilités ou pas, et dans le cas précédent le stocke dans la liste spécifique aux vulnérabilités
-        Args:
-            fichier (Fichier): Fichier à analyser
-        Returns:
-            bool : True si l'analyse à été réussie, False sinon
-        """
-        pass
