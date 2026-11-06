@@ -17,13 +17,13 @@ from utils.log_utils import LogMiddleware, get_logger, initialize_logs
 logger = get_logger(__name__)
 
 # Initialization
-initialize_logs("Webservice")
+initialize_logs("CleanOps")
 
 load_environment_variables()
 display_values()
 
 
-app = FastAPI(title="My Webservice")
+app = FastAPI(title="CleanOps")
 
 app.add_middleware(LogMiddleware)
 
@@ -53,13 +53,6 @@ app.include_router(dossier_controller.router)
 async def redirect_to_docs():
     """Redirect to the API documentation"""
     return RedirectResponse(url="/docs")
-
-
-@app.get("/hello/{name}", tags=["Misc"])
-async def hello_name(name: str):
-    """Display Hello"""
-    logger.info("Display Hello")
-    return {"message": f"Hello {name}"}
 
 
 @app.get("/reset_database", tags=["Misc"])
