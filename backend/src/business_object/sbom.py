@@ -41,5 +41,10 @@ class SBOM:
             {"type": "library", "name": d.nom, "version": d.version, "author": d.auteur}
             for d in audit.dossier.obtenir_dependances_dossier()
         ]
-        sbom = {"bomFormat": self.format, "version": 1, "components": composants}
+        sbom = {
+            "bomFormat": self.format,
+            "specVersion": "1.6",
+            "version": 1,
+            "components": composants,
+    }
         return json.dumps(sbom, indent=2, ensure_ascii=False)
