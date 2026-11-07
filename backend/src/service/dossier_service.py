@@ -36,6 +36,20 @@ class DossierService:
         return self.fichier_dao.find_fichier(id_fichier)
 
     @log
+    def find_fichier_by_user(self, id_utilisateur: int) -> list[Fichier] | None:
+        """Permet de retrouver l'ensemble des fichiers créer par un utilisateur
+        Args:
+            id_utilisateur (int): ID de l'utilisateur pour lequel on recherche les fichiers
+        Returns:
+            list[Fichier] | None: Liste de fichiers spécifiques à l'utilisateur. Renvoie None si l'utilisateur est introuvable
+        """
+        try:
+            fichiers = self.fichier_dao.find_by_utilisateur(id_utilisateur)
+        except ValueError:
+            return None
+        return fichiers
+
+    @log
     def remove_fichier(self, id_fichier: int) -> bool:
         """Supprime un fichier de la base de donnée
         Args:
@@ -54,21 +68,27 @@ class DossierService:
         Returns:
             Fichier | None: Fichier modifié, None si échec de la modification
         """
-        success = self.fichier_dao.update_fichier(fichier=fichier, id_audit=id_audit)
+        try:
+            success = self.fichier_dao.update_fichier(fichier=fichier, id_audit=id_audit)
+        except ValueError:
+            return None
         if not success:
             return None
         else:
             return self.find_fichier_by_id(id_fichier=fichier.id)
 
     @log
-    def create_dossier(self, liste_fichier: list[Fichier]) -> bool:
-        """Créer et enregistre les fichiers d'un dossier en base de données."""
-        success = True
-        for fichier in liste_fichier:
-            res = self.fichier_dao.create_fichier(fichier)
-            if not res:
-                success = False
-        return success
+    def create_fichier(self, fichier: Fichier) -> Fichier | None:
+        """Créer un fichier et le stocke dans la base de donnée
+        Args:
+            fichier (Fichier): Objet de type fichier
+        Returns:
+            Fichier | None: Fichier créé, None si échec
+        """
+        if self.fichier_dao.create_fichier(fichier):
+            return fichier
+        else:
+            return None
 
     @log
     def remove_dossier(self, path: str) -> bool:
@@ -81,7 +101,7 @@ class DossierService:
         return self.fichier_dao.remove_dossier(path)
 
     @log
-    def update_dossier(self, path: str, dossier: Dossier) -> bool:
+    def update_dossier(self, path: str, dossier: Dossier) -> Dossier | None:
         """Met à jour un dossier à l'adresse fourni, avec un nouveau dossier donné
         Le dossier à mettre à jour ne doit pas avoir été traité i.e. ne doit pas avoir d'audit correspondant
         Sinon, il faut plutôt recréer un dossier et un audit
@@ -90,13 +110,16 @@ class DossierService:
             path (str): Chemin d'accès à l'ancien dossier
             dossier (Dossier): Nouvelles données qui remplaceront l'ancien dossier
         Returns:
-            bool : True si la suppression réussie, False sinon
-        Raise:
+            Dossier | None : Dossier modifiée, None si échec
+        Raises:
             ValueError : L'adresse fourni du premier dossier n'est pas valide
         """
         dossier_init = self.fichier_dao.read_dossier(path)
         if dossier_init:
-            return self.fichier_dao.update_dossier(dossier_init, dossier_nouv=dossier)
+            if not self.fichier_dao.update_dossier(dossier_init, dossier_nouv=dossier):
+                return None
+            else:
+                return self.fichier_dao.read_dossier(dossier.chemin)
         else:
             raise ValueError("L'adresse fourni du premier dossier n'est pas valide")
 

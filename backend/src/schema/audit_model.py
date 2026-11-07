@@ -2,7 +2,17 @@ import datetime
 
 from pydantic import BaseModel, EmailStr
 
-from schema.fichier_model import FichierAuditModel
+from schema.fichier_model import FichierReadModel, FichierSubmitModel
+
+
+class DossierSubmitSchema(BaseModel):
+    """
+    Schéma de données pour la submission de dossier
+    """
+
+    nom: str
+    chemin: str
+    liste_fichiers: list[FichierSubmitModel]
 
 
 class DossierSchema(BaseModel):
@@ -12,8 +22,8 @@ class DossierSchema(BaseModel):
 
     nom: str
     chemin: str
-    date_soumission: datetime.date | None = None
-    liste_fichiers: list[FichierAuditModel] = []
+    date_soumission: datetime.datetime | None = None
+    liste_fichiers: list[FichierReadModel] = []
 
 
 class AuditModel(BaseModel):

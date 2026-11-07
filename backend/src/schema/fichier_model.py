@@ -37,15 +37,15 @@ class FichierModel(BaseModel):
     @classmethod
     def check_extension(cls, v: str) -> str:
         if v not in {".py", ".lock", ".txt"}:
-            raise TypeError("Le type de fichier accepté doit être un .py ou un .lock")
+            raise TypeError("Le type de fichier accepté doit être un .py, .txt ou .lock")
         return v
 
     @field_validator("complexite")
     @classmethod
-    def check_complexite(cls, v: str) -> str:
+    def check_complexite(cls, v: int) -> int:
         if v is None:
             return v
-        elif len(v) != len("O(n^p)") or v[:4] != "O(n^":
+        elif not isinstance(v, int):
             raise ValueError("Le format de complexité n'est pas le bon")
         return v
 
@@ -54,14 +54,22 @@ class FichierReadModel(BaseModel):
     id: int
     chemin: str
     extension: str
-    complexite: str | None = None
+    complexite: int | None = None
     score: int | None = None
     emissionCO2: float | None = None
 
 
-class FichierAuditModel(BaseModel):
+class FichierSubmitModel(BaseModel):
     chemin: str
     extension: str
-    complexite: str | None = None
-    score: int | None = None
-    emissionCO2: float | None = None
+    complexite: int | None = None
+    score: float | None = None
+    emissionCO2: int | None = None
+
+
+    @field_validator("extension")
+    @classmethod
+    def check_extension(cls, v: str) -> str:
+        if v not in {".py", ".lock", ".txt"}:
+            raise TypeError("Le type de fichier accepté doit être un .py, .txt ou .lock")
+        return v

@@ -25,8 +25,8 @@ class Dossier:
         self,
         nom: str,
         chemin: str,
-        signature_HMAC: str,
         liste_fichiers: list[Fichier],
+        signature_HMAC: str | None = None,
         date_soumission: datetime | None = None,
     ) -> None:
         """
@@ -45,7 +45,7 @@ class Dossier:
         self.chemin: str = chemin
         self._signature_HMAC: str = signature_HMAC
         self.liste_fichiers: list[Fichier] = liste_fichiers
-        self.date_soumission: datetime = date_soumission or datetime.now()
+        self.date_soumission: datetime = date_soumission or datetime.today()
 
     def obtenir_fichiers(self) -> list[Fichier]:
         """

@@ -27,8 +27,8 @@ class FichierDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "INSERT INTO Fichier(audit_id, chemin, extension, complexite, score, emissionCO2) VALUES "
-                        "(%(chemin)s, %(extension)s, %(complexite)s, %(score)s, %(emissionCO2)s) "
+                        "INSERT INTO Fichier(chemin, extension, complexite, score, emissionco2) VALUES "
+                        "(%(chemin)s, %(extension)s, %(complexite)s, %(score)s, %(emissionco2)s) "
                         "RETURNING id;",
                         {
                             "chemin": fichier.chemin,
@@ -58,8 +58,26 @@ class FichierDao(metaclass=Singleton):
             id_audit (int): ID de l'audit correspondant au fichier, reste None si la valeur n'est pas déterminé
         Returns :
             True si la mise à jour est réussie, False sinon
+        Raise:
+            ValueError: Le fichier visé à déjà été traité, il ne peut plus être modifié
         """
         nb_affected_rows = 0
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT * FROM fichier                       "
+                        "WHERE id = %(id)s AND (audit_id IS NOT NULL);",
+                        {"id": fichier.id},
+                    )
+                    res = cursor.fetchall()
+        except Exception as e:
+            logger.error(e)
+            raise
+        if res:
+            logger.error("Tentative de modification de fichier déjà traité")
+            raise ValueError("Le fichier visé à déjà été traité, il ne peut plus être modifié")
+            return False
 
         try:
             with DBConnection().connection as connection:
@@ -71,7 +89,7 @@ class FichierDao(metaclass=Singleton):
                         "       extension = %(extension)s,     "
                         "       score = %(score)s,             "
                         "       complexite = %(complexite)s,   "
-                        "       emissionco2 = %(emissionco2)s, "
+                        "       emissionco2 = %(emissionco2)s  "
                         " WHERE id = %(id_fichier)s;           ",
                         {
                             "chemin": fichier.chemin,
@@ -137,6 +155,7 @@ class FichierDao(metaclass=Singleton):
             fichier = Fichier(
                 id=res["id"],
                 chemin=res["chemin"],
+                extension=res["extension"],
                 complexite=res["complexite"],
                 score=res["score"],
                 emissionCO2=res["emissionco2"],
@@ -158,7 +177,7 @@ class FichierDao(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT f.* FROM utilisateurs u "
-                        "JOIN audit a ON a.utilisateurs_id=u.id "
+                        "JOIN audit a ON a.utilisateur_id=u.id "
                         "JOIN fichier f ON f.audit_id=a.id "
                         "WHERE u.id=%(id_user)s",
                         {"id_user": id_utilisateur},
@@ -181,7 +200,6 @@ class FichierDao(metaclass=Singleton):
                         emissionCO2=row["emissionco2"],
                     )
                 )
-
         return fichiers
 
     @log
@@ -281,8 +299,12 @@ class FichierDao(metaclass=Singleton):
 
         fichiers = []
         dossier = None
+        audit = False
         if res:
             for row in res:
+                if row["audit_id"] is not None:
+                    audit = True
+                    audit_id = row["audit_id"]
                 fichiers.append(
                     Fichier(
                         id=row["id"],
@@ -293,14 +315,32 @@ class FichierDao(metaclass=Singleton):
                         emissionCO2=row["emissionco2"],
                     )
                 )
-            dossier = Dossier(
-                nom=dossier_nom,
-                chemin=path_normalise,
-                signature_HMAC="",
-                liste_fichiers=fichiers,
-                date_soumission=None,
-            )
+        else:
             logger.warning("Le chemin indiqué ne contient aucun fichier")
+            return None
+
+        dossier = Dossier(
+            nom=dossier_nom,
+            chemin=path_normalise,
+            signature_HMAC="",
+            liste_fichiers=fichiers,
+            date_soumission=None,
+        )
+
+        if audit:
+            try:
+                with DBConnection().connection as connection:
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "SELECT date_audit FROM Audit WHERE id= %(id)s",
+                            {"id": audit_id},
+                        )
+                        res = cursor.fetchone()
+            except Exception as e:
+                logger.error(e)
+                raise
+            dossier.date_soumission = res["date_audit"]
+
         return dossier
 
     @log
