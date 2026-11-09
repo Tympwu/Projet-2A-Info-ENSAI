@@ -35,7 +35,7 @@ class HistoriqueService:
             raise ValueError(f"{nom} doit être un entier positif")
 
     @log
-    def consulter_historique(self, id_utilisateur: int) -> None:
+    def consulter_historique(self, id_utilisateur: int) -> Historique:
         """Retourne l'historique des audits d'un utilisateur.
 
         Args:

@@ -44,7 +44,7 @@ async def find_utilisateur(
     logger.info("Recherche d'un utilisateur par ID")
     utilisateur = utilisateur_service.find_utilisateur(id_utilisateur)
     if not utilisateur:
-        raise HTTPException(status_code=404, detail=f"Utilisateur (id={id_utilisateur}) not found.")
+        raise HTTPException(status_code=404, detail=f"Utilisateur (id={id_utilisateur}) introuvable.")
     return utilisateur
 
 
@@ -127,7 +127,7 @@ async def remove_utilisateur(
             status_code=500, detail="Erreur lors de la suppression de l'utilisateur"
         )
     else:
-        return f"Player {utilisateur.name} deleted"
+        return f"Utilisateur {utilisateur.name} supprimé"
 
 
 @router.post("/login", response_model=UtilisateurReadModel, tags=["Utilisateurs"])

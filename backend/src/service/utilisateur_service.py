@@ -5,11 +5,12 @@ from business_object.utilisateur import Utilisateur
 from dao.utilisateur_dao import UtilisateurDao
 from utils.log_utils import get_logger, log
 from utils.security import hash_password
+from utils.singleton import Singleton
 
 logger = get_logger(__name__)
 
 
-class UtilisateurService:
+class UtilisateurService(metaclass=Singleton):
     """Classe de service gérant la logique métier liée aux utilisateurs."""
 
     def __init__(self) -> None:
