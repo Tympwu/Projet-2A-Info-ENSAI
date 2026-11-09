@@ -3,7 +3,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from schema.audit_model import AuditModel, AuditReadModel, AuditHistoriqueModel
+from schema.audit_model import AuditModel, AuditReadModel
 from service.audit_service import AuditService
 from utils.log_utils import get_logger
 
@@ -29,9 +29,7 @@ async def find_all_audit(audit_service=Depends(get_audit_service)):
 
 
 @router.get("/{id_audit}", response_model=AuditReadModel, tags=["Audits"])
-async def consulter_audit(
-    id_audit: int, audit_service=Depends(get_audit_service)
-):
+async def consulter_audit(id_audit: int, audit_service=Depends(get_audit_service)):
     """Trouve un audit en fonction de son ID.
     Args:
         id_audit (int)
@@ -49,9 +47,7 @@ async def consulter_audit(
 
 
 @router.post("/", response_model=AuditReadModel, tags=["Audits"])
-async def create_audit(
-    a: AuditModel, audit_service=Depends(get_audit_service)
-):
+async def create_audit(a: AuditModel, audit_service=Depends(get_audit_service)):
     """Créer un nouvel audit. Il faut au préalable avoir créé les fichiers contenu dans cet audit
     Args:
         a (AuditReadModel): Les données de l'audit à créer.
@@ -77,9 +73,7 @@ async def create_audit(
 
 
 @router.delete("/{id_audit}", tags=["Audits"])
-async def remove_audit(
-    id_audit: int, audit_service=Depends(get_audit_service)
-):
+async def remove_audit(id_audit: int, audit_service=Depends(get_audit_service)):
     """Supprime un audit du système.
     Args:
         id_audit (int)
@@ -93,15 +87,11 @@ async def remove_audit(
     logger.info("Retrait d'un audit")
     audit = audit_service.find_audit(id_audit)
     if not audit:
-        raise HTTPException(
-            status_code=404, detail=f"Audit (id={id_audit}) introuvable."
-        )
+        raise HTTPException(status_code=404, detail=f"Audit (id={id_audit}) introuvable.")
 
     success = audit_service.remove_audit(id_audit)
     if not success:
-        raise HTTPException(
-            status_code=500, detail="Erreur lors de la suppression de l'audit"
-        )
+        raise HTTPException(status_code=500, detail="Erreur lors de la suppression de l'audit")
     else:
         return f"Audit {audit.id} supprimé"
 
@@ -127,11 +117,11 @@ async def remove_audit(
 #         raise HTTPException(
 #             status_code=404, detail=f"Audit (id={id_audit}) introuvable."
 #         )
-# 
+#
 #     audit = audit_service.update_audit(
 #         a.dossier_chemin, a.date
 #     )
 #     if not audit:
 #         raise HTTPException(status_code=500, detail="Erreur lors de la mise à jour des données.")
-# 
+#
 #     return audit

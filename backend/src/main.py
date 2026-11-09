@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from controller import dossier_controller, historique_controller, utilisateur_controller
+from controller import dossier_controller, historique_controller, utilisateur_controller, audit_controller
 from dao.manager_db import Manager_db
 from utils.env_variables import display_values, load_environment_variables
 from utils.log_utils import LogMiddleware, get_logger, initialize_logs
@@ -46,6 +46,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 app.include_router(utilisateur_controller.router, prefix="/user", tags=["Utilisateurs"])
 app.include_router(historique_controller.router, prefix="/historic", tags=["Historique"])
+app.include_router(audit_controller.router, prefix="/audit", tags=["Audits"])
 app.include_router(dossier_controller.router)
 
 

@@ -1,15 +1,11 @@
 from business_object.audit import Audit
 from dao.audit_dao import AuditDao
-from utils.log_utils import log
-from service.analyse_fichier import Analyse_fichier
 from service.dossier_service import DossierService
-
-import datetime
+from utils.log_utils import log
 
 
 class AuditService:
-    """Gère la consultation et la suppression de l'audit d'un utilisateur.
-    """
+    """Gère la consultation et la suppression de l'audit d'un utilisateur."""
 
     def __init__(self):
         """
@@ -49,7 +45,6 @@ class AuditService:
         if not dossier:
             raise ValueError("Dossier introuvable")
         return self.dossier_service.traiter_dossier(dossier)
-
 
     @log
     def remove_audit(self, id_audit: int) -> bool:
