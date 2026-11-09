@@ -1,6 +1,6 @@
 import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 from schema.fichier_model import FichierReadModel, FichierSubmitModel
 
@@ -33,18 +33,15 @@ class AuditModel(BaseModel):
     assurant une forme de donnée constante et valide durant les échanges avec l'API
     """
 
-    id: int | None = None
-    name: str
-    mot_de_passe: str
-    email: EmailStr
-    historique: str
+    statut: str = "créé"
+    dossier_chemin: str
 
 
 class AuditReadModel(BaseModel):
     id: int | None = None
     score: float | None = None
     statut: str = "créé"
-    date: datetime.date | None = None
+    date: datetime.date | None = datetime.datetime.today()
     emissionCO2_total: float | None = None
     dossier: DossierSchema
 
