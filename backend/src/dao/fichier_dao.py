@@ -1,3 +1,4 @@
+import datetime
 import os
 from pathlib import Path
 
@@ -324,7 +325,7 @@ class FichierDao(metaclass=Singleton):
             chemin=path_normalise,
             signature_HMAC="",
             liste_fichiers=fichiers,
-            date_soumission=None,
+            date_soumission=datetime.datetime.today(),
         )
 
         if audit:

@@ -149,6 +149,7 @@ class AuditDao(metaclass=Singleton):
 
         return audit
 
+    @log
     def find_by_utilisateur(self, id_utilisateur: int) -> list[Audit]:
         """Recherche des Audits par l'ID d'un utilisateur
         Arguments :
