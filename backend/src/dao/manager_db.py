@@ -1,9 +1,11 @@
+import json
 import os
 from pathlib import Path
 from unittest import mock
-import json
+
 import dotenv
 
+from business_object.audit import Audit
 from business_object.certificat import Certificat
 from business_object.sbom import SBOM
 from dao.db_connection import DBConnection
@@ -76,7 +78,6 @@ class Manager_db(metaclass=Singleton):
         chemin_fichier = dossier_export / f"certificat_{certificat.id}.json"
 
         contenu = {
-
             "audit_id": certificat.id,
             "nom": certificat.nom,
             "date_delivrance": (
@@ -84,41 +85,36 @@ class Manager_db(metaclass=Singleton):
                 if certificat.date_delivrance is not None
                 else None
             ),
-
-        "statut": certificat.statut
-        } 
+            "statut": certificat.statut,
+        }
 
         try:
             with open(chemin_fichier, "w", encoding="utf-8") as fichier:
                 json.dump(contenu, fichier, ensure_ascii=False, indent=4)
-            
+
             logger.info(f"Certificat exporté avec succès dans le fichier {chemin_fichier}")
             return chemin_fichier
-        
-        except OSError :
+
+        except OSError:
             logger.exception("Erreur lors de l'exportation du certificat")
-            raise 
+            raise
 
     @log
-    def exporter_SBOM(self, sbom: SBOM , audit: Audit) -> Path:
-         
+    def exporter_SBOM(self, sbom: SBOM, audit: Audit) -> Path:
         """Exporte le SBOM d'un audit dans un fichier JSON."""
         dossier_export = self.base_path / "data" / "sbom"
         dossier_export.mkdir(parents=True, exist_ok=True)
         chemin_fichier = dossier_export / f"sbom_audit_{audit.id}.json"
 
-        
-
         try:
-            contenu = sbom.generer_sbom(audit) 
+            contenu = sbom.generer_sbom(audit)
 
             with open(chemin_fichier, "w", encoding="utf-8") as fichier:
                 fichier.write(contenu)
-            
+
             logger.info(f"SBOM exporté avec succès dans le fichier {chemin_fichier}")
             return chemin_fichier
-        
-        except (OSError ,ValueError, TypeError) :
+
+        except (OSError, ValueError, TypeError):
             logger.exception("Erreur lors de l'exportation du SBOM")
             raise
-        
