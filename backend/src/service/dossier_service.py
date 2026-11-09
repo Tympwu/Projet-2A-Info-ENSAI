@@ -8,6 +8,7 @@ from dao.audit_dao import AuditDao
 from dao.fichier_dao import FichierDao
 from dao.manager_db import Manager_db
 from service.analyse_fichier import Analyse_fichier
+from service.utilisateur_service import UtilisateurService
 from utils.log_utils import get_logger, log
 
 logger = get_logger(__name__)
@@ -152,13 +153,32 @@ class DossierService:
         return audit
 
     @log
-    def traiter_dossier(self, dossier: Dossier, id_utilisateur: int | None = None) -> Audit | None:
+    def traiter_dossier(self, dossier: Dossier) -> Audit | None:
         """Traite un dossier complet pour lancer l'audit de ses fichiers.
+        - Récupération de l'ID de l'utilisateur connecté (ou pas)
+        - Création d'un objet Audit et enregistrement dans la base de donnée
+        - Puis fichier par fichiers :
+            - Extraction des dépendances en local (dans l'objet fichier)
+            - Analyse des anti-patterns présent dans le fichier et stockage en local
+            - Calcul du score affecté au fichier
+        - Calcul final de l'audit
         Args:
             dossier (Dossier): Dossier à analyser pour l'audit
         Returns:
             Audit: Audit final obtenu lors de l'analyse
+        Raises:
+            ValueError: Analyse des anti-patterns échouée
+            ArithmeticError: Echec du calcul des scores des dépendances
+            ArithmeticError: Erreur lors du calcul général de l'audit
+            FileNotFoundError: Le fichier est invalide ou illisible
+            FileNotFoundError Le fichier est introuvable
         """
+
+        # Récupération de l'ID si un utilisateur est connecté
+        id_utilisateur = UtilisateurService().utilisateur_connecte
+        if id_utilisateur:
+            id_utilisateur = id_utilisateur.id
+
         # Création de l'audit
         audit = Audit(dossier=dossier, date=datetime.today())
         if not self.audit_dao.create_audit(audit, id_utilisateur):
@@ -171,30 +191,31 @@ class DossierService:
                 # Extraction de chacune des dépendances des fichiers
                 if not fichier.extraire_dependances():
                     logger.error("Le type de fichier est invalide ou illisible")
-                    return None
+                    raise FileNotFoundError("Le fichier est invalide ou illisible")
             # Si le fichier n'est pas trouvé
             except FileNotFoundError:
                 logger.error("Fichier de l'audit introuvable")
-                return None
+                raise FileNotFoundError("Le fichier est introuvable")
 
             # Analyse des anti_patterns
             anti_pattern = self.audit_service.detecter_anti_patterns(fichier)
 
             if not anti_pattern:
-                logger.error("Analyse des anti-patterns échoué")
-                return None
+                logger.error("Analyse des anti-patterns échouée")
+                raise ValueError("Analyse des anti-patterns échouée")
             else:
                 fichier.liste_anti_pattern = anti_pattern
 
             # Calcul du score basé sur les dépendances
             if not self.audit_service.analyse_dependances(fichier):
                 logger.error("Echec du calcul des scores des dépendances")
-                return None
+                raise ArithmeticError("Echec du calcul des scores des dépendances")
 
         try:
             audit.calculer_score()
         except ValueError:
             logger.error("Erreur lors du calcul général de l'audit")
+            raise ArithmeticError("Erreur lors du calcul général de l'audit")
         return audit
 
     @log
