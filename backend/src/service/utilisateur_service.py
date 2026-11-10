@@ -95,9 +95,7 @@ class UtilisateurService(metaclass=Singleton):
         Returns:
             Utilisateur |None : Compte de l'utilisateur connecté si identifiants corrects, sinon None
         """
-        utilisateur = self.utilisateur_dao.login_utilisateur(nom=name, mot_de_passe=mot_de_passe)
-        if utilisateur:
-            self.utilisateur_connecte = utilisateur
-        else:
-            self.utilisateur_connecte = None
+        hash_mdp = hash_password(mot_de_passe, name)
+        utilisateur = self.utilisateur_dao.login_utilisateur(nom=name, mot_de_passe=hash_mdp)
+        self.utilisateur_connecte = utilisateur if utilisateur else None
         return self.utilisateur_connecte
