@@ -3,9 +3,9 @@ from business_object.vulnerabilite import Vulnerabilite
 
 class Dependances:
     def __init__(self, nom: str, version: str, auteur: str | None) -> None:
-        self.nom = nom
-        self.auteur = auteur
-        self.version = version
+        self.nom: str = nom
+        self.auteur: str = auteur
+        self.version: str = version
 
     
     def a_vulnerabilite(self,data_api: dict,scores: list[float | None],seuil: float = 7.0,) -> list[Vulnerabilite]:

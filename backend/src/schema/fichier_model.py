@@ -30,7 +30,7 @@ class FichierModel(BaseModel):
     chemin: str
     extension: str
     complexite: int | None = None
-    score: int | None = None
+    score: float | None = None
     emissionCO2: float | None = None
 
     @field_validator("extension")
@@ -55,7 +55,7 @@ class FichierReadModel(BaseModel):
     chemin: str
     extension: str
     complexite: int | None = None
-    score: int | None = None
+    score: float | None = None
     emissionCO2: float | None = None
 
 
