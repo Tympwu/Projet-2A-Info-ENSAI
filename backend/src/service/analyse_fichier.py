@@ -421,6 +421,7 @@ class Analyse_fichier:
         except (ValueError, SyntaxError, UnicodeDecodeError):
             # Si le fichier n'est pas Python, contient une erreur de syntaxe
             # ou ne peut pas être lu, on ne peut pas faire l'analyse.
+            print("Haha !")
             return None
 
         # On crée un analyseur neuf pour ce fichier.
@@ -485,10 +486,18 @@ class Analyse_fichier:
                 # version non épinglée) ne peut pas être interrogée et n'entre pas dans le
                 # score.
                 if dependance.version is None:
-                    logger.warning("Dépendance %s ignorée : version inconnue.", dependance.nom)
-                    continue
+                    url = f"https://pypi.org/pypi/{dependance.nom}/json"
+                    try:
+                        with urllib.request.urlopen(url, timeout=5) as reponse:
+                            dependance.version = json.load(reponse)["info"]["version"]
+                            print("Whee", dependance.nom)
+                    except (urllib.error.HTTPError, urllib.error.URLError, json.JSONDecodeError):
+                        logger.warning("Dépendance %s introuvable : version inconnue.", dependance.nom)
+                        print("Whooo", dependance.nom)
+                        continue
 
                 for fiche in self._interroger_osv(dependance):
+                    print(fiche)
                     score = self._score_vulnerabilite(fiche)
                     identifiant = fiche.get("id", "identifiant inconnu")
                     if score is None:
@@ -549,8 +558,10 @@ class Analyse_fichier:
             )
             with urllib.request.urlopen(requete, timeout=self.TIMEOUT_OSV) as reponse:
                 donnees = json.load(reponse)
+                print(donnees)
             fiches.extend(donnees.get("vulns", []))
             jeton = donnees.get("next_page_token")
+            print(jeton)
             if not jeton:
                 return fiches
 

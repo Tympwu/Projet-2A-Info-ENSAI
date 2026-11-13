@@ -190,14 +190,15 @@ class Fichier:
                     elif isinstance(noeud, ast.ImportFrom):
                         if noeud.level == 0 and noeud.module:
                             noms.add(noeud.module.split(".")[0])
-                externes = sorted(noms - sys.stdlib_module_names)
+                externes = [nom for nom in noms if nom in sys.stdlib_module_names]
                 dependances = [Dependances(nom=nom, auteur=None, version=None) for nom in externes]
             elif nom_fichier.startswith("requirements") and nom_fichier.endswith(".txt"):
                 dependances = self._lire_exigences(self.lire_contenu().splitlines())
             elif nom_fichier == "pyproject.toml":
                 donnees = tomllib.loads(self.lire_contenu())
-                dependances = self._lire_exigences(donnees.get("project", {}).get(
-                    "dependencies", []))
+                dependances = self._lire_exigences(
+                    donnees.get("project", {}).get("dependencies", [])
+                )
         except (SyntaxError, UnicodeDecodeError, tomllib.TOMLDecodeError):
             dependances = None
         self.liste_dependances = dependances

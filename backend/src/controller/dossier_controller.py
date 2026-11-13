@@ -150,7 +150,7 @@ async def find_by_utilisateur(id_utilisateur: int, dossier_service=Depends(get_d
     return fichiers
 
 
-@router.delete("/dossier/{chemin_dossier}", tags=["Dossier"])
+@router.delete("/dossier/{chemin_dossier:path}", tags=["Dossier"])
 async def remove_dossier(chemin_dossier: str, dossier_service=Depends(get_dossier_service)):
     """Supprime un dossier du système et ce qu'il contient en se basant sur son chemin d'accès.
     Args:
@@ -169,7 +169,7 @@ async def remove_dossier(chemin_dossier: str, dossier_service=Depends(get_dossie
         return "Dossier supprimé"
 
 
-@router.post("/dossier/{chemin_dossier}", response_model=DossierSchema, tags=["Dossier"])
+@router.post("/dossier/{chemin_dossier:path}", response_model=DossierSchema, tags=["Dossier"])
 async def update_dossier(
     chemin_dossier: str, dossier: DossierSubmitSchema, dossier_service=Depends(get_dossier_service)
 ):
@@ -210,7 +210,7 @@ async def update_dossier(
     return dossier_nouv
 
 
-@router.get("/dossier/{chemin_dossier}", response_model=DossierSchema, tags=["Dossier"])
+@router.get("/dossier/{chemin_dossier:path}", response_model=DossierSchema, tags=["Dossier"])
 async def read_dossier(chemin_dossier: str, dossier_service=Depends(get_dossier_service)):
     """Trouve un dossier en fonction de son chemin d'accès.
     Args:
@@ -224,5 +224,5 @@ async def read_dossier(chemin_dossier: str, dossier_service=Depends(get_dossier_
     logger.info("Recherche d'un dossier par son ID")
     dossier = dossier_service.consulter_dossier(chemin_dossier)
     if not dossier:
-        raise HTTPException(status_code=500, detail="Dossier introuvable")
+        raise HTTPException(status_code=404, detail="Dossier introuvable")
     return dossier
