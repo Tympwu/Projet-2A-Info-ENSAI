@@ -1,6 +1,6 @@
 import streamlit as st
-from utils.affichage import afficher_audit
 
+from utils.affichage import afficher_audit
 from utils.api_client import api_client
 from utils.log_init import get_page_logger
 
@@ -33,11 +33,12 @@ fichiers = st.file_uploader(
 if st.button("Lancer l'audit", type="primary", disabled=not fichiers):
     with st.spinner("Analyse en cours..."):
         try:
-            reponse = api_client.post_files("/audits", fichiers)
+            reponse = api_client.post("/audit/start_audit", data=fichiers)
         except Exception as e:
             st.error(f"Connexion impossible : {e}")
             st.stop()
 
+    print(reponse)
     if reponse and reponse["status_code"] == 200:
         st.session_state["audit_id"] = reponse["data"]["id"]
         st.switch_page("pages/detail_audit.py")
