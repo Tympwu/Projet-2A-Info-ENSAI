@@ -1,4 +1,5 @@
 from business_object.audit import Audit
+from business_object.fichier import Fichier
 from dao.audit_dao import AuditDao
 from service.dossier_service import DossierService
 from utils.log_utils import log
@@ -67,3 +68,9 @@ class AuditService:
         Returns:
             list[Audit]: Liste composée de tous les audits enregistrés. La liste est vide si aucun audit est trouvé"""
         return self.audit_dao.find_all()
+
+    @log
+    def create_dossier(self, liste_fichier):
+        for fichier in liste_fichier:
+            self.dossier_service.create_fichier(Fichier(chemin=fichier.read()))
+            self.create_audit("a")
