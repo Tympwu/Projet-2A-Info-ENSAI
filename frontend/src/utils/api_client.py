@@ -100,24 +100,6 @@ class APIClient:
         """
         return self._request(method="POST", path=path, json=json, data=data, **kwargs)
 
-
-def post_files(self, path: str, fichiers, data=None, **kwargs):
-    """Envoie des fichiers (issus de st.file_uploader) en multipart.
-    Args:
-        path (str): The endpoint path.
-        fichiers (list): Fichiers renvoyés par st.file_uploader.
-        data (dict, optional): Champs de formulaire envoyés avec les fichiers.
-        **kwargs: Additional arguments for requests.request.
-    Returns:
-        dict: The response dictionary.
-    """
-    files = [
-        ("fichiers", (f.name, f.getvalue(), f.type or "application/octet-stream"))
-        for f in fichiers
-    ]
-    kwargs.setdefault("timeout", 60)  # une analyse peut dépasser les 5 s par défaut
-    return self._request(method="POST", path=path, files=files, data=data, **kwargs)
-
     def put(self, path: str, json=None, data=None, **kwargs):
         """Sends a PUT request.
         Args:
