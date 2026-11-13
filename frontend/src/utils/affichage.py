@@ -1,0 +1,43 @@
+"""Fonctions d'affichage réutilisables entre les pages."""
+
+import base64
+
+import pandas as pd
+import streamlit as st
+
+
+def afficher_audit(audit: dict, cle: str = "audit") -> None:
+    """Affiche le résultat complet d'un audit (statut, métriques, détail par fichier).
+
+    Args:
+        audit (dict): Audit renvoyé par l'API.
+        cle (str): Préfixe unique pour les widgets, utile si plusieurs audits
+            sont affichés sur la même page.
+    """
+    statut = audit.get("statut")
+    if statut == "validé":
+        st.success("Audit validé ✅")
+    elif statut == "refusé":
+        st.error("Audit refusé ❌")
+    else:
+        st.warning(f"Statut : {statut}")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Score", audit.get("score"))
+    col2.metric("Émissions de CO₂", audit.get("emissionCO2_total"))
+    col3.metric("Complexité maximale", audit.get("complexite_max"))
+
+    fichiers = audit.get("fichiers")
+    if fichiers:
+        st.subheader("Détail par fichier")
+        st.dataframe(pd.DataFrame(fichiers), width="stretch")
+
+    certificat = audit.get("certificat_pdf")  # PDF encodé en base64, si l'audit est validé
+    if statut == "validé" and certificat:
+        st.download_button(
+            "Télécharger le certificat (PDF)",
+            data=base64.b64decode(certificat),
+            file_name="certificat_audit.pdf",
+            mime="application/pdf",
+            key=f"{cle}_certificat",
+        )
