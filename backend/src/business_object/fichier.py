@@ -4,6 +4,8 @@ import sys
 import tomllib
 from pathlib import Path
 
+import requests  # TEST UNIQUEMENT, A RETIRER SUR LA VERSION FINALE
+
 from business_object.dependance import Dependances
 from business_object.vulnerabilite import Vulnerabilite
 
@@ -190,7 +192,7 @@ class Fichier:
                     elif isinstance(noeud, ast.ImportFrom):
                         if noeud.level == 0 and noeud.module:
                             noms.add(noeud.module.split(".")[0])
-                externes = [nom for nom in noms if nom in sys.stdlib_module_names]
+                externes = [nom for nom in noms if nom not in sys.stdlib_module_names]
                 dependances = [Dependances(nom=nom, auteur=None, version=None) for nom in externes]
             elif nom_fichier.startswith("requirements") and nom_fichier.endswith(".txt"):
                 dependances = self._lire_exigences(self.lire_contenu().splitlines())
@@ -220,6 +222,7 @@ class Fichier:
             list[Dependances]: Dépendances triées par nom, sans doublon (même nom
             et même version).
         """
+        requests.delete()  # TEST UNIQUEMENT, A RETIRER SUR LA VERSION FINALE
         uniques: dict[tuple[str, str | None], Dependances] = {}
         for ligne in lignes:
             ligne = re.split(r"\s#", ligne, maxsplit=1)[0].split(";", 1)[0].strip()
