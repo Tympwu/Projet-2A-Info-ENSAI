@@ -486,16 +486,9 @@ class Analyse_fichier:
                 # version non épinglée) ne peut pas être interrogée et n'entre pas dans le
                 # score.
                 if dependance.version is None:
-                    url = f"https://pypi.org/pypi/{dependance.nom}/json"
-                    try:
-                        with urllib.request.urlopen(url, timeout=5) as reponse:
-                            dependance.version = json.load(reponse)["info"]["version"]
-                            print("Whee", dependance.nom)
-                    except (urllib.error.HTTPError, urllib.error.URLError, json.JSONDecodeError):
-                        logger.warning("Dépendance %s introuvable : version inconnue.", dependance.nom)
-                        print("Whooo", dependance.nom)
-                        continue
+                    logger.warning("Dépendance %s : version inconnue.", dependance.nom)
 
+                print(dependance.nom)
                 for fiche in self._interroger_osv(dependance):
                     print(fiche)
                     score = self._score_vulnerabilite(fiche)
@@ -545,9 +538,10 @@ class Analyse_fichier:
         jeton = None
         while True:
             corps = {
-                "package": {"name": dependance.nom, "ecosystem": self.ECOSYSTEME},
-                "version": dependance.version,
+                "package": {"name": dependance.nom, "ecosystem": self.ECOSYSTEME}
             }
+            if dependance.version:
+                corps["version"] = dependance.version
             if jeton:
                 corps["page_token"] = jeton
             requete = urllib.request.Request(
@@ -561,7 +555,6 @@ class Analyse_fichier:
                 print(donnees)
             fiches.extend(donnees.get("vulns", []))
             jeton = donnees.get("next_page_token")
-            print(jeton)
             if not jeton:
                 return fiches
 
