@@ -1,7 +1,7 @@
 import json
 
-from .audit import Audit
 from business_object.audit import Audit
+
 
 class SBOM:
     """
@@ -46,6 +46,5 @@ class SBOM:
             "specVersion": "1.6",
             "version": 1,
             "components": composants,
-
-    }
+        }
         return json.dumps(sbom, indent=2, ensure_ascii=False)

@@ -41,7 +41,7 @@ class AuditReadModel(BaseModel):
     id: int | None = None
     score: float | None = None
     statut: str = "créé"
-    date: datetime.date | None = datetime.datetime.today()
+    date: datetime.datetime | None = datetime.datetime.today()
     emissionCO2_total: float | None = None
     dossier: DossierSchema
 

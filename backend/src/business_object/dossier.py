@@ -89,4 +89,4 @@ class Dossier:
         -------
         str: Nom du dossier et nombre de fichiers.
         """
-        return f"Dossier({self.nom!r}, {len(self.liste_fichiers)} fichier"
+        return f"Dossier({self.nom!r}, {len(self.liste_fichiers)} fichier(s))"
