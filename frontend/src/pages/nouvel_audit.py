@@ -32,18 +32,24 @@ fichiers = st.file_uploader(
 
 if st.button("Lancer l'audit", type="primary", disabled=not fichiers):
     with st.spinner("Analyse en cours..."):
-        try:
-            reponse = api_client.post("/audit/start_audit", data=fichiers)
-        except Exception as e:
-            st.error(f"Connexion impossible : {e}")
-            st.stop()
+        files = [
+            ("liste_fichier", (f.name, f.getvalue(), f.type or "application/octet-stream"))
+            for f in fichiers
+        ]
+        donnees = {"utilisateur_id": utilisateur["id"]} if utilisateur else None
+        reponse = api_client.post(
+            "/audit/start_audit",
+            files=files,
+            data=donnees,
+            timeout=60,  # une analyse peut dépasser les 5 s par défaut
+        )
 
-    print(reponse)
     if reponse and reponse["status_code"] == 200:
-        st.session_state["audit_id"] = reponse["data"]["id"]
-        st.switch_page("pages/detail_audit.py")
+        st.session_state["dernier_audit"] = reponse["data"]
     else:
-        st.error("L'audit a échoué, voir les logs.")
+        code = reponse["status_code"] if reponse else "aucune réponse"
+        logger.error(f"Échec de l'audit : {code}")
+        st.error(f"L'audit a échoué (code {code}). {reponse['data'] if reponse else ''}")
 
 audit = st.session_state.get("dernier_audit")
 if audit:
