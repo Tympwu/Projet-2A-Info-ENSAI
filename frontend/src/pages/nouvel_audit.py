@@ -41,7 +41,7 @@ if st.button("Lancer l'audit", type="primary", disabled=not fichiers):
             "/audit/start_audit",
             files=files,
             data=donnees,
-            timeout=60,  # une analyse peut dépasser les 5 s par défaut
+            timeout=60,
         )
 
     if reponse and reponse["status_code"] == 200:

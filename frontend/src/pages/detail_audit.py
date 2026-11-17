@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
-from utils.auth import exiger_connexion
 
 from utils.api_client import api_client
+from utils.auth import exiger_connexion
 
 exiger_connexion()
 audit_id = st.session_state.get("audit_id")

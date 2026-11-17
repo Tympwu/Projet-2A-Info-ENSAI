@@ -14,7 +14,7 @@ from streamlit import config
 from utils.api_client import api_client
 from utils.log_init import get_page_logger
 
-PAGE_APRES_CONNEXION = "pages/nouvel_audit.py"  # à adapter à ta première page connectée
+PAGE_APRES_CONNEXION = "pages/nouvel_audit.py"
 PAGE_CREATION_COMPTE = "pages/creer_compte.py"
 
 st.set_page_config(page_title="Audit de code", page_icon="🌱", layout="centered")
@@ -77,7 +77,6 @@ st.space("small")
 if st.button("Créer un compte"):
     st.switch_page(PAGE_CREATION_COMPTE)
 
-# Outil de développement : à retirer avant le rendu (efface toutes les données).
 if st.button("Réinitialiser la base de données", type="primary"):
     logger.info("Réinitialisation de la base de données")
     response = api_client.get("/reset_database")

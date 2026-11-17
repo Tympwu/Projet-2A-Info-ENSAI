@@ -22,6 +22,7 @@ dependencies = [
     "regex",
     "uvicorn",
     "cvss>=3.6",
+    "python-multipart>=0.0.34",
 ]
 
 # Dependencies used only for development, not for runtime

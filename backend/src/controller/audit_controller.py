@@ -1,11 +1,13 @@
 # controller/audit_controller.py
 
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from schema.audit_model import AuditModel, AuditReadModel
 from service.audit_service import AuditService
 from utils.log_utils import get_logger
+
+print(">>> audit_controller chargé depuis :", __file__)
 
 router = APIRouter()
 
@@ -98,8 +100,12 @@ async def remove_audit(id_audit: int, audit_service=Depends(get_audit_service)):
 
 
 @router.post("/start_audit", tags=["Audits"])
-def start_audit(liste_fichier, audit_service=Depends(get_audit_service)):
+def start_audit(
+    liste_fichier: list[UploadFile] = File(...),
+    utilisateur_id: int | None = Form(None),
+    audit_service=Depends(get_audit_service),
+):
+    print(liste_fichier[0].file.read())
     logger.info("Création d'un audit et de ses fichiers")
     audit_service.create_dossier(liste_fichier)
     return "C'est temporaire"
-
