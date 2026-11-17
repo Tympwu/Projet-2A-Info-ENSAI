@@ -1,14 +1,17 @@
 import shutil
 import tempfile
 import zipfile
+from datetime import datetime
 from pathlib import Path
 
 from business_object.audit import Audit
+from business_object.dossier import Dossier
 from business_object.fichier import Fichier
 from dao.audit_dao import AuditDao
 from service.dossier_service import DossierService
 from utils.log_utils import log
 
+EXTENSIONS_AUTORISEES = {".py", ".txt", ".toml"}
 TAILLE_MAX_ZIP = 50 * 1024 * 1024  # 50 Mo décompressés (protection contre les zip bombs)
 
 
@@ -77,38 +80,58 @@ class AuditService:
         return self.audit_dao.find_all()
 
     @log
-    def create_dossier(self, liste_fichier) -> Audit:
-        """Écrit les fichiers reçus dans un dossier temporaire (en dézippant les .zip),
-        puis lance l'audit sur ce dossier.
+    def create_dossier(self, liste_fichier) -> Audit | None:
+        """Lit les fichiers reçus (dézippe les .zip), construit un Dossier en mémoire
+        puis lance l'audit dessus.
 
         Args:
             liste_fichier (list[UploadFile]): Fichiers envoyés par le client.
 
         Returns:
-            Audit: L'audit calculé sur le dossier.
+            Audit | None: L'audit calculé, None si sa création a échoué.
 
         Raises:
             zipfile.BadZipFile: Si une archive .zip est invalide.
-            ValueError: Si une archive est trop volumineuse ou si le dossier est introuvable.
+            ValueError: Archive trop volumineuse, fichier non UTF-8, aucun fichier
+                exploitable ou enregistrement d'un fichier impossible.
         """
-        dossier_temp = Path(tempfile.mkdtemp(prefix="audit_"))
-        try:
-            for fichier in liste_fichier:
-                nom = Path(fichier.filename).name  # .name évite les chemins du type "../x"
+        fichiers: list[Fichier] = []
+
+        # Le dossier temporaire ne sert qu'à l'extraction, il est supprimé à la sortie du with
+        with tempfile.TemporaryDirectory(prefix="audit_") as tmp:
+            dossier_temp = Path(tmp)
+            for upload in liste_fichier:
+                nom = Path(upload.filename).name  # .name évite les chemins du type "../x"
                 if nom.lower().endswith(".zip"):
-                    self._extraire_zip(fichier.file, dossier_temp)
+                    self._extraire_zip(upload.file, dossier_temp)
                 else:
                     with open(dossier_temp / nom, "wb") as sortie:
-                        shutil.copyfileobj(fichier.file, sortie)
-            for chemin in sorted(p for p in dossier_temp.rglob("*") if p.is_file()):
-                if not self.dossier_service.create_fichier(Fichier(chemin=str(chemin))):
-                    raise ValueError(f"Impossible d'enregistrer le fichier {chemin.name}")
+                        shutil.copyfileobj(upload.file, sortie)
 
-            return self.create_audit(str(dossier_temp))
-        except Exception:
-            # En cas d'échec, on ne laisse pas un dossier temporaire orphelin
-            shutil.rmtree(dossier_temp, ignore_errors=True)
-            raise
+            chemins = sorted(
+                p for p in dossier_temp.rglob("*") if p.is_file() and p.suffix in EXTENSIONS_AUTORISEES
+            )
+            for chemin in chemins:
+                try:
+                    code = chemin.read_text(encoding="utf-8")
+                except UnicodeDecodeError:
+                    raise ValueError(f"{chemin.name} n'est pas encodé en UTF-8")
+                fichiers.append(Fichier(code=code, extension=chemin.suffix))
+
+        if not fichiers:
+            raise ValueError("Aucun fichier exploitable (.py, .txt, .toml)")
+
+        for fichier in fichiers:
+            if not self.dossier_service.create_fichier(fichier):  # renseigne fichier.id
+                raise ValueError("Impossible d'enregistrer un fichier")
+
+        dossier = Dossier(
+            nom="",
+            signature_HMAC="",
+            liste_fichiers=fichiers,
+            date_soumission=datetime.today(),
+        )
+        return self.dossier_service.traiter_dossier(dossier)
 
     def _extraire_zip(self, flux, destination: Path) -> None:
         """Extrait une archive zip dans le dossier de destination, de façon sécurisée."""
