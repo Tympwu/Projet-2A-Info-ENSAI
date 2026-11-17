@@ -275,10 +275,6 @@ class Analyse_fichier:
         -------
         int | None: L'exposant k de la complexité estimée O(n^k), ou None si le fichier
         n'est pas analysable
-
-        Raises
-        ------
-        FileNotFoundError: Si le fichier n'existe pas au chemin indiqué.
         """
 
         resultat: int | None = None
@@ -464,9 +460,6 @@ class Analyse_fichier:
         Returns:
             bool: True si l'analyse a réussi, False sinon : dépendances non extractibles, ou
             API injoignable (`fichier.score` et `fichier.liste_vulnerabilites` valent alors None).
-
-        Raises:
-            FileNotFoundError: Si le fichier n'existe pas au chemin indiqué.
         """
 
         if fichier.liste_dependances is None:
@@ -537,9 +530,7 @@ class Analyse_fichier:
         fiches: list[dict] = []
         jeton = None
         while True:
-            corps = {
-                "package": {"name": dependance.nom, "ecosystem": self.ECOSYSTEME}
-            }
+            corps = {"package": {"name": dependance.nom, "ecosystem": self.ECOSYSTEME}}
             if dependance.version:
                 corps["version"] = dependance.version
             if jeton:

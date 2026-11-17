@@ -1,7 +1,3 @@
-import datetime
-import os
-from pathlib import Path
-
 from business_object.dossier import Dossier
 from business_object.fichier import Fichier
 from dao.db_connection import DBConnection
@@ -28,11 +24,11 @@ class FichierDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "INSERT INTO Fichier(chemin, extension, complexite, score, emissionco2) VALUES "
-                        "(%(chemin)s, %(extension)s, %(complexite)s, %(score)s, %(emissionco2)s) "
+                        "INSERT INTO Fichier(code, extension, complexite, score, emissionco2) VALUES "
+                        "(%(code)s, %(extension)s, %(complexite)s, %(score)s, %(emissionco2)s) "
                         "RETURNING id;",
                         {
-                            "chemin": fichier.chemin,
+                            "code": fichier.code,
                             "extension": fichier.extension,
                             "complexite": fichier.complexite,
                             "score": fichier.score,
@@ -85,7 +81,7 @@ class FichierDao(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "UPDATE fichier                        "
-                        "   SET chemin = %(chemin)s,           "
+                        "   SET code = %(code)s,           "
                         "       audit_id = %(audit_id)s,       "
                         "       extension = %(extension)s,     "
                         "       score = %(score)s,             "
@@ -93,7 +89,7 @@ class FichierDao(metaclass=Singleton):
                         "       emissionco2 = %(emissionco2)s  "
                         " WHERE id = %(id_fichier)s;           ",
                         {
-                            "chemin": fichier.chemin,
+                            "code": fichier.code,
                             "audit_id": id_audit,
                             "extension": fichier.extension,
                             "score": fichier.score,
@@ -155,7 +151,7 @@ class FichierDao(metaclass=Singleton):
         if res:
             fichier = Fichier(
                 id=res["id"],
-                chemin=res["chemin"],
+                code=res["code"],
                 extension=res["extension"],
                 complexite=res["complexite"],
                 score=res["score"],
@@ -195,7 +191,7 @@ class FichierDao(metaclass=Singleton):
                     Fichier(
                         id=row["id"],
                         extension=row["extension"],
-                        chemin=row["chemin"],
+                        code=row["code"],
                         complexite=row["complexite"],
                         score=row["score"],
                         emissionCO2=row["emissionco2"],
@@ -234,7 +230,7 @@ class FichierDao(metaclass=Singleton):
                     Fichier(
                         id=row["id"],
                         extension=row["extension"],
-                        chemin=row["chemin"],
+                        code=row["code"],
                         complexite=row["complexite"],
                         score=row["score"],
                         emissionCO2=row["emissionco2"],
@@ -267,7 +263,7 @@ class FichierDao(metaclass=Singleton):
                     Fichier(
                         id=row["id"],
                         extension=row["extension"],
-                        chemin=row["chemin"],
+                        code=row["code"],
                         complexite=row["complexite"],
                         score=row["score"],
                         emissionCO2=row["emissionco2"],
@@ -277,123 +273,32 @@ class FichierDao(metaclass=Singleton):
         return fichiers
 
     @log
-    def read_dossier(self, path: str) -> Dossier | None:
-        """Créer un objet dossier avec tous les fichiers selon un chemin d'accès
+    def read_dossier(self, audit_id: int) -> Dossier | None:
+        """Créer un objet dossier avec tous les fichiers selon une ID d'audit
         Arguments:
-            path (str): chemin d'accès du dossier que tous les fichiers vont partager
+            audit_id (int): ID de l'audit contenant tous les fichiers voulu
         Returns:
             Dossier | None : Objet dossier contenant tous les fichiers à l'adresse donnée, None si aucun fichier n'a été trouvé
         """
-        dossier_nom = Path(path).name
-        path_normalise = path.rstrip(os.sep)
-        try:
-            with DBConnection().connection as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT * FROM Fichier WHERE chemin LIKE %(path)s",
-                        {"path": f"{path_normalise}/%"},
-                    )
-                    res = cursor.fetchall()
-        except Exception as e:
-            logger.error(e)
-            raise
-
-        fichiers = []
-        dossier = None
-        audit = False
-        if res:
-            for row in res:
-                if row["audit_id"] is not None:
-                    audit = True
-                    audit_id = row["audit_id"]
-                fichiers.append(
-                    Fichier(
-                        id=row["id"],
-                        extension=row["extension"],
-                        chemin=row["chemin"],
-                        complexite=row["complexite"],
-                        score=row["score"],
-                        emissionCO2=row["emissionco2"],
-                    )
-                )
-        else:
-            logger.warning("Le chemin indiqué ne contient aucun fichier")
-            return None
-
+        fichiers = self.find_by_audit(audit_id)
         dossier = Dossier(
-            nom=dossier_nom,
-            chemin=path_normalise,
+            nom="",
             signature_HMAC="",
             liste_fichiers=fichiers,
-            date_soumission=datetime.datetime.today(),
+            date_soumission=None,
         )
 
-        if audit:
-            try:
-                with DBConnection().connection as connection:
-                    with connection.cursor() as cursor:
-                        cursor.execute(
-                            "SELECT date_audit FROM Audit WHERE id= %(id)s",
-                            {"id": audit_id},
-                        )
-                        res = cursor.fetchone()
-            except Exception as e:
-                logger.error(e)
-                raise
-            dossier.date_soumission = res["date_audit"]
+        try:
+            with DBConnection().connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT date_audit FROM Audit WHERE id= %(id)s",
+                        {"id": audit_id},
+                    )
+                    res = cursor.fetchone()
+        except Exception as e:
+            logger.error(e)
+            raise
+        dossier.date_soumission = res["date_audit"]
 
         return dossier
-
-    @log
-    def remove_dossier(self, path: str) -> bool:
-        """Supprime tous les fichiers concernés par un dossier
-        Arguments:
-            path (str): chemin d'accès du dossier que tous les fichiers vont partager
-        Returns:
-            bool : True si la suppression est réussie, False sinon
-        """
-        path_normalise = path.rstrip(os.sep)
-        try:
-            with DBConnection().connection as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "DELETE FROM Fichier WHERE chemin LIKE %(path)s",
-                        {"path": f"{path_normalise}/%"},
-                    )
-                    res = cursor.rowcount
-        except Exception as e:
-            logger.error(e)
-            raise
-
-        return res > 0
-
-    @log
-    def update_dossier(self, dossier_init: Dossier, dossier_nouv: Dossier) -> bool:
-        """Met à jour une liste de fichiers contenu dans un dossier
-        Arguments:
-            dossier_init (Dossier): Dossier initial à mettre à jour
-            dossier_nouv (Dossier): Nouveau dossier devant remplacer le précédent
-        Returns:
-            bool : True si la mise à jour est réussie, False sinon
-        """
-        path_normalise = dossier_init.chemin.rstrip(os.sep)
-        try:
-            with DBConnection().connection as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT * FROM project.fichier WHERE (chemin LIKE %(path)s) "
-                        "AND (audit_id IS NOT NULL);",
-                        {"path": f"{path_normalise}/%"},
-                    )
-                    res = cursor.fetchall()
-        except Exception as e:
-            logger.error(e)
-            raise
-        if res:
-            logger.error("Tentative de modification de dossier déjà traité")
-            return False
-        else:
-            self.remove_dossier(dossier_init.chemin)
-            for fichier in dossier_nouv.liste_fichiers:
-                self.create_fichier(fichier)
-        return True

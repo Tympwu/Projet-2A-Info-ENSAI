@@ -133,7 +133,6 @@ class AuditDao(metaclass=Singleton):
         if res:
             dossier = Dossier(
                 nom="",  # A VOIR
-                chemin="",
                 signature_HMAC="",
                 liste_fichiers=FichierDao().find_by_audit(id_audit),
                 date_soumission=res["date_audit"],
@@ -178,7 +177,6 @@ class AuditDao(metaclass=Singleton):
             for row in res:
                 dossier = Dossier(
                     nom="",  # A VOIR
-                    chemin="",
                     signature_HMAC="",
                     liste_fichiers=FichierDao().find_by_audit(row["id"]),
                     date_soumission=row["date_audit"],
@@ -216,7 +214,6 @@ class AuditDao(metaclass=Singleton):
             for row in res:
                 dossier = Dossier(
                     nom="",  # A VOIR
-                    chemin="",
                     signature_HMAC="",
                     liste_fichiers=FichierDao().find_by_audit(row["id"]),
                     date_soumission=row["date_audit"],

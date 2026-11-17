@@ -27,7 +27,7 @@ class FichierModel(BaseModel):
     assurant une forme de donnée constante et valide durant les échanges avec l'API
     """
 
-    chemin: str
+    code: str
     extension: str
     complexite: int | None = None
     score: float | None = None
@@ -52,7 +52,7 @@ class FichierModel(BaseModel):
 
 class FichierReadModel(BaseModel):
     id: int
-    chemin: str
+    code: str
     extension: str
     complexite: int | None = None
     score: float | None = None
@@ -60,7 +60,7 @@ class FichierReadModel(BaseModel):
 
 
 class FichierSubmitModel(BaseModel):
-    chemin: str
+    code: str
     extension: str
     complexite: int | None = None
     score: float | None = None

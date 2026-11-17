@@ -20,9 +20,8 @@ class Fichier:
 
     Attributes:
         id (int): Identifiant unique du fichier.
-        chemin (str): Chemin d'accès au fichier.
-        extension (str): Extension du fichier, par exemple ".py"
-            (déduite du chemin).
+        code (str): code contenu dans le fichier.
+        extension (str): Extension du fichier, par exemple ".py".
         liste_vulnerabilites (list[Vulnerabilite] | None): Vulnérabilités
             détectées, ou None tant que l'analyse n'a pas eu lieu.
         liste_dependances (list[Dependances] | None): Dépendances
@@ -44,9 +43,10 @@ class Fichier:
 
     def __init__(
         self,
-        chemin: str,
+        code: str,
         id: int | None = None,
         extension: str | None = None,
+        nom_dossier: str | None = None,
         liste_vulnerabilites: list[Vulnerabilite] | None = None,
         liste_dependances: list[Dependances] | None = None,
         complexite: int | None = None,
@@ -58,7 +58,7 @@ class Fichier:
 
         Args:
             id (int): Identifiant unique du fichier.
-            chemin (str): Chemin d'accès au fichier.
+            code (str): Code contenu dans le fichier.
             liste_vulnerabilites (list[Vulnerabilite] | None): Vulnérabilités
                 détectées. None signifie « pas encore analysé », alors
                 qu'une liste vide signifie « analysé, rien trouvé ».
@@ -70,8 +70,8 @@ class Fichier:
             AST_analyse (ast.Module | None): Arbre syntaxique déjà construit.
         """
         self.id = id
-        self.chemin = chemin
-        self.extension = extension if extension else Path(chemin).suffix
+        self.code = code
+        self.extension = extension
         self.liste_vulnerabilites = liste_vulnerabilites
         self.liste_dependances = liste_dependances
         self.liste_anti_pattern = None
@@ -85,39 +85,8 @@ class Fichier:
 
         Returns:
             str: Le texte du fichier.
-
-        Raises:
-            FileNotFoundError: Si le fichier n'existe pas au chemin indiqué.
-            UnicodeDecodeError: Si le fichier n'est pas encodé en UTF-8.
         """
-        with open(self.chemin, encoding=self.ENCODAGE) as f:
-            return f.read()
-
-    def lire_ligne(self, ligne_voulue: int) -> str:
-        """Retourne une ligne précise du fichier.
-
-        Args:
-            ligne_voulue (int): Numéro de la ligne, en commençant à 1.
-
-        Returns:
-            str: Le contenu de la ligne demandée, sans le saut de ligne
-            final.
-
-        Raises:
-            ValueError: Si `ligne_voulue` est inférieur à 1.
-            IndexError: Si `ligne_voulue` dépasse le nombre de lignes
-                du fichier.
-            FileNotFoundError: Si le fichier n'existe pas au chemin indiqué.
-        """
-        if ligne_voulue < 1:
-            raise ValueError("ligne_voulue doit être supérieur ou égal à 1")
-
-        with open(self.chemin, encoding=self.ENCODAGE) as f:
-            for numero, ligne in enumerate(f, start=1):
-                if numero == ligne_voulue:
-                    return ligne.rstrip("\n")
-
-        raise IndexError(f"La ligne {ligne_voulue} n'existe pas dans {self.chemin}")
+        return self.code
 
     def obtenir_ast(self) -> ast.Module:
         """Retourne l'arbre syntaxique du fichier, en le construisant si besoin.
@@ -127,13 +96,12 @@ class Fichier:
 
         Raises:
             ValueError: Si le fichier n'est pas un fichier Python.
-            FileNotFoundError: Si le fichier n'existe pas au chemin indiqué.
             SyntaxError: Si le code Python du fichier est invalide.
         """
         if self.extension != ".py":
-            raise ValueError(f"{self.chemin} n'est pas un fichier Python : pas d'arbre syntaxique")
+            raise ValueError(f"Fichier(id ={self.id}) n'est pas un fichier Python : pas d'arbre syntaxique")
         if self.AST_analyse is None:
-            self.AST_analyse = ast.parse(self.lire_contenu(), filename=self.chemin)
+            self.AST_analyse = ast.parse(self.lire_contenu())
         return self.AST_analyse
 
     def obtenir_dependances_fichier(self) -> list[Dependances]:
@@ -148,10 +116,6 @@ class Fichier:
             list[Dependances]: Dépendances du fichier. Liste vide si le fichier
             n'est pas d'un type pris en charge, n'est pas lisible ou ne déclare
             rien d'externe.
-
-        Raises:
-            FileNotFoundError: Si le fichier n'existe pas au chemin indiqué (et
-                que les dépendances n'avaient pas encore été extraites).
         """
 
         if self.liste_dependances is None:
@@ -177,9 +141,8 @@ class Fichier:
             (`liste_dependances` vaut alors None).
 
         Raises:
-            FileNotFoundError: Si le fichier n'existe pas au chemin indiqué.
+            ValueError : Si le fichier est vide.
         """
-        nom_fichier = Path(self.chemin).name.lower()
         dependances: list[Dependances] | None = None
 
         try:
@@ -194,9 +157,9 @@ class Fichier:
                             noms.add(noeud.module.split(".")[0])
                 externes = [nom for nom in noms if nom not in sys.stdlib_module_names]
                 dependances = [Dependances(nom=nom, auteur=None, version=None) for nom in externes]
-            elif nom_fichier.startswith("requirements") and nom_fichier.endswith(".txt"):
+            elif self.extension == ".txt":
                 dependances = self._lire_exigences(self.lire_contenu().splitlines())
-            elif nom_fichier == "pyproject.toml":
+            elif self.extension == ".toml":
                 donnees = tomllib.loads(self.lire_contenu())
                 dependances = self._lire_exigences(
                     donnees.get("project", {}).get("dependencies", [])
@@ -256,7 +219,7 @@ class Fichier:
         """
         if self.liste_vulnerabilites is None:
             raise ValueError(
-                f"{self.chemin} n'a pas encore été analysé : impossible d'évaluer le risque"
+                f"Fichier(id = {self.id}) n'a pas encore été analysé : impossible d'évaluer le risque"
             )
         return any(v.est_critique() for v in self.liste_vulnerabilites)
 

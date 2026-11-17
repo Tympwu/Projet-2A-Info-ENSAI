@@ -62,12 +62,6 @@ class Manager_db(metaclass=Singleton):
             logger.info(e)
             raise
 
-        # Mis en commentaire car probablement utile et à réadapter mais pour l'instant ne peux pas fonctionner et empêche le reset de la base de données
-        # Apply password hashing to all players
-        # for p in PlayerDao().find_all():
-        #     p.password = hash_password(p.password, p.username)
-        #     PlayerDao().update(p)
-
         return True
 
     @log

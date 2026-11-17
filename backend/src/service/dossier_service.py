@@ -92,47 +92,14 @@ class DossierService:
             return None
 
     @log
-    def remove_dossier(self, path: str) -> bool:
-        """Supprime l'ensemble des fichiers contenus dans le dossier indiqué
-        Args:
-            path (str): Chemin d'accès au dossier
-        Returns:
-            bool : True si la suppression réussie, False sinon
-        """
-        return self.fichier_dao.remove_dossier(path)
-
-    @log
-    def update_dossier(self, path: str, dossier: Dossier) -> Dossier | None:
-        """Met à jour un dossier à l'adresse fourni, avec un nouveau dossier donné
-        Le dossier à mettre à jour ne doit pas avoir été traité i.e. ne doit pas avoir d'audit correspondant
-        Sinon, il faut plutôt recréer un dossier et un audit
-
-        Args:
-            path (str): Chemin d'accès à l'ancien dossier
-            dossier (Dossier): Nouvelles données qui remplaceront l'ancien dossier
-        Returns:
-            Dossier | None : Dossier modifiée, None si échec
-        Raises:
-            ValueError : L'adresse fourni du premier dossier n'est pas valide
-        """
-        dossier_init = self.fichier_dao.read_dossier(path)
-        if dossier_init:
-            if not self.fichier_dao.update_dossier(dossier_init, dossier_nouv=dossier):
-                return None
-            else:
-                return self.fichier_dao.read_dossier(dossier.chemin)
-        else:
-            raise ValueError("L'adresse fourni du premier dossier n'est pas valide")
-
-    @log
-    def consulter_dossier(self, path: str) -> Dossier | None:
+    def consulter_dossier(self, id_audit: int) -> Dossier | None:
         """Renvoie un objet de type dossier correspondant à l'ensemble des fichiers stockés à cet endroit
         Args:
-            path (str): Chemin d'accès au dossier
+            id_audit (int): Audit contenant le dossier
         Returns:
-            Dossier | None : Dossier contenant toutes les informations des fichiers issus de ce chemin, None si aucun
+            Dossier | None : Dossier contenant toutes les informations des fichiers issus de cet audit, None si aucun
         """
-        return self.fichier_dao.read_dossier(path)
+        return self.fichier_dao.read_dossier(id_audit)
 
     @log
     def traiter_emission_dossier(self, audit: Audit, n: int = 500) -> Audit:
