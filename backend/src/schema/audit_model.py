@@ -11,7 +11,6 @@ class DossierSubmitSchema(BaseModel):
     """
 
     nom: str
-    chemin: str
     liste_fichiers: list[FichierSubmitModel]
 
 
@@ -21,7 +20,6 @@ class DossierSchema(BaseModel):
     """
 
     nom: str
-    chemin: str
     date_soumission: datetime.datetime | None = None
     liste_fichiers: list[FichierReadModel] = []
 
@@ -34,7 +32,7 @@ class AuditModel(BaseModel):
     """
 
     statut: str = "créé"
-    dossier_chemin: str
+    liste_fichier: list[int]
 
 
 class AuditReadModel(BaseModel):

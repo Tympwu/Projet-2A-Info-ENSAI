@@ -63,9 +63,8 @@ async def create_audit(a: AuditModel, audit_service=Depends(get_audit_service)):
     """
     logger.info("Création d'un audit")
     try:
-        audit = audit_service.create_audit(a.dossier_chemin)
+        audit = audit_service.create_audit(a.liste_fichier)
     except ValueError:
-        print("hi")
         raise HTTPException(status_code=500, detail="Erreur d'analyse des anti-patterns")
     except ArithmeticError:
         raise HTTPException(status_code=500, detail="Erreur de calcul final des données")

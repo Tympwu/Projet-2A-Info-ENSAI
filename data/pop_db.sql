@@ -12,7 +12,7 @@ INSERT INTO Audit(utilisateur_id, date_audit, statut, score, emissionCO2) VALUES
 (3, '06/30/2031', 'refusé', 7   , 90.63),
 (3, '06/30/2031', 'validé', 2   , 82.67);
 
-INSERT INTO Fichier(audit_id, chemin, extension, score, complexite, emissionCO2) VALUES
+INSERT INTO Fichier(audit_id, code, extension, score, complexite, emissionCO2) VALUES
 (1, 'a', '.py'  , NULL , NULL, NULL ),
 (2, 'b', '.lock', 100  , NULL, NULL ),
 (2, 'c', '.py'  , 97.8 , NULL, NULL ),

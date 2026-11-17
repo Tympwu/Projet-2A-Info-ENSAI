@@ -84,7 +84,7 @@ async def create_fichier(fichier: FichierSubmitModel, dossier_service=Depends(ge
     """
     logger.info("Création d'un fichier")
     nouv_fichier = dossier_service.create_fichier(
-        Fichier(chemin=fichier.chemin, extension=fichier.extension)
+        Fichier(code=fichier.code, extension=fichier.extension)
     )
     if nouv_fichier is None:
         raise HTTPException(status_code=500, detail="Echec de la création du fichier")
@@ -113,7 +113,7 @@ async def update_fichier(
 
     fichier_nouv = dossier_service.update_fichier(
         Fichier(
-            chemin=fichier.chemin,
+            code=fichier.code,
             id=id_fichier,
             extension=fichier.extension,
             complexite=fichier.complexite,
@@ -149,80 +149,3 @@ async def find_by_utilisateur(id_utilisateur: int, dossier_service=Depends(get_d
         raise HTTPException(status_code=500, detail="Utilisateur introuvable")
     return fichiers
 
-
-@router.delete("/dossier/{chemin_dossier:path}", tags=["Dossier"])
-async def remove_dossier(chemin_dossier: str, dossier_service=Depends(get_dossier_service)):
-    """Supprime un dossier du système et ce qu'il contient en se basant sur son chemin d'accès.
-    Args:
-        chemin_dossier (str)
-        dossier_service (DossierService): Le service utilisé pour intéragir avec les données des dossiers et fichiers.
-    Returns:
-        str: Un message de confirmation indiquant que le dossier a bien été supprimé.
-    Raises:
-        HTTPException: Erreur 404 si le dossier n'est pas trouvé.
-    """
-    logger.info("Retrait d'un dossier")
-    success = dossier_service.remove_dossier(chemin_dossier)
-    if not success:
-        raise HTTPException(status_code=404, detail=f"Dosser(path={chemin_dossier}) introuvable")
-    else:
-        return "Dossier supprimé"
-
-
-@router.post("/dossier/{chemin_dossier:path}", response_model=DossierSchema, tags=["Dossier"])
-async def update_dossier(
-    chemin_dossier: str, dossier: DossierSubmitSchema, dossier_service=Depends(get_dossier_service)
-):
-    """Met à jour un dossier du système en se basant sur son chemin d'accès
-    Args:
-        chemin_dossier (str): chemin d'accès du dossier à mettre à jour
-        dossier (DossierSubmitSchema): Données utilisées pour mettre à jour le dossier voulu
-        dossier_service (DossierService): Service permettant de manipuler les données liés aux dossiers
-    Returns:
-        DossierSchema : Dossier avec les données mise à jour
-    Raises:
-        HTTPException: Erreur 404 si le dossier n'est pas trouvé.
-        HTTPException: Erreur 500 si le processus échoue
-    """
-    logger.info("Mise à jour d'un dossier")
-    dossier_init = dossier_service.consulter_dossier(chemin_dossier)
-    if not dossier_init:
-        raise HTTPException(status_code=404, detail=f"Dossier (path={chemin_dossier}) introuvable.")
-
-    liste_fichiers = []
-    for fichier in dossier.liste_fichiers:
-        liste_fichiers.append(Fichier(chemin=fichier.chemin, extension=fichier.extension, complexite=fichier.complexite, score=fichier.score, emissionCO2=fichier.emissionCO2))
-    dossier_nouv = dossier_service.update_dossier(
-        chemin_dossier,
-        Dossier(
-            nom=dossier.nom,
-            chemin=dossier.chemin,
-            liste_fichiers=liste_fichiers,
-            date_soumission=datetime.today(),
-        ),
-    )
-    if not dossier_nouv:
-        raise HTTPException(
-            status_code=500,
-            detail="Erreur lors de la mise à jour des données. Potentiellement le dossier à déjà été analysé et ne peut pas être modifié dans ce cas.",
-        )
-
-    return dossier_nouv
-
-
-@router.get("/dossier/{chemin_dossier:path}", response_model=DossierSchema, tags=["Dossier"])
-async def read_dossier(chemin_dossier: str, dossier_service=Depends(get_dossier_service)):
-    """Trouve un dossier en fonction de son chemin d'accès.
-    Args:
-        chemin_dossier (str) : chemin d'accès du dossier recherché
-        dossier_service (DossierService): Le service utilisé pour interagir avec les données des fichiers et dossiers
-    Returns:
-        DossierSchema: Les données du fichier si trouvé
-    Raises:
-        HTTPException: Erreur 404 si le dossier n'est pas trouvé
-    """
-    logger.info("Recherche d'un dossier par son ID")
-    dossier = dossier_service.consulter_dossier(chemin_dossier)
-    if not dossier:
-        raise HTTPException(status_code=404, detail="Dossier introuvable")
-    return dossier
