@@ -13,7 +13,7 @@ from service.dossier_service import DossierService
 from utils.log_utils import log
 from utils.singleton import Singleton
 
-EXTENSIONS_AUTORISEES = {".py", ".txt", ".toml"}
+EXTENSIONS_AUTORISEES = {".py", ".txt", ".toml", ".lock"}
 TAILLE_MAX_ZIP = 50 * 1024 * 1024  # 50 Mo décompressés (protection contre les zip bombs)
 
 
@@ -172,12 +172,18 @@ class AuditService(metaclass=Singleton):
         Raises:
             ValueError: Échec dans l'analyse de l'audit
         """
+        compteur_fichier_analyse = 0
         if self.current_audit is None:
             raise ValueError("Il n'y a pas d'audit en mémoire")
         for fichier in self.current_audit.dossier.liste_fichiers:
-            self.analyse_fichier.estimer_emission_fichier(fichier, taille_reference=nb_entree)
+            if fichier.extension == ".py":
+                compteur_fichier_analyse += 1
+                self.analyse_fichier.estimer_emission_fichier(fichier, taille_reference=nb_entree)
+        if compteur_fichier_analyse == 0:
+            raise ValueError("Pas de fichier possible à analyser")
         try:
             self.current_audit.lancer(CO2=True)
         except ValueError:
+            print("hi 3")
             raise ValueError("Échec dans l'analyse de l'audit")
         return self.current_audit

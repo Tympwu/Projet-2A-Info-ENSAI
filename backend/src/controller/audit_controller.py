@@ -7,8 +7,6 @@ from service.audit_service import AuditService
 from utils.log_utils import get_logger
 from utils.security import preparer_contenu_hmac, verifier_hmac
 
-print(">>> audit_controller chargé depuis :", __file__)
-
 router = APIRouter()
 
 logger = get_logger(__name__)
@@ -120,9 +118,15 @@ async def detail_audit(taille_entree: int = 500, audit_service=Depends(get_audit
     ----
         taille_entree (int) : Taille de l'entrée utilisé pour estimer les emissions de CO2
         audit_service (AuditService) : Service utilisé pour intéragir avec les données de l'audit
+    Raises
+    ------
+        HTTPException: Erreur 500 si l'audit ne peut pas être analysé
     Returns
     -------
         Audit : Audit analysé vis-à-vis de la complexité et de l'émission
     """
-    audit = audit_service.analyse_CO2_audit(nb_entree=taille_entree)
+    try:
+        audit = audit_service.analyse_CO2_audit(nb_entree=taille_entree)
+    except ValueError:
+        raise HTTPException(status_code=500, detail="Erreur lors de l'analyse.\nCela peut provenir d'une absence d'audit en mémoire, de fichiers incompatibles ou d'erreur d'analyse.") from ValueError
     return audit
