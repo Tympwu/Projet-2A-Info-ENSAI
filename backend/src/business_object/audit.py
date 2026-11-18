@@ -105,7 +105,7 @@ class Audit:
             if f.complexite is not None
         }
 
-    def lancer(self) -> bool:
+    def lancer(self, CO2 = False) -> bool:
         """
         Exécute l'audit du dossier.
 
@@ -119,6 +119,9 @@ class Audit:
 
     Les émissions de CO2 totales sont également calculées si tous les
     fichiers possèdent une valeur d'émission.
+    Args
+    ----
+    CO2 (bool) = False: Si le calcul du CO2 doit être pris en compte ou pas
 
     Returns
     -------
@@ -144,16 +147,16 @@ class Audit:
                 self.statut = "validé"
             else:
                 self.statut = "refusé"
+            if CO2:
+                if any(f.emissionCO2 is None for f in fichiers):
+                    raise ValueError(
+                        "Impossible de calculer les émissions totales : "
+                        "les émissions de certains fichiers ne sont pas calculées."
+                    )
 
-            if any(f.emissionCO2 is None for f in fichiers):
-                raise ValueError(
-                    "Impossible de calculer les émissions totales : "
-                    "les émissions de certains fichiers ne sont pas calculées."
+                self.emissionCO2_total = sum(
+                    f.emissionCO2 for f in fichiers
                 )
-
-            self.emissionCO2_total = sum(
-                f.emissionCO2 for f in fichiers
-            )
 
             return True
 

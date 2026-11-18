@@ -48,33 +48,6 @@ async def consulter_audit(id_audit: int, audit_service=Depends(get_audit_service
     return audit
 
 
-@router.post("/", response_model=AuditReadModel, tags=["Audits"])
-async def create_audit(dossier, audit_service=Depends(get_audit_service)):
-    """Créer un nouvel audit. Il faut au préalable avoir créé les fichiers contenu dans cet audit
-    Args:
-        dossier : Dossier contenant les fichiers à analyser.
-        audit_service (AuditService): Le service utilisé pour intéragir avec les données de l'audit.
-    Returns:
-        AuditReadModel: Les données de l'audit nouvellement créé.
-    Raises:
-        HTTPException: Erreur 500 Erreur de lecture des fichiers.
-        HTTPException: Erreur 500 Erreur d'analyse des anti-patterns
-        HTTPException: Erreur 500 Erreur de calcul final des données
-    """
-    logger.info("Création d'un audit")
-    print("hi")
-    try:
-        audit = audit_service.create_audit(dossier)
-    except ValueError:
-        raise HTTPException(status_code=500, detail="Erreur d'analyse des anti-patterns")
-    except ArithmeticError:
-        raise HTTPException(status_code=500, detail="Erreur de calcul final des données")
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="Erreur de lecture des fichiers.")
-
-    return audit
-
-
 @router.delete("/{id_audit}", tags=["Audits"])
 async def remove_audit(id_audit: int, audit_service=Depends(get_audit_service)):
     """Supprime un audit du système.
@@ -128,7 +101,7 @@ async def start_audit(
         raise HTTPException(status_code=403, detail="Signature HMAC invalide.")
 
     # 4. Restaurer les fichiers après lecture
-    for fichier, (_, donnees) in zip(liste_fichier, fichiers_recus): 
+    for fichier, (_, donnees) in zip(liste_fichier, fichiers_recus):
         fichier.file = BytesIO(donnees)
 
     # 5. Lancer le traitement uniquement si la signature est valide
@@ -137,4 +110,22 @@ async def start_audit(
     dossier = audit_service.create_dossier(liste_fichier)
     audit = audit_service.create_audit(dossier)
 
+    return audit
+
+
+@router.post("/detail_audit", tags=["Audits"])
+async def detail_audit(
+    id_audit: int, taille_entree: int = 500, audit_service=Depends(get_audit_service)
+):
+    """Continue l'analyse de l'audit en proposant une analyse de la complexité et de l'émission de CO2
+    Args
+    ----
+        id_audit (int) : ID de l'audit à analyser
+        taille_entree (int) : Taille de l'entrée utilisé pour estimer les emissions de CO2
+        audit_service (AuditService) : Service utilisé pour intéragir avec les données de l'audit
+    Returns
+    -------
+        Audit : Audit analysé vis-à-vis de la complexité et de l'émission
+    """
+    audit = audit_service.find_audit(id_audit, taille_entree)
     return audit
