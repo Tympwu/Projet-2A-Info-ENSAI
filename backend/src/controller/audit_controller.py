@@ -92,14 +92,14 @@ async def start_audit(
     try:
         contenu = preparer_contenu_hmac(fichiers_recus)
     except ValueError as erreur:
-        raise HTTPException(status_code=400, detail=str(erreur))
+        raise HTTPException(status_code=400, detail=str(erreur)) from ValueError
 
     # 3. Vérifier la signature HMAC
     if not verifier_hmac(contenu, x_hmac_signature):
         raise HTTPException(status_code=403, detail="Signature HMAC invalide.")
 
     # 4. Restaurer les fichiers après lecture
-    for fichier, (_, donnees) in zip(liste_fichier, fichiers_recus):
+    for fichier, (_, donnees) in zip(liste_fichier, fichiers_recus, strict=False):
         fichier.file = BytesIO(donnees)
 
     # 5. Lancer le traitement uniquement si la signature est valide

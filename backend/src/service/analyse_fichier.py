@@ -253,13 +253,13 @@ class Analyse_fichier:
             try:
                 self.puissance_machine = float(puissance)
             except ValueError:
-                raise ValueError("PUISSANCE_MACHINE_W doit être un nombre.")
+                raise ValueError("PUISSANCE_MACHINE_W doit être un nombre.") from ValueError
         intensite = os.getenv("INTENSITE_CARBONE_G_KWH")
         if intensite:
             try:
                 self.intensite_carbone = float(intensite)
             except ValueError:
-                raise ValueError("INTENSITE_CARBONE_G_KWH doit être un nombre.")
+                raise ValueError("INTENSITE_CARBONE_G_KWH doit être un nombre.") from ValueError
 
     def analyser_complexite_code(self, fichier: Fichier) -> int | None:
         """

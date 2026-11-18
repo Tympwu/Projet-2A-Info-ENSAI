@@ -166,7 +166,7 @@ class DossierService:
             # Si le fichier n'est pas trouvé
             except FileNotFoundError:
                 logger.error("Fichier de l'audit introuvable")
-                raise FileNotFoundError("Le fichier est introuvable")
+                raise FileNotFoundError("Le fichier est introuvable") from FileNotFoundError
             print("étape 1 OK")
 
             if fichier.extension == ".py":
@@ -190,7 +190,7 @@ class DossierService:
             audit.lancer()
         except ValueError:
             logger.error("Erreur lors du calcul général de l'audit")
-            raise ArithmeticError("Erreur lors du calcul général de l'audit")
+            raise ArithmeticError("Erreur lors du calcul général de l'audit") from ValueError
         print("etape 4 OK")
 
         # Enregistrement de l'audit dans la base de donnée
