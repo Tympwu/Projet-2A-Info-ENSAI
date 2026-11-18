@@ -1,6 +1,6 @@
 INSERT INTO Utilisateurs(mot_de_passe, name, email) VALUES
-('azerty', 'jacques', 'jacques@ensai.fr'),
 ('admin' , 'admin'  , 'admin@ensai.fr'  ),
+('azerty', 'jacques', 'jacques@ensai.fr'),
 ('a'     , 'jean'   , 'jean@ensai.fr'   );
 
 INSERT INTO Audit(utilisateur_id, date_audit, statut, score, emissionCO2) VALUES
