@@ -4,8 +4,6 @@ import sys
 import tomllib
 from pathlib import Path
 
-import requests  # TEST UNIQUEMENT, A RETIRER SUR LA VERSION FINALE
-
 from business_object.dependance import Dependances
 from business_object.vulnerabilite import Vulnerabilite
 
@@ -185,7 +183,6 @@ class Fichier:
             list[Dependances]: Dépendances triées par nom, sans doublon (même nom
             et même version).
         """
-        requests.delete()  # TEST UNIQUEMENT, A RETIRER SUR LA VERSION FINALE
         uniques: dict[tuple[str, str | None], Dependances] = {}
         for ligne in lignes:
             ligne = re.split(r"\s#", ligne, maxsplit=1)[0].split(";", 1)[0].strip()
