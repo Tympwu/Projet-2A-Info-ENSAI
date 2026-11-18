@@ -27,17 +27,18 @@ if st.button("Lancer l'analyse", type="primary"):
         )
     if reponse and reponse["status_code"] == 200:
         st.session_state["emissions"] = reponse["data"]
+
+        emissions = st.session_state.get("emissions")
+        if emissions and emissions["id"] == audit_id:
+            st.divider()
+            st.metric("Émissions de CO₂ totales", f"{(emissions['emissionCO2_total'] or 0):.2f}")
+            st.subheader("Détail par fichier")
+            st.dataframe(pd.DataFrame(emissions["dossier"]["liste_fichiers"]), use_container_width=True)
     else:
         code = reponse["status_code"] if reponse else "aucune réponse"
-        logger.error(f"Échec de l'analyse CO2 : {code}")
-        st.error(f"L'analyse a échoué (code {code}).")
-
-emissions = st.session_state.get("emissions")
-if emissions and emissions["id"] == audit_id:
-    st.divider()
-    st.metric("Émissions de CO₂ totales", f"{(emissions['emissionCO2_total'] or 0):.2f}")
-    st.subheader("Détail par fichier")
-    st.dataframe(pd.DataFrame(emissions["dossier"]["liste_fichiers"]), use_container_width=True)
+        reason = reponse["data"]["detail"]
+        logger.error(f"Échec de l'analyse CO2 : {code}\n{reason}")
+        st.error(f"L'analyse a échoué (code {code}).\n\n Raison :\n{reason}")
 
 st.divider()
 if st.button("Retour au nouvel audit"):
