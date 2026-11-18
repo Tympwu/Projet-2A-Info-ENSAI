@@ -191,7 +191,12 @@ class DossierService:
             logger.error("Erreur lors du calcul général de l'audit")
             raise ArithmeticError("Erreur lors du calcul général de l'audit")
         print("etape 6 OK")
-        print(audit.score)
+
+        # Enregistrement de l'audit dans la base de donnée
+        if not self.audit_dao.update_audit(audit):
+            raise ValueError("Erreur lors du stockage dans la base de donnée")
+        print("etape 7 OK")
+
         return audit
 
     @log

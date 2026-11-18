@@ -50,8 +50,8 @@ class AuditDao(metaclass=Singleton):
 
     @log
     def update_audit(self, audit: Audit) -> bool:
-        """Met à jour un Audit existant
-        Arguments :
+        """Met à jour un Audit existant en se basant sur l'ID
+        Args:
             audit (Audit) : Audit à mettre à jour
         Returns:
             True si la mise à jour réussie, False sinon
@@ -79,7 +79,8 @@ class AuditDao(metaclass=Singleton):
         except Exception as e:
             logger.error(e)
             raise
-
+        for fichier in audit.dossier.liste_fichiers:
+            FichierDao().update_fichier(fichier, id_audit=audit.id)
         return nb_affected_rows == 1
 
     @log
