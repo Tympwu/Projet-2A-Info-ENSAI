@@ -114,19 +114,15 @@ async def start_audit(
 
 
 @router.post("/detail_audit", tags=["Audits"])
-async def detail_audit(
-    id_audit: int, taille_entree: int = 500, audit_service=Depends(get_audit_service)
-):
+async def detail_audit(taille_entree: int = 500, audit_service=Depends(get_audit_service)):
     """Continue l'analyse de l'audit en proposant une analyse de la complexité et de l'émission de CO2
     Args
     ----
-        id_audit (int) : ID de l'audit à analyser
         taille_entree (int) : Taille de l'entrée utilisé pour estimer les emissions de CO2
         audit_service (AuditService) : Service utilisé pour intéragir avec les données de l'audit
     Returns
     -------
         Audit : Audit analysé vis-à-vis de la complexité et de l'émission
     """
-    audit = audit_service.find_audit(id_audit)
-    audit = audit_service.analyse_CO2_audit(audit, nb_entree=taille_entree)
+    audit = audit_service.analyse_CO2_audit(nb_entree=taille_entree)
     return audit

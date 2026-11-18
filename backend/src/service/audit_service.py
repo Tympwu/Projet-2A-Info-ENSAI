@@ -8,15 +8,16 @@ from business_object.audit import Audit
 from business_object.dossier import Dossier
 from business_object.fichier import Fichier
 from dao.audit_dao import AuditDao
-from service.dossier_service import DossierService
 from service.analyse_fichier import Analyse_fichier
+from service.dossier_service import DossierService
 from utils.log_utils import log
+from utils.singleton import Singleton
 
 EXTENSIONS_AUTORISEES = {".py", ".txt", ".toml"}
 TAILLE_MAX_ZIP = 50 * 1024 * 1024  # 50 Mo décompressés (protection contre les zip bombs)
 
 
-class AuditService:
+class AuditService(metaclass=Singleton):
     """Gère la consultation et la suppression de l'audit d'un utilisateur."""
 
     def __init__(self):
@@ -28,6 +29,7 @@ class AuditService:
         self.audit_dao = AuditDao()
         self.dossier_service = DossierService()
         self.analyse_fichier = Analyse_fichier()
+        self.current_audit = None
 
     @log
     def find_audit(self, id_audit: int) -> Audit | None:
@@ -56,7 +58,8 @@ class AuditService:
         """
         if not dossier:
             raise ValueError("Dossier introuvable")
-        return self.dossier_service.traiter_dossier(dossier)
+        self.current_audit = self.dossier_service.traiter_dossier(dossier)
+        return self.current_audit
 
     @log
     def remove_audit(self, id_audit: int) -> bool:
@@ -159,20 +162,22 @@ class AuditService:
                     shutil.copyfileobj(source, sortie)
 
     @log
-    def analyse_CO2_audit(self, audit: Audit, nb_entree) -> Audit:
+    def analyse_CO2_audit(self, nb_entree: int) -> Audit:
         """Analyse approfondie de l'audit pour le CO2 et la complexité
 
         Args:
-            audit (Audit): Audit à continuer d'analyser
+            nb_entree (int): Taille de l'entrée à utiliser pour calculer les émissions
         Returns:
             Audit: L'audit analysé en profondeur
         Raises:
             ValueError: Échec dans l'analyse de l'audit
         """
-        for fichier in audit.dossier.liste_fichiers:
+        if self.current_audit is None:
+            raise ValueError("Il n'y a pas d'audit en mémoire")
+        for fichier in self.current_audit.dossier.liste_fichiers:
             self.analyse_fichier.estimer_emission_fichier(fichier, taille_reference=nb_entree)
         try:
-            audit.lancer(CO2=True)
+            self.current_audit.lancer(CO2=True)
         except ValueError:
             raise ValueError("Échec dans l'analyse de l'audit")
-        return audit
+        return self.current_audit

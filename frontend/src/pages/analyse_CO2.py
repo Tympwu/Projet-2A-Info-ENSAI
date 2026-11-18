@@ -33,11 +33,11 @@ if st.button("Lancer l'analyse", type="primary"):
         st.error(f"L'analyse a échoué (code {code}).")
 
 emissions = st.session_state.get("emissions")
-if emissions and emissions.get("audit_id") == audit_id:
+if emissions and emissions["id"] == audit_id:
     st.divider()
     st.metric("Émissions de CO₂ totales", f"{(emissions['emissionCO2_total'] or 0):.2f}")
     st.subheader("Détail par fichier")
-    st.dataframe(pd.DataFrame(emissions["fichiers"]), use_container_width=True)
+    st.dataframe(pd.DataFrame(emissions["dossier"]["liste_fichiers"]), use_container_width=True)
 
 st.divider()
 if st.button("Retour au nouvel audit"):
