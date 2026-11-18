@@ -189,6 +189,7 @@ class DossierService:
             logger.error("Erreur lors du calcul général de l'audit")
             raise ArithmeticError("Erreur lors du calcul général de l'audit")
         print("etape 6 OK")
+        print(audit.score)
         return audit
 
     @log

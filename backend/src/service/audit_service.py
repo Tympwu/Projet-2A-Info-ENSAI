@@ -41,7 +41,7 @@ class AuditService:
         return audit
 
     @log
-    def create_audit(self, chemin_dossier: str) -> Audit:
+    def create_audit(self, dossier) -> Audit:
         """Créer un audit en se basant sur le chemin d'accès du dossier
 
         Args:
@@ -52,7 +52,6 @@ class AuditService:
         Raises:
             ValueError: Le chemin indiqué ne mène à aucun dossier
         """
-        dossier = self.dossier_service.consulter_dossier(chemin_dossier)
         if not dossier:
             raise ValueError("Dossier introuvable")
         return self.dossier_service.traiter_dossier(dossier)
@@ -131,7 +130,7 @@ class AuditService:
             liste_fichiers=fichiers,
             date_soumission=datetime.today(),
         )
-        return self.dossier_service.traiter_dossier(dossier)
+        return dossier
 
     def _extraire_zip(self, flux, destination: Path) -> None:
         """Extrait une archive zip dans le dossier de destination, de façon sécurisée."""

@@ -417,7 +417,6 @@ class Analyse_fichier:
         except (ValueError, SyntaxError, UnicodeDecodeError):
             # Si le fichier n'est pas Python, contient une erreur de syntaxe
             # ou ne peut pas être lu, on ne peut pas faire l'analyse.
-            print("Haha !")
             return None
 
         # On crée un analyseur neuf pour ce fichier.
@@ -481,9 +480,7 @@ class Analyse_fichier:
                 if dependance.version is None:
                     logger.warning("Dépendance %s : version inconnue.", dependance.nom)
 
-                print(dependance.nom)
                 for fiche in self._interroger_osv(dependance):
-                    print(fiche)
                     score = self._score_vulnerabilite(fiche)
                     identifiant = fiche.get("id", "identifiant inconnu")
                     if score is None:
@@ -543,7 +540,6 @@ class Analyse_fichier:
             )
             with urllib.request.urlopen(requete, timeout=self.TIMEOUT_OSV) as reponse:
                 donnees = json.load(reponse)
-                print(donnees)
             fiches.extend(donnees.get("vulns", []))
             jeton = donnees.get("next_page_token")
             if not jeton:

@@ -2,7 +2,7 @@ from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
 
-from schema.audit_model import AuditModel, AuditReadModel
+from schema.audit_model import AuditModel, AuditReadModel, DossierSchema
 from service.audit_service import AuditService
 from utils.log_utils import get_logger
 from utils.security import preparer_contenu_hmac, verifier_hmac
@@ -49,10 +49,10 @@ async def consulter_audit(id_audit: int, audit_service=Depends(get_audit_service
 
 
 @router.post("/", response_model=AuditReadModel, tags=["Audits"])
-async def create_audit(a: AuditModel, audit_service=Depends(get_audit_service)):
+async def create_audit(dossier, audit_service=Depends(get_audit_service)):
     """Créer un nouvel audit. Il faut au préalable avoir créé les fichiers contenu dans cet audit
     Args:
-        a (AuditReadModel): Les données de l'audit à créer.
+        dossier : Dossier contenant les fichiers à analyser.
         audit_service (AuditService): Le service utilisé pour intéragir avec les données de l'audit.
     Returns:
         AuditReadModel: Les données de l'audit nouvellement créé.
@@ -62,8 +62,9 @@ async def create_audit(a: AuditModel, audit_service=Depends(get_audit_service)):
         HTTPException: Erreur 500 Erreur de calcul final des données
     """
     logger.info("Création d'un audit")
+    print("hi")
     try:
-        audit = audit_service.create_audit(a.liste_fichier)
+        audit = audit_service.create_audit(dossier)
     except ValueError:
         raise HTTPException(status_code=500, detail="Erreur d'analyse des anti-patterns")
     except ArithmeticError:
@@ -138,6 +139,7 @@ async def start_audit(
     # 5. Lancer le traitement uniquement si la signature est valide
     logger.info("Signature HMAC valide. Création du dossier.")
 
-    audit_service.create_dossier(liste_fichier)
+    dossier = audit_service.create_dossier(liste_fichier)
+    audit = audit_service.create_audit(dossier)
 
-    return "Signature vérifiée. Dossier créé."
+    return audit
