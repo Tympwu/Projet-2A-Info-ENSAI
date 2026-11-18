@@ -1,12 +1,9 @@
 # controller/historique_controller.py
 
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from business_object.dossier import Dossier
 from business_object.fichier import Fichier
-from schema.audit_model import DossierSchema, DossierSubmitSchema
 from schema.fichier_model import FichierReadModel, FichierSubmitModel
 from service.dossier_service import DossierService
 from utils.log_utils import get_logger
@@ -21,7 +18,7 @@ def get_dossier_service():
     return DossierService()
 
 
-@router.get("/fichier", response_model=list[FichierReadModel], tags=["Fichier"])
+@router.get("/", response_model=list[FichierReadModel], tags=["Fichier"])
 async def find_all_fichier(dossier_service=Depends(get_dossier_service)):
     """Liste tous les fichiers de la base de donnée.
     Args:
@@ -34,7 +31,7 @@ async def find_all_fichier(dossier_service=Depends(get_dossier_service)):
     return fichier_list
 
 
-@router.get("/fichier/{id_fichier}", response_model=FichierReadModel, tags=["Fichier"])
+@router.get("/{id_fichier}", response_model=FichierReadModel, tags=["Fichier"])
 async def find_fichier(id_fichier: int, dossier_service=Depends(get_dossier_service)):
     """Trouve un fichier en fonction de son ID.
     Args:
@@ -52,7 +49,7 @@ async def find_fichier(id_fichier: int, dossier_service=Depends(get_dossier_serv
     return fichier
 
 
-@router.delete("/fichier/{id_fichier}", tags=["Fichier"])
+@router.delete("/{id_fichier}", tags=["Fichier"])
 async def remove_fichier(id_fichier: int, dossier_service=Depends(get_dossier_service)):
     """Supprime un fichier du système en se basant sur son ID.
     Args:
@@ -71,7 +68,7 @@ async def remove_fichier(id_fichier: int, dossier_service=Depends(get_dossier_se
         return "Fichier supprimé"
 
 
-@router.post("/fichier", response_model=FichierReadModel, tags=["Fichier"])
+@router.post("/", response_model=FichierReadModel, tags=["Fichier"])
 async def create_fichier(fichier: FichierSubmitModel, dossier_service=Depends(get_dossier_service)):
     """Créer un fichier
     Args:
@@ -92,7 +89,7 @@ async def create_fichier(fichier: FichierSubmitModel, dossier_service=Depends(ge
         return nouv_fichier
 
 
-@router.post("/fichier/{id_fichier}", response_model=FichierReadModel, tags=["Fichier"])
+@router.post("/{id_fichier}", response_model=FichierReadModel, tags=["Fichier"])
 async def update_fichier(
     id_fichier: int, fichier: FichierSubmitModel, dossier_service=Depends(get_dossier_service)
 ):
@@ -130,9 +127,7 @@ async def update_fichier(
     return fichier_nouv
 
 
-@router.get(
-    "/fichier_by_user/{id_utilisateur}", response_model=list[FichierReadModel], tags=["Fichier"]
-)
+@router.get("/{id_utilisateur}", response_model=list[FichierReadModel], tags=["Fichier"])
 async def find_by_utilisateur(id_utilisateur: int, dossier_service=Depends(get_dossier_service)):
     """Trouve une liste de fichiers en fonction de l'ID d'un utilisateur.
     Args:
@@ -148,4 +143,3 @@ async def find_by_utilisateur(id_utilisateur: int, dossier_service=Depends(get_d
     if fichiers is None:
         raise HTTPException(status_code=500, detail="Utilisateur introuvable")
     return fichiers
-
