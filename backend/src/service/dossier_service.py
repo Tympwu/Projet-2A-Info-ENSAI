@@ -112,7 +112,9 @@ class DossierService:
         """
         audit.emissionCO2_total = 0
         for fichier in audit.dossier.liste_fichiers:
-            fichier.emissionCO2 = self.analyse_fichier.calculer_emissionCO2e(fichier, nb_operations=n)
+            fichier.emissionCO2 = self.analyse_fichier.calculer_emissionCO2e(
+                fichier, nb_operations=n
+            )
             if isinstance(fichier.emissionCO2):
                 audit.emissionCO2_total += fichier.emissionCO2
         if audit.emissionCO2_total == 0:
@@ -165,7 +167,9 @@ class DossierService:
             except FileNotFoundError:
                 logger.error("Fichier de l'audit introuvable")
                 raise FileNotFoundError("Le fichier est introuvable")
-            print("etape 3 OK", fichier.liste_dependances[0].nom, fichier.liste_dependances[0].version)
+            print(
+                "etape 3 OK", fichier.liste_dependances[0].nom, fichier.liste_dependances[0].version
+            )
 
             # Analyse des anti_patterns
             anti_pattern = self.analyse_fichier.detecter_anti_patterns(fichier)

@@ -108,7 +108,9 @@ class AuditService:
                         shutil.copyfileobj(upload.file, sortie)
 
             chemins = sorted(
-                p for p in dossier_temp.rglob("*") if p.is_file() and p.suffix in EXTENSIONS_AUTORISEES
+                p
+                for p in dossier_temp.rglob("*")
+                if p.is_file() and p.suffix in EXTENSIONS_AUTORISEES
             )
             for chemin in chemins:
                 try:

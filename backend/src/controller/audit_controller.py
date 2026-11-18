@@ -2,7 +2,7 @@ from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
 
-from schema.audit_model import AuditModel, AuditReadModel, DossierSchema
+from schema.audit_model import AuditReadModel
 from service.audit_service import AuditService
 from utils.log_utils import get_logger
 from utils.security import preparer_contenu_hmac, verifier_hmac
@@ -98,6 +98,7 @@ async def remove_audit(id_audit: int, audit_service=Depends(get_audit_service)):
     else:
         return f"Audit {audit.id} supprimé"
 
+
 @router.post("/start_audit", tags=["Audits"])
 async def start_audit(
     liste_fichier: list[UploadFile] = File(...),
@@ -112,10 +113,7 @@ async def start_audit(
     # 1. Lire les fichiers envoyés par le frontend
     for fichier in liste_fichier:
         if not fichier.filename:
-            raise HTTPException(
-            status_code=400,
-            detail="Nom de fichier manquant."
-        )
+            raise HTTPException(status_code=400, detail="Nom de fichier manquant.")
 
         donnees = await fichier.read()
         fichiers_recus.append((fichier.filename, donnees))
@@ -127,13 +125,10 @@ async def start_audit(
 
     # 3. Vérifier la signature HMAC
     if not verifier_hmac(contenu, x_hmac_signature):
-        raise HTTPException(
-            status_code=403,
-            detail="Signature HMAC invalide."
-        )
+        raise HTTPException(status_code=403, detail="Signature HMAC invalide.")
 
     # 4. Restaurer les fichiers après lecture
-    for fichier, (_, donnees) in zip(liste_fichier, fichiers_recus):
+    for fichier, (_, donnees) in zip(liste_fichier, fichiers_recus): 
         fichier.file = BytesIO(donnees)
 
     # 5. Lancer le traitement uniquement si la signature est valide
