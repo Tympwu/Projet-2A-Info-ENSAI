@@ -167,9 +167,7 @@ class DossierService:
             except FileNotFoundError:
                 logger.error("Fichier de l'audit introuvable")
                 raise FileNotFoundError("Le fichier est introuvable")
-            print(
-                "etape 3 OK", fichier.liste_dependances[0].nom, fichier.liste_dependances[0].version
-            )
+            print("etape 3 OK")
 
             # Analyse des anti_patterns
             anti_pattern = self.analyse_fichier.detecter_anti_patterns(fichier)
@@ -188,7 +186,7 @@ class DossierService:
             print("etape 5 OK")
 
         try:
-            audit.calculer_score()
+            audit.lancer()
         except ValueError:
             logger.error("Erreur lors du calcul général de l'audit")
             raise ArithmeticError("Erreur lors du calcul général de l'audit")

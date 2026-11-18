@@ -119,6 +119,7 @@ class Audit:
 
     Les émissions de CO2 totales sont également calculées si tous les
     fichiers possèdent une valeur d'émission.
+    
     Args
     ----
     CO2 (bool) = False: Si le calcul du CO2 doit être pris en compte ou pas

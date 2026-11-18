@@ -9,6 +9,7 @@ from business_object.dossier import Dossier
 from business_object.fichier import Fichier
 from dao.audit_dao import AuditDao
 from service.dossier_service import DossierService
+from service.analyse_fichier import Analyse_fichier
 from utils.log_utils import log
 
 EXTENSIONS_AUTORISEES = {".py", ".txt", ".toml"}
@@ -26,6 +27,7 @@ class AuditService:
         """
         self.audit_dao = AuditDao()
         self.dossier_service = DossierService()
+        self.analyse_fichier = Analyse_fichier()
 
     @log
     def find_audit(self, id_audit: int) -> Audit | None:
@@ -42,10 +44,10 @@ class AuditService:
 
     @log
     def create_audit(self, dossier) -> Audit:
-        """Créer un audit en se basant sur le chemin d'accès du dossier
+        """Créer un audit en se basant sur le dossier contenu dans l'audit
 
         Args:
-            chemin_dossier (str): Chemin d'accès du dossier contenant les fichiers.
+            dossier (Dossier): Dossier contenant tous les fichiers
 
         Returns:
             Audit: L'audit nouvellement crée, None si il y a eu un échec dans la création.
@@ -155,3 +157,22 @@ class AuditService:
                 cible.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(info) as source, open(cible, "wb") as sortie:
                     shutil.copyfileobj(source, sortie)
+
+    @log
+    def analyse_CO2_audit(self, audit: Audit, nb_entrée) -> Audit:
+        """Analyse approfondie de l'audit pour le CO2 et la complexité
+
+        Args:
+            audit (Audit): Audit à continuer d'analyser
+        Returns:
+            Audit: L'audit analysé en profondeur
+        Raises:
+            ValueError: Échec dans l'analyse de l'audit
+        """
+        for fichier in audit.dossier.liste_fichiers:
+            self.analyse_fichier.estimer_emission_fichier(fichier, taille_reference=nb_entrée)
+        try:
+            audit.lancer(CO2=True)
+        except ValueError:
+            raise ValueError("Échec dans l'analyse de l'audit")
+        return audit
