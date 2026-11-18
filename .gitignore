@@ -168,7 +168,7 @@ doc/report/report_files/
 doc/report/.quarto/
 
 .env
-.streamlit/secrets.toml
+frontend/.streamlit/secrets.toml
 
 
 #fonction pour générer une clé secrète pour le HMAC
