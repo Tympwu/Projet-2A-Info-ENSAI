@@ -1,10 +1,8 @@
-import hashlib
-
 from business_object.historique import Historique
 from business_object.utilisateur import Utilisateur
 from dao.utilisateur_dao import UtilisateurDao
 from utils.log_utils import get_logger, log
-from utils.security import hash_password
+from utils.security import hash_mdp
 from utils.singleton import Singleton
 
 logger = get_logger(__name__)
@@ -23,23 +21,10 @@ class UtilisateurService(metaclass=Singleton):
         self.utilisateur_connecte = None
 
     @log
-    def verif_hash_mdp(self, mdp: str, name: str) -> str:
-        """Génère le hash SHA-256 du mot de passe avec le nom comme sel."""
-        salted_mdp = f"{name}{mdp}"
-        return hashlib.sha256(salted_mdp.encode()).hexdigest()
-
-    @log
-    def connexion(self, name: str, mdp: str) -> Utilisateur | None:
-        """Permet de connecter un utilisateur en vérifiant son nom et son mot de passe haché."""
-        hash_mdp = self.verif_hash_mdp(mdp, name)
-        # On utilise directement la méthode login_utilisateur du DAO
-        return self.utilisateur_dao.login_utilisateur(name, hash_mdp)
-
-    @log
     def create_utilisateur(self, name: str, mot_de_passe: str, email: str) -> bool:
         """Crée un nouvel utilisateur en base de données."""
         nouveau_user = Utilisateur(
-            name=name, email=email, mot_de_passe=hash_password(mot_de_passe, name)
+            name=name, email=email, mot_de_passe=hash_mdp(mot_de_passe, name)
         )
         if self.utilisateur_dao.create_utilisateur(nouveau_user):
             nouveau_user.historique = Historique(id=nouveau_user.id, audits=[])
@@ -95,7 +80,7 @@ class UtilisateurService(metaclass=Singleton):
         Returns:
             Utilisateur |None : Compte de l'utilisateur connecté si identifiants corrects, sinon None
         """
-        hash_mdp = hash_password(mot_de_passe, name)
-        utilisateur = self.utilisateur_dao.login_utilisateur(nom=name, mot_de_passe=hash_mdp)
+        mdp_final = hash_mdp(mot_de_passe, name)
+        utilisateur = self.utilisateur_dao.login_utilisateur(nom=name, mot_de_passe=mdp_final)
         self.utilisateur_connecte = utilisateur if utilisateur else None
         return self.utilisateur_connecte

@@ -159,7 +159,7 @@ class UtilisateurDao(metaclass=Singleton):
 
     @log
     def update_utilisateur(self, utilisateur) -> bool:
-        """Met à jour un utilisateur dans la base de données
+        """Met à jour un utilisateur dans la base de données en se basant sur l'ID
         Arguments:
             utilisateur (Utilisateur) : Utilisateur à mettre à jour
         Returns :
