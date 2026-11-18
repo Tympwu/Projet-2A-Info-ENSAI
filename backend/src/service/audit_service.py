@@ -159,7 +159,7 @@ class AuditService:
                     shutil.copyfileobj(source, sortie)
 
     @log
-    def analyse_CO2_audit(self, audit: Audit, nb_entrée) -> Audit:
+    def analyse_CO2_audit(self, audit: Audit, nb_entree) -> Audit:
         """Analyse approfondie de l'audit pour le CO2 et la complexité
 
         Args:
@@ -170,7 +170,7 @@ class AuditService:
             ValueError: Échec dans l'analyse de l'audit
         """
         for fichier in audit.dossier.liste_fichiers:
-            self.analyse_fichier.estimer_emission_fichier(fichier, taille_reference=nb_entrée)
+            self.analyse_fichier.estimer_emission_fichier(fichier, taille_reference=nb_entree)
         try:
             audit.lancer(CO2=True)
         except ValueError:
