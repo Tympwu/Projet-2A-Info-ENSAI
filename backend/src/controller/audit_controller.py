@@ -127,5 +127,6 @@ async def detail_audit(
     -------
         Audit : Audit analysé vis-à-vis de la complexité et de l'émission
     """
-    audit = audit_service.find_audit(id_audit, taille_entree)
+    audit = audit_service.find_audit(id_audit)
+    audit = audit_service.analyse_CO2_audit(audit, nb_entree=taille_entree)
     return audit
