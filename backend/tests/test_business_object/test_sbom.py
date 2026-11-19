@@ -2,48 +2,74 @@
 
 import json
 from unittest.mock import MagicMock
-import pytest
+
+from business_object.dependance import Dependances
 from business_object.sbom import SBOM
-from business_object.audit import Audit
+
+
+def faux_audit(dependances):
+    """Crée un faux audit dont le dossier contient les dépendances données."""
+    audit = MagicMock()
+    audit.id = 7
+    audit.dossier.nom = "ProjetTest"
+    audit.dossier.obtenir_dependances_dossier.return_value = dependances
+    return audit
 
 
 def test_sbom_init_defaut():
     """Vérifie l'initialisation du SBOM avec le format par défaut."""
-    sbom_gen = SBOM()
-    assert sbom_gen.format == "CycloneDX"
+    assert SBOM().format == "CycloneDX"
 
 
 def test_sbom_init_personnalise():
     """Vérifie l'initialisation du SBOM avec un format personnalisé."""
-    sbom_gen = SBOM(format="SPDX")
-    assert sbom_gen.format == "SPDX"
+    assert SBOM(format="SPDX").format == "SPDX"
 
 
-def test_generer_sbom():
-    """Vérifie la génération correcte du SBOM au format JSON à partir d'un audit."""
-    # Création d'une dépendance mockée
-    dep = MagicMock()
-    dep.nom = "requests"
-    dep.version = "2.28.0"
-    dep.auteur = "Kenneth Reitz"
+def test_normaliser_nom():
+    """Les noms PyPI sont normalisés selon la PEP 503."""
+    assert SBOM.normaliser_nom("Py_YAML") == "py-yaml"
+    assert SBOM.normaliser_nom("zope.interface") == "zope-interface"
 
-    # Simulation de la structure : audit -> dossier -> obtenir_dependances_dossier()
-    audit_mock = MagicMock(spec=Audit)
-    audit_mock.dossier.obtenir_dependances_dossier.return_value = [dep]
 
-    sbom_gen = SBOM(format="CycloneDX")
-    resultat_json = sbom_gen.generer_sbom(audit_mock)
+def test_generer_sbom_structure_cyclonedx():
+    """Le SBOM contient les champs obligatoires de CycloneDX 1.6."""
+    deps = [Dependances(nom="requests", version="2.31.0", auteur="Kenneth Reitz")]
 
-    # Conversion du JSON généré en dictionnaire pour validation facile
-    data = json.loads(resultat_json)
+    data = json.loads(SBOM().generer_sbom(faux_audit(deps)))
 
     assert data["bomFormat"] == "CycloneDX"
     assert data["specVersion"] == "1.6"
     assert data["version"] == 1
-    assert len(data["components"]) == 1
-    
+    assert data["serialNumber"].startswith("urn:uuid:")
+    assert data["metadata"]["component"]["name"] == "ProjetTest"
     composant = data["components"][0]
     assert composant["type"] == "library"
     assert composant["name"] == "requests"
-    assert composant["version"] == "2.28.0"
+    assert composant["version"] == "2.31.0"
+    assert composant["purl"] == "pkg:pypi/requests@2.31.0"
+    assert composant["bom-ref"] == composant["purl"]
     assert composant["author"] == "Kenneth Reitz"
+
+
+def test_generer_sbom_garde_la_version_precise():
+    """Un import sans version est ignoré si la même bibliothèque a une version précise."""
+    deps = [
+        Dependances(nom="requests", version=None, auteur=None),
+        Dependances(nom="requests", version="2.31.0", auteur=None),
+        Dependances(nom="numpy", version=None, auteur=None),
+    ]
+
+    data = json.loads(SBOM().generer_sbom(faux_audit(deps)))
+
+    purls = [c["purl"] for c in data["components"]]
+    assert purls == ["pkg:pypi/numpy", "pkg:pypi/requests@2.31.0"]
+    assert "version" not in data["components"][0]
+    assert "author" not in data["components"][0]
+
+
+def test_generer_sbom_sans_dependance():
+    """Un dossier sans dépendance donne un SBOM valide mais vide."""
+    data = json.loads(SBOM().generer_sbom(faux_audit([])))
+
+    assert data["components"] == []
