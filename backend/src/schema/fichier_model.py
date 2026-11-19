@@ -36,8 +36,8 @@ class FichierModel(BaseModel):
     @field_validator("extension")
     @classmethod
     def check_extension(cls, v: str) -> str:
-        if v not in {".py", ".lock", ".txt"}:
-            raise TypeError("Le type de fichier accepté doit être un .py, .txt ou .lock")
+        if v not in {".py", ".lock", ".txt", ".toml"}:
+            raise TypeError("Le type de fichier accepté doit être un .py, .txt, .toml ou .lock")
         return v
 
     @field_validator("complexite")

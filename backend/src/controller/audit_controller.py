@@ -2,12 +2,10 @@ from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
 
-from schema.audit_model import AuditModel, AuditReadModel
+from schema.audit_model import AuditReadModel
 from service.audit_service import AuditService
 from utils.log_utils import get_logger
 from utils.security import preparer_contenu_hmac, verifier_hmac
-
-print(">>> audit_controller chargé depuis :", __file__)
 
 router = APIRouter()
 
@@ -48,32 +46,6 @@ async def consulter_audit(id_audit: int, audit_service=Depends(get_audit_service
     return audit
 
 
-@router.post("/", response_model=AuditReadModel, tags=["Audits"])
-async def create_audit(a: AuditModel, audit_service=Depends(get_audit_service)):
-    """Créer un nouvel audit. Il faut au préalable avoir créé les fichiers contenu dans cet audit
-    Args:
-        a (AuditReadModel): Les données de l'audit à créer.
-        audit_service (AuditService): Le service utilisé pour intéragir avec les données de l'audit.
-    Returns:
-        AuditReadModel: Les données de l'audit nouvellement créé.
-    Raises:
-        HTTPException: Erreur 500 Erreur de lecture des fichiers.
-        HTTPException: Erreur 500 Erreur d'analyse des anti-patterns
-        HTTPException: Erreur 500 Erreur de calcul final des données
-    """
-    logger.info("Création d'un audit")
-    try:
-        audit = audit_service.create_audit(a.liste_fichier)
-    except ValueError:
-        raise HTTPException(status_code=500, detail="Erreur d'analyse des anti-patterns")
-    except ArithmeticError:
-        raise HTTPException(status_code=500, detail="Erreur de calcul final des données")
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="Erreur de lecture des fichiers.")
-
-    return audit
-
-
 @router.delete("/{id_audit}", tags=["Audits"])
 async def remove_audit(id_audit: int, audit_service=Depends(get_audit_service)):
     """Supprime un audit du système.
@@ -97,6 +69,7 @@ async def remove_audit(id_audit: int, audit_service=Depends(get_audit_service)):
     else:
         return f"Audit {audit.id} supprimé"
 
+
 @router.post("/start_audit", tags=["Audits"])
 async def start_audit(
     liste_fichier: list[UploadFile] = File(...),
@@ -111,10 +84,7 @@ async def start_audit(
     # 1. Lire les fichiers envoyés par le frontend
     for fichier in liste_fichier:
         if not fichier.filename:
-            raise HTTPException(
-            status_code=400,
-            detail="Nom de fichier manquant."
-        )
+            raise HTTPException(status_code=400, detail="Nom de fichier manquant.")
 
         donnees = await fichier.read()
         fichiers_recus.append((fichier.filename, donnees))
@@ -122,22 +92,41 @@ async def start_audit(
     try:
         contenu = preparer_contenu_hmac(fichiers_recus)
     except ValueError as erreur:
-        raise HTTPException(status_code=400, detail=str(erreur))
+        raise HTTPException(status_code=400, detail=str(erreur)) from ValueError
 
     # 3. Vérifier la signature HMAC
     if not verifier_hmac(contenu, x_hmac_signature):
-        raise HTTPException(
-            status_code=403,
-            detail="Signature HMAC invalide."
-        )
+        raise HTTPException(status_code=403, detail="Signature HMAC invalide.")
 
     # 4. Restaurer les fichiers après lecture
-    for fichier, (_, donnees) in zip(liste_fichier, fichiers_recus):
+    for fichier, (_, donnees) in zip(liste_fichier, fichiers_recus, strict=False):
         fichier.file = BytesIO(donnees)
 
     # 5. Lancer le traitement uniquement si la signature est valide
     logger.info("Signature HMAC valide. Création du dossier.")
 
-    audit_service.create_dossier(liste_fichier)
+    dossier = audit_service.create_dossier(liste_fichier)
+    audit = audit_service.create_audit(dossier)
 
-    return "Signature vérifiée. Dossier créé."
+    return audit
+
+
+@router.post("/detail_audit", tags=["Audits"])
+async def detail_audit(taille_entree: int = 500, audit_service=Depends(get_audit_service)):
+    """Continue l'analyse de l'audit en proposant une analyse de la complexité et de l'émission de CO2
+    Args
+    ----
+        taille_entree (int) : Taille de l'entrée utilisé pour estimer les emissions de CO2
+        audit_service (AuditService) : Service utilisé pour intéragir avec les données de l'audit
+    Raises
+    ------
+        HTTPException: Erreur 500 si l'audit ne peut pas être analysé
+    Returns
+    -------
+        Audit : Audit analysé vis-à-vis de la complexité et de l'émission
+    """
+    try:
+        audit = audit_service.analyse_CO2_audit(nb_entree=taille_entree)
+    except ValueError:
+        raise HTTPException(status_code=500, detail="Erreur lors de l'analyse.\nCela peut provenir d'une absence d'audit en mémoire, de fichiers incompatibles ou d'erreur d'analyse.") from ValueError
+    return audit

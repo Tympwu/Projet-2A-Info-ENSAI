@@ -2,9 +2,6 @@ import ast
 import re
 import sys
 import tomllib
-from pathlib import Path
-
-import requests  # TEST UNIQUEMENT, A RETIRER SUR LA VERSION FINALE
 
 from business_object.dependance import Dependances
 from business_object.vulnerabilite import Vulnerabilite
@@ -99,7 +96,9 @@ class Fichier:
             SyntaxError: Si le code Python du fichier est invalide.
         """
         if self.extension != ".py":
-            raise ValueError(f"Fichier(id ={self.id}) n'est pas un fichier Python : pas d'arbre syntaxique")
+            raise ValueError(
+                f"Fichier(id ={self.id}) n'est pas un fichier Python : pas d'arbre syntaxique"
+            )
         if self.AST_analyse is None:
             self.AST_analyse = ast.parse(self.lire_contenu())
         return self.AST_analyse
@@ -159,11 +158,26 @@ class Fichier:
                 dependances = [Dependances(nom=nom, auteur=None, version=None) for nom in externes]
             elif self.extension == ".txt":
                 dependances = self._lire_exigences(self.lire_contenu().splitlines())
-            elif self.extension == ".toml":
+            elif self.extension in (".toml", ".lock"):
                 donnees = tomllib.loads(self.lire_contenu())
-                dependances = self._lire_exigences(
-                    donnees.get("project", {}).get("dependencies", [])
-                )
+
+                # uv.lock
+                if "package" in donnees:
+                    dependances = [
+                        Dependances(
+                            nom=p["name"],
+                            auteur=None,
+                            version=p["version"],
+                        )
+                        for p in donnees["package"]
+                        if isinstance(p.get("name"), str) and isinstance(p.get("version"), str)
+                    ]
+
+                # pyproject.toml classique
+                else:
+                    dependances = self._lire_exigences(
+                        donnees.get("project", {}).get("dependencies", [])
+                    )
         except (SyntaxError, UnicodeDecodeError, tomllib.TOMLDecodeError):
             dependances = None
         self.liste_dependances = dependances
@@ -185,7 +199,6 @@ class Fichier:
             list[Dependances]: Dépendances triées par nom, sans doublon (même nom
             et même version).
         """
-        requests.delete()  # TEST UNIQUEMENT, A RETIRER SUR LA VERSION FINALE
         uniques: dict[tuple[str, str | None], Dependances] = {}
         for ligne in lignes:
             ligne = re.split(r"\s#", ligne, maxsplit=1)[0].split(";", 1)[0].strip()

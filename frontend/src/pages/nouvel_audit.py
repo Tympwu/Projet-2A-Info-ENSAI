@@ -1,16 +1,18 @@
+import hashlib
+import hmac
+import struct
+
 import streamlit as st
 
 from utils.affichage import afficher_audit
 from utils.api_client import api_client
 from utils.log_init import get_page_logger
-import hashlib
-import hmac
-import struct
 
 st.set_page_config(page_title="Nouvel audit", page_icon="🌱")
 logger = get_page_logger("nouvel_audit")
 
-# signature du fichier 
+
+# signature du fichier
 def signer_fichiers(fichiers, cle_secrete: str) -> str:
     """Signe les fichiers envoyés par le frontend."""
 
@@ -59,8 +61,10 @@ else:
     if col2.button("Créer un compte"):
         st.switch_page("pages/creer_compte.py")
 
+# MODIFIÉ : on n'accepte que les types de fichiers que le backend sait lire
 fichiers = st.file_uploader(
-    "Fichiers (.py, requirements.txt, pyproject.toml, uv.lock)",
+    "Fichiers (.py, requirements.txt, pyproject.toml, uv.lock, .zip)",
+    type=["py", "txt", "toml", "lock", "zip"],
     accept_multiple_files=True,
 )
 
@@ -99,5 +103,11 @@ if audit:
     st.divider()
     st.subheader("Résultat de l'audit")
     afficher_audit(audit, cle="nouvel_audit")
+    id_audit = audit.get("id")
+    if id_audit is not None:
+        if st.button("Analyser le CO₂ de cet audit"):
+            st.session_state["audit_id"] = id_audit
+            st.session_state.pop("emissions", None)
+            st.switch_page("pages/analyse_CO2.py")
     if not utilisateur:
         st.caption("Audit non enregistré : connectez-vous pour conserver vos audits.")

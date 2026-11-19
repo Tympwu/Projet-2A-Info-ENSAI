@@ -8,14 +8,16 @@ from business_object.audit import Audit
 from business_object.dossier import Dossier
 from business_object.fichier import Fichier
 from dao.audit_dao import AuditDao
+from service.analyse_fichier import Analyse_fichier
 from service.dossier_service import DossierService
 from utils.log_utils import log
+from utils.singleton import Singleton
 
-EXTENSIONS_AUTORISEES = {".py", ".txt", ".toml"}
+EXTENSIONS_AUTORISEES = {".py", ".txt", ".toml", ".lock"}
 TAILLE_MAX_ZIP = 50 * 1024 * 1024  # 50 Mo décompressés (protection contre les zip bombs)
 
 
-class AuditService:
+class AuditService(metaclass=Singleton):
     """Gère la consultation et la suppression de l'audit d'un utilisateur."""
 
     def __init__(self):
@@ -26,6 +28,8 @@ class AuditService:
         """
         self.audit_dao = AuditDao()
         self.dossier_service = DossierService()
+        self.analyse_fichier = Analyse_fichier()
+        self.current_audit = None
 
     @log
     def find_audit(self, id_audit: int) -> Audit | None:
@@ -41,21 +45,21 @@ class AuditService:
         return audit
 
     @log
-    def create_audit(self, chemin_dossier: str) -> Audit:
-        """Créer un audit en se basant sur le chemin d'accès du dossier
+    def create_audit(self, dossier) -> Audit:
+        """Créer un audit en se basant sur le dossier contenu dans l'audit
 
         Args:
-            chemin_dossier (str): Chemin d'accès du dossier contenant les fichiers.
+            dossier (Dossier): Dossier contenant tous les fichiers
 
         Returns:
             Audit: L'audit nouvellement crée, None si il y a eu un échec dans la création.
         Raises:
             ValueError: Le chemin indiqué ne mène à aucun dossier
         """
-        dossier = self.dossier_service.consulter_dossier(chemin_dossier)
         if not dossier:
             raise ValueError("Dossier introuvable")
-        return self.dossier_service.traiter_dossier(dossier)
+        self.current_audit = self.dossier_service.traiter_dossier(dossier)
+        return self.current_audit
 
     @log
     def remove_audit(self, id_audit: int) -> bool:
@@ -109,13 +113,15 @@ class AuditService:
                         shutil.copyfileobj(upload.file, sortie)
 
             chemins = sorted(
-                p for p in dossier_temp.rglob("*") if p.is_file() and p.suffix in EXTENSIONS_AUTORISEES
+                p
+                for p in dossier_temp.rglob("*")
+                if p.is_file() and p.suffix in EXTENSIONS_AUTORISEES
             )
             for chemin in chemins:
                 try:
                     code = chemin.read_text(encoding="utf-8")
                 except UnicodeDecodeError:
-                    raise ValueError(f"{chemin.name} n'est pas encodé en UTF-8")
+                    raise ValueError(f"{chemin.name} n'est pas encodé en UTF-8") from UnicodeDecodeError
                 fichiers.append(Fichier(code=code, extension=chemin.suffix))
 
         if not fichiers:
@@ -131,7 +137,7 @@ class AuditService:
             liste_fichiers=fichiers,
             date_soumission=datetime.today(),
         )
-        return self.dossier_service.traiter_dossier(dossier)
+        return dossier
 
     def _extraire_zip(self, flux, destination: Path) -> None:
         """Extrait une archive zip dans le dossier de destination, de façon sécurisée."""
@@ -154,3 +160,29 @@ class AuditService:
                 cible.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(info) as source, open(cible, "wb") as sortie:
                     shutil.copyfileobj(source, sortie)
+
+    @log
+    def analyse_CO2_audit(self, nb_entree: int) -> Audit:
+        """Analyse approfondie de l'audit pour le CO2 et la complexité
+
+        Args:
+            nb_entree (int): Taille de l'entrée à utiliser pour calculer les émissions
+        Returns:
+            Audit: L'audit analysé en profondeur
+        Raises:
+            ValueError: Échec dans l'analyse de l'audit
+        """
+        compteur_fichier_analyse = 0
+        if self.current_audit is None:
+            raise ValueError("Il n'y a pas d'audit en mémoire")
+        for fichier in self.current_audit.dossier.liste_fichiers:
+            if fichier.extension == ".py":
+                compteur_fichier_analyse += 1
+                self.analyse_fichier.estimer_emission_fichier(fichier, taille_reference=nb_entree)
+        if compteur_fichier_analyse == 0:
+            raise ValueError("Pas de fichier possible à analyser")
+        try:
+            self.current_audit.lancer(CO2=True)
+        except ValueError:
+            raise ValueError("Échec dans l'analyse de l'audit") from ValueError
+        return self.current_audit

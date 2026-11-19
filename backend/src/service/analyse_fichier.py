@@ -246,18 +246,20 @@ class Analyse_fichier:
         load_dotenv()
 
         self.api_url_OSV = os.getenv("OSV_API_URL", self.URL_OSV_PAR_DEFAUT)
-        puissance = os.getenv("PUISSANCE_MACHINE_W")
+        puissance = os.getenv(
+            "PUISSANCE_MACHINE_W", 15.0
+        )  # Valeur temporaire à changer le temps d'obtenir la vraie valeur dans le .env
         if puissance:
             try:
                 self.puissance_machine = float(puissance)
             except ValueError:
-                raise ValueError("PUISSANCE_MACHINE_W doit être un nombre.")
+                raise ValueError("PUISSANCE_MACHINE_W doit être un nombre.") from ValueError
         intensite = os.getenv("INTENSITE_CARBONE_G_KWH")
         if intensite:
             try:
                 self.intensite_carbone = float(intensite)
             except ValueError:
-                raise ValueError("INTENSITE_CARBONE_G_KWH doit être un nombre.")
+                raise ValueError("INTENSITE_CARBONE_G_KWH doit être un nombre.") from ValueError
 
     def analyser_complexite_code(self, fichier: Fichier) -> int | None:
         """
@@ -417,7 +419,6 @@ class Analyse_fichier:
         except (ValueError, SyntaxError, UnicodeDecodeError):
             # Si le fichier n'est pas Python, contient une erreur de syntaxe
             # ou ne peut pas être lu, on ne peut pas faire l'analyse.
-            print("Haha !")
             return None
 
         # On crée un analyseur neuf pour ce fichier.
@@ -481,9 +482,7 @@ class Analyse_fichier:
                 if dependance.version is None:
                     logger.warning("Dépendance %s : version inconnue.", dependance.nom)
 
-                print(dependance.nom)
                 for fiche in self._interroger_osv(dependance):
-                    print(fiche)
                     score = self._score_vulnerabilite(fiche)
                     identifiant = fiche.get("id", "identifiant inconnu")
                     if score is None:
@@ -543,7 +542,6 @@ class Analyse_fichier:
             )
             with urllib.request.urlopen(requete, timeout=self.TIMEOUT_OSV) as reponse:
                 donnees = json.load(reponse)
-                print(donnees)
             fiches.extend(donnees.get("vulns", []))
             jeton = donnees.get("next_page_token")
             if not jeton:

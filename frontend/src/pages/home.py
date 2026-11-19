@@ -17,10 +17,10 @@ from utils.log_init import get_page_logger
 PAGE_APRES_CONNEXION = "pages/nouvel_audit.py"
 PAGE_CREATION_COMPTE = "pages/creer_compte.py"
 
-st.set_page_config(page_title="Audit de code", page_icon="🌱", layout="centered")
+CLES_SESSION_UTILISATEUR = ("utilisateur", "access_token", "dernier_audit")
 
-if "utilisateur" in st.session_state:
-    st.switch_page(PAGE_APRES_CONNEXION)
+st.set_page_config(page_title="Audit de code", page_icon="🌱", layout="centered")
+logger = get_page_logger("home")
 
 st.markdown(
     f"""
@@ -30,7 +30,20 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-logger = get_page_logger("home")
+
+utilisateur = st.session_state.get("utilisateur")
+if utilisateur:
+    st.write(f"Connecté en tant que **{utilisateur.get('name', '')}**.")
+
+    col1, col2 = st.columns(2)
+    if col1.button("Nouvel audit", type="primary"):
+        st.switch_page(PAGE_APRES_CONNEXION)
+    if col2.button("Se déconnecter"):
+        logger.info(f"Déconnexion de l'utilisateur {utilisateur.get('name', '')}")
+        for cle in CLES_SESSION_UTILISATEUR:
+            st.session_state.pop(cle, None)
+        st.rerun()
+    st.stop()
 
 username = st.text_input("Nom d'utilisateur", placeholder="Entrez votre nom d'utilisateur")
 password = st.text_input("Mot de passe", type="password", placeholder="Entrez votre mot de passe")

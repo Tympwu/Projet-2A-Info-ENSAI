@@ -9,7 +9,9 @@ from business_object.audit import Audit
 from business_object.certificat import Certificat
 from business_object.sbom import SBOM
 from dao.db_connection import DBConnection
+from dao.utilisateur_dao import UtilisateurDao
 from utils.log_utils import get_logger, log
+from utils.security import hash_mdp
 from utils.singleton import Singleton
 
 logger = get_logger(__name__)
@@ -61,6 +63,10 @@ class Manager_db(metaclass=Singleton):
         except Exception as e:
             logger.info(e)
             raise
+
+        for user in UtilisateurDao().find_all():
+            user.mot_de_passe = hash_mdp(user.mot_de_passe, user.name)
+            UtilisateurDao().update_utilisateur(user)
 
         return True
 

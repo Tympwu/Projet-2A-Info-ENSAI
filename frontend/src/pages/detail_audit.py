@@ -10,7 +10,7 @@ if audit_id is None:
     st.info("Aucun audit sélectionné.")
     st.stop()
 
-reponse = api_client.get(f"/audits/{audit_id}")
+reponse = api_client.get(f"/audit/{audit_id}")
 audit = reponse["data"]
 
 st.title(f"Audit n°{audit['id']}")

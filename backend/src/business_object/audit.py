@@ -100,39 +100,41 @@ class Audit:
         (None) sont absents.
         """
         return {
-            f.id: f.complexite
-            for f in self.dossier.obtenir_fichiers()
-            if f.complexite is not None
+            f.id: f.complexite for f in self.dossier.obtenir_fichiers() if f.complexite is not None
         }
 
-    def lancer(self) -> bool:
+    def lancer(self, CO2=False) -> bool:
         """
-        Exécute l'audit du dossier.
+            Exécute l'audit du dossier.
 
-        Calcule le score global du dossier à partir des scores de ses fichiers,
-     puis détermine si l'audit est validé ou refusé.
+            Calcule le score global du dossier à partir des scores de ses fichiers,
+         puis détermine si l'audit est validé ou refusé.
 
-        Un audit est :
-        - "validé" si le score global est strictement inférieur à 5.
-        - "refusé" si le score global est supérieur ou égal à 5.
-        - "échoué" si une erreur empêche le calcul du score.
+            Un audit est :
+            - "validé" si le score global est strictement inférieur à 5.
+            - "refusé" si le score global est supérieur ou égal à 5.
+            - "échoué" si une erreur empêche le calcul du score.
 
-    Les émissions de CO2 totales sont également calculées si tous les
-    fichiers possèdent une valeur d'émission.
+        Les émissions de CO2 totales sont également calculées si tous les
+        fichiers possèdent une valeur d'émission.
 
-    Returns
-    -------
-    bool:
-        True si l'audit a été correctement exécuté, qu'il soit validé
-        ou refusé.
+        Args
+        ----
+            CO2 (bool) = False : Prend en compte le calcul du CO2 ou pas
 
-    Raises
-    ------
-    ValueError:
-        Si le dossier ne contient aucun fichier, si certains scores
-        ne sont pas calculés ou si certaines émissions de CO2 sont
-        indisponibles.
-    """
+        Returns
+        -------
+        bool:
+            True si l'audit a été correctement exécuté, qu'il soit validé
+            ou refusé.
+
+        Raises
+        ------
+        ValueError:
+            Si le dossier ne contient aucun fichier, si certains scores
+            ne sont pas calculés ou si certaines émissions de CO2 sont
+            indisponibles.
+        """
         self.score = None
         self.emissionCO2_total = None
         try:
@@ -145,15 +147,16 @@ class Audit:
             else:
                 self.statut = "refusé"
 
-            if any(f.emissionCO2 is None for f in fichiers):
-                raise ValueError(
-                    "Impossible de calculer les émissions totales : "
-                    "les émissions de certains fichiers ne sont pas calculées."
-                )
+            if CO2:
+                if any(f.emissionCO2 is None for f in fichiers if f.extension == ".py"):
+                    raise ValueError(
+                        "Impossible de calculer les émissions totales : "
+                        "les émissions de certains fichiers ne sont pas calculées."
+                    )
 
-            self.emissionCO2_total = sum(
-                f.emissionCO2 for f in fichiers
-            )
+                self.emissionCO2_total = sum(
+                    (f.emissionCO2 for f in fichiers if f.extension == ".py"), start=0
+                )
 
             return True
 

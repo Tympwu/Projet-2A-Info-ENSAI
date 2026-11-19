@@ -1,6 +1,7 @@
 """Outils d'authentification pour les pages Streamlit."""
 
 import streamlit as st
+import time
 
 PAGE_CONNEXION = "pages/home.py"  # même chemin que celui utilisé dans creer_compte.py
 
@@ -16,6 +17,7 @@ def exiger_connexion() -> dict:
     """
     if "utilisateur" not in st.session_state:
         st.warning("Veuillez vous connecter.")
+        time.sleep(1)
         st.switch_page(PAGE_CONNEXION)
         st.stop()
     return st.session_state["utilisateur"]

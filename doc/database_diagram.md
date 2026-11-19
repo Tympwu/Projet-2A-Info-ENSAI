@@ -34,7 +34,7 @@ erDiagram
     FICHIER {
       int id PK
       int audit_id FK
-      string chemin "Not NULL"
+      string code "Not NULL"
       varchar(20) extension "20 caracters max"
       numeric(4) score "default NULL"
       string complexite "default NULL"
