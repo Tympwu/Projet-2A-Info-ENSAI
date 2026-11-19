@@ -4,12 +4,12 @@ import struct
 
 import streamlit as st
 
-from utils.affichage import afficher_audit
+from utils.affichage import afficher_audit, configurer_page
 from utils.api_client import api_client
 from utils.log_init import get_page_logger
 
-st.set_page_config(page_title="Nouvel audit", page_icon="🌱")
-logger = get_page_logger("nouvel_audit")
+configurer_page(layout="centered")
+logger = get_page_logger("home")
 
 
 # signature du fichier

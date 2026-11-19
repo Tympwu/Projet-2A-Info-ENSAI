@@ -7,8 +7,12 @@ class Dependances:
         self.auteur: str = auteur
         self.version: str = version
 
-    
-    def a_vulnerabilite(self,data_api: dict,scores: list[float | None],seuil: float = 7.0,) -> list[Vulnerabilite]:
+    def a_vulnerabilite(
+        self,
+        data_api: dict,
+        scores: list[float | None],
+        seuil: float = 7.0,
+    ) -> list[Vulnerabilite]:
         """
         Construit les vulnérabilités retenues pour cette dépendance.
 
@@ -21,20 +25,14 @@ class Dependances:
         fiches = data_api.get("vulns", [])
 
         if len(fiches) != len(scores):
-            raise ValueError(
-                "Chaque fiche OSV doit avoir un score associé."
-            )
+            raise ValueError("Chaque fiche OSV doit avoir un score associé.")
 
-        for fiche, score in zip(fiches, scores):
+        for fiche, score in zip(fiches, scores, strict=False):
             if score is None or score < seuil:
                 continue
 
             identifiant = fiche.get("id", "identifiant inconnu")
-            description = (
-                fiche.get("summary")
-                or fiche.get("details")
-                or "Description indisponible"
-            )
+            description = fiche.get("summary") or fiche.get("details") or "Description indisponible"
 
             vulnerabilites.append(
                 Vulnerabilite(
@@ -42,5 +40,5 @@ class Dependances:
                     score_danger=score,
                 )
             )
- 
+
         return vulnerabilites

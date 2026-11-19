@@ -11,10 +11,11 @@ Endpoint utilisé :
 
 import streamlit as st
 
+from utils.affichage import configurer_page
 from utils.api_client import api_client
 from utils.log_init import get_page_logger
 
-st.set_page_config(page_title="Créer un compte", page_icon="🌱", layout="centered")
+configurer_page(layout="centered")
 
 st.title("Créer un compte")
 logger = get_page_logger("creer_compte")
@@ -58,7 +59,9 @@ with st.container(horizontal_alignment="center"):
             else:
                 logger.warning(f"Échec de la création : status {response['status_code']}")
                 st.error(f"Échec (code {response['status_code']}).")
-                detail = response["data"].get("detail") if isinstance(response["data"], dict) else None
+                detail = (
+                    response["data"].get("detail") if isinstance(response["data"], dict) else None
+                )
                 if isinstance(detail, str):
                     st.caption(detail)
 

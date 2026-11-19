@@ -1,9 +1,13 @@
 """Fonctions d'affichage réutilisables entre les pages."""
 
 import base64
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+
+# affichage.py est dans src/utils/ : on remonte d'un cran pour trouver src/assets/
+ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
 
 def afficher_audit(audit: dict, cle: str = "audit") -> None:
@@ -41,3 +45,23 @@ def afficher_audit(audit: dict, cle: str = "audit") -> None:
             mime="application/pdf",
             key=f"{cle}_certificat",
         )
+
+
+def configurer_page(layout: str = "centered") -> None:
+    """Configure la page (titre, icône, mise en page) et affiche le logo CleanOps.
+
+    À appeler en tout premier dans chaque page, avant toute autre commande Streamlit.
+
+    Args:
+        layout (str): "centered" ou "wide".
+    """
+    st.set_page_config(
+        page_title="CleanOps",
+        page_icon=str(ASSETS / "bouclier.png"),
+        layout=layout,
+    )
+    st.logo(
+        str(ASSETS / "logo_cleanops.png"),
+        icon_image=str(ASSETS / "bouclier.png"),
+        size="large",
+    )

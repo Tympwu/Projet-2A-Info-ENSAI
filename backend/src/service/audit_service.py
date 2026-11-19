@@ -1,3 +1,5 @@
+import json
+import os
 import shutil
 import tempfile
 import zipfile
@@ -5,8 +7,10 @@ from datetime import datetime
 from pathlib import Path
 
 from business_object.audit import Audit
+from business_object.certificat import Certificat
 from business_object.dossier import Dossier
 from business_object.fichier import Fichier
+from business_object.sbom import SBOM
 from dao.audit_dao import AuditDao
 from service.analyse_fichier import Analyse_fichier
 from service.dossier_service import DossierService
@@ -121,7 +125,9 @@ class AuditService(metaclass=Singleton):
                 try:
                     code = chemin.read_text(encoding="utf-8")
                 except UnicodeDecodeError:
-                    raise ValueError(f"{chemin.name} n'est pas encodé en UTF-8") from UnicodeDecodeError
+                    raise ValueError(
+                        f"{chemin.name} n'est pas encodé en UTF-8"
+                    ) from UnicodeDecodeError
                 fichiers.append(Fichier(code=code, extension=chemin.suffix))
 
         if not fichiers:
@@ -186,3 +192,39 @@ class AuditService(metaclass=Singleton):
         except ValueError:
             raise ValueError("Échec dans l'analyse de l'audit") from ValueError
         return self.current_audit
+
+    @log
+    def generer_sbom(self, id_audit: int) -> dict | None:
+        """Génère le SBOM (CycloneDX) d'un audit enregistré .
+
+        Args:
+            id_audit (int): Identifiant de l'audit.
+
+        Returns:
+            dict | None: Le SBOM sous forme de dictionnaire JSON, None si l'audit n'existe pas.
+        """
+        audit = self.find_audit(id_audit)
+        if audit is None:
+            return None
+        return json.loads(SBOM().generer_sbom(audit))
+
+    @log
+    def generer_certificat(self, id_audit: int) -> Certificat | None:
+        """Applique la Quality Gate à un audit enregistré et produit son certificat .
+
+        Le seuil carbone est lu dans la variable d'environnement SEUIL_CO2_G (en gCO2e).
+        S'il n'est pas défini, seul le score de vulnérabilité est pris en compte.
+
+        Args:
+            id_audit (int): Identifiant de l'audit.
+
+        Returns:
+            Certificat | None: Le certificat (validé ou non), None si l'audit n'existe pas.
+        """
+        audit = self.find_audit(id_audit)
+        if audit is None:
+            return None
+        certificat = Certificat(audit=audit, date_delivrance=datetime.now())
+        seuil_co2 = os.getenv("SEUIL_CO2_G")
+        certificat.calcul_QualityGate(seuil_co2=float(seuil_co2) if seuil_co2 else None)
+        return certificat

@@ -28,7 +28,7 @@ erDiagram
         int utilisateur_id FK
         date date_audit
         bool statut "default FALSE"
-        numeric(4) score "default NULL"
+        float(4) score "default NULL"
         numeric(4) emissionCO2 "default NULL"
     }
     FICHIER {

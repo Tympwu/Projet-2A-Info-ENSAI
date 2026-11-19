@@ -1,8 +1,9 @@
 from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 
-from schema.audit_model import AuditReadModel
+from schema.audit_model import AuditReadModel, CertificatModel
 from service.audit_service import AuditService
 from utils.log_utils import get_logger
 from utils.security import preparer_contenu_hmac, verifier_hmac
@@ -128,5 +129,58 @@ async def detail_audit(taille_entree: int = 500, audit_service=Depends(get_audit
     try:
         audit = audit_service.analyse_CO2_audit(nb_entree=taille_entree)
     except ValueError:
-        raise HTTPException(status_code=500, detail="Erreur lors de l'analyse.\nCela peut provenir d'une absence d'audit en mémoire, de fichiers incompatibles ou d'erreur d'analyse.") from ValueError
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur lors de l'analyse.\nCela peut provenir d'une absence d'audit en mémoire, de fichiers incompatibles ou d'erreur d'analyse.",
+        ) from ValueError
     return audit
+
+
+@router.get("/{id_audit}/sbom", tags=["Audits"])
+async def telecharger_sbom(id_audit: int, audit_service=Depends(get_audit_service)):
+    """Renvoie le SBOM (inventaire des dépendances, format CycloneDX) d'un audit .
+
+    Args:
+        id_audit (int): Identifiant de l'audit.
+    Returns:
+        JSONResponse: Le SBOM, proposé au téléchargement sous le nom sbom_audit_<id>.json.
+    Raises:
+        HTTPException: Erreur 404 si l'audit n'existe pas.
+    """
+    logger.info(f"Génération du SBOM de l'audit {id_audit}")
+    sbom = audit_service.generer_sbom(id_audit)
+    if sbom is None:
+        raise HTTPException(status_code=404, detail=f"Audit (id={id_audit}) introuvable.")
+    return JSONResponse(
+        content=sbom,
+        headers={"Content-Disposition": f'attachment; filename="sbom_audit_{id_audit}.json"'},
+    )
+
+
+@router.get("/{id_audit}/certificat", response_model=CertificatModel, tags=["Audits"])
+async def telecharger_certificat(id_audit: int, audit_service=Depends(get_audit_service)):
+    """Applique la Quality Gate à un audit et renvoie son certificat .
+
+    Le certificat est renvoyé même s'il est refusé : son statut et ses motifs
+    expliquent pourquoi.
+
+    Args:
+        id_audit (int): Identifiant de l'audit.
+    Returns:
+        CertificatModel: Statut du certificat ("validé", "échoué" ou "rejeté") et motifs.
+    Raises:
+        HTTPException: Erreur 404 si l'audit n'existe pas.
+    """
+    logger.info(f"Génération du certificat de l'audit {id_audit}")
+    certificat = audit_service.generer_certificat(id_audit)
+    if certificat is None:
+        raise HTTPException(status_code=404, detail=f"Audit (id={id_audit}) introuvable.")
+    return CertificatModel(
+        audit_id=certificat.id,
+        nom=certificat.nom,
+        date_delivrance=certificat.date_delivrance,
+        statut=certificat.statut,
+        score=certificat.audit.score,
+        emissionCO2_total=certificat.audit.emissionCO2_total,
+        motifs=certificat.motifs,
+    )

@@ -12,6 +12,7 @@ Endpoints utilisés :
 import streamlit as st
 from streamlit import config
 
+from utils.affichage import configurer_page
 from utils.api_client import api_client
 from utils.log_init import get_page_logger
 
@@ -20,7 +21,7 @@ PAGE_CREATION_COMPTE = "pages/creer_compte.py"
 
 CLES_SESSION_UTILISATEUR = ("utilisateur", "access_token", "dernier_audit")
 
-st.set_page_config(page_title="Audit de code", page_icon="🌱", layout="centered")
+configurer_page(layout="centered")   # remplace ton st.set_page_config(...)
 logger = get_page_logger("home")
 
 
