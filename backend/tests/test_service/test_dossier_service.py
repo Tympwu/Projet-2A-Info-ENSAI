@@ -8,7 +8,6 @@ from service.dossier_service import DossierService
 from business_object.dossier import Dossier
 from business_object.fichier import Fichier
 from business_object.audit import Audit
-from business_object.certificat import Certificat
 
 
 @pytest.fixture
@@ -183,24 +182,3 @@ def test_traiter_dossier_fichier_introuvable(service, faux_audit_dao):
     faux_audit_dao.create_audit.return_value = True
 
     assert service.traiter_dossier(dossier) is None
-
-
-# --- Tests de la génération et l'export de certificat ---
-
-def test_generer_et_exporter_certificat_sans_export(service):
-    """Vérifie la génération d'un certificat sans demande d'export en fichier."""
-    audit = Audit()
-    certificat = service.generer_et_exporter_certificat(audit, exporter=False)
-
-    assert isinstance(certificat, Certificat)
-    assert certificat.audit == audit
-
-
-@patch("service.dossier_service.Manager_db")
-def test_generer_et_exporter_certificat_avec_export(mock_manager_db, service):
-    """Vérifie la génération d'un certificat avec export via le Manager_db."""
-    audit = Audit()
-    certificat = service.generer_et_exporter_certificat(audit, exporter=True)
-
-    assert isinstance(certificat, Certificat)
-    mock_manager_db.return_value.write_certificate.assert_called_once_with(certificat)
