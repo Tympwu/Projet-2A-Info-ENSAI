@@ -5,12 +5,14 @@ Permet de se connecter, de créer un compte ou de réinitialiser la base de donn
 
 Endpoints utilisés :
     POST /user/login
+    DELETE /user/{id_utilisateur}
     GET /reset_database
 """
 
 import streamlit as st
 from streamlit import config
 
+from utils.affichage import configurer_page
 from utils.api_client import api_client
 from utils.log_init import get_page_logger
 
@@ -19,8 +21,15 @@ PAGE_CREATION_COMPTE = "pages/creer_compte.py"
 
 CLES_SESSION_UTILISATEUR = ("utilisateur", "access_token", "dernier_audit")
 
-st.set_page_config(page_title="Audit de code", page_icon="🌱", layout="centered")
+configurer_page(layout="centered")   # remplace ton st.set_page_config(...)
 logger = get_page_logger("home")
+
+
+def vider_session_utilisateur() -> None:
+    """Retire de la session les informations de l'utilisateur connecté."""
+    for cle in CLES_SESSION_UTILISATEUR:
+        st.session_state.pop(cle, None)
+
 
 st.markdown(
     f"""
@@ -43,7 +52,42 @@ if utilisateur:
         for cle in CLES_SESSION_UTILISATEUR:
             st.session_state.pop(cle, None)
         st.rerun()
+
+    with st.expander("Supprimer mon compte"):
+        st.warning("Action définitive : votre compte et vos données seront supprimés.")
+
+        mot_de_passe = st.text_input("Mot de passe", type="password", key="mdp_suppression")
+        confirmer = st.checkbox(
+            "Je confirme vouloir supprimer définitivement mon compte",
+            key="confirmer_suppression",
+        )
+
+        if st.button(
+            "Supprimer définitivement mon compte",
+            disabled=not (mot_de_passe and confirmer),
+        ):
+            # On revérifie le mot de passe pour éviter une suppression par erreur
+            verification = api_client.post(
+                "/user/login",
+                json={"name": utilisateur["name"], "mot_de_passe": mot_de_passe},
+            )
+            if not verification or verification["status_code"] != 200:
+                st.error("Mot de passe incorrect.")
+                st.stop()
+
+            reponse = api_client.delete(f"/user/{utilisateur['id']}")
+            if reponse and reponse["status_code"] == 200:
+                logger.info(f"Compte de {utilisateur.get('name', '')} supprimé")
+                vider_session_utilisateur()
+                st.session_state["compte_supprime"] = True
+                st.rerun()
+            else:
+                code = reponse["status_code"] if reponse else "aucune réponse"
+                logger.error(f"Échec de la suppression du compte : {code}")
+                st.error(f"La suppression a échoué (code {code}).")
     st.stop()
+if st.session_state.pop("compte_supprime", False):
+    st.success("Votre compte a été supprimé.")
 
 username = st.text_input("Nom d'utilisateur", placeholder="Entrez votre nom d'utilisateur")
 password = st.text_input("Mot de passe", type="password", placeholder="Entrez votre mot de passe")

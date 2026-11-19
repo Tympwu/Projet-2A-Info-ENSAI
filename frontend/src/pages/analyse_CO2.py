@@ -1,11 +1,12 @@
 import pandas as pd
 import streamlit as st
 
+from utils.affichage import configurer_page
 from utils.api_client import api_client
 from utils.log_init import get_page_logger
 
-st.set_page_config(page_title="Analyse CO₂", page_icon="🌱")
-logger = get_page_logger("analyse_CO2")
+configurer_page(layout="centered")
+logger = get_page_logger("home")
 
 audit_id = st.session_state.get("audit_id")
 if audit_id is None:
@@ -33,7 +34,9 @@ if st.button("Lancer l'analyse", type="primary"):
             st.divider()
             st.metric("Émissions de CO₂ totales", f"{(emissions['emissionCO2_total'] or 0):.2f}")
             st.subheader("Détail par fichier")
-            st.dataframe(pd.DataFrame(emissions["dossier"]["liste_fichiers"]), use_container_width=True)
+            st.dataframe(
+                pd.DataFrame(emissions["dossier"]["liste_fichiers"]), use_container_width=True
+            )
     else:
         code = reponse["status_code"] if reponse else "aucune réponse"
         reason = reponse["data"]["detail"]

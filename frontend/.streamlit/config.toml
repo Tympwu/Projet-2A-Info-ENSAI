@@ -2,20 +2,19 @@
 port = 8000
 
 [theme]
-textColor="#1a1a1a"
-font="Calibri"
+textColor = "#1A1450"
+font = "sans-serif"
 
-primaryColor="#1963a0"
-backgroundColor="#90C090"
-secondaryBackgroundColor="#ffffff"
+primaryColor = "#8B2FE8"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F3F0FC"
 
-redTextColor="#8b0303"
-redBackgroundColor="#ff5f5f"
-greenTextColor="#016806"
-greenBackgroundColor="#9cd1b7"
-yellowTextColor="#bd7f0c"
-yellowBackgroundColor="#f7bd53"
+redTextColor = "#B42318"
+redBackgroundColor = "#FDE2E0"
+greenTextColor = "#067647"
+greenBackgroundColor = "#D1F2E0"
+yellowTextColor = "#B54708"
+yellowBackgroundColor = "#FEF0C7"
 
-
-dataframeBorderColor="#976a09"
-dataframeHeaderBackgroundColor="#eea73d"
+dataframeBorderColor = "#D9D2F0"
+dataframeHeaderBackgroundColor = "#E6DDFB"
