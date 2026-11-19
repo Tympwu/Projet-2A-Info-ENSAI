@@ -247,7 +247,7 @@ class Analyse_fichier:
 
         self.api_url_OSV = os.getenv("OSV_API_URL", self.URL_OSV_PAR_DEFAUT)
         puissance = os.getenv(
-            "PUISSANCE_MACHINE_W", 500000
+            "PUISSANCE_MACHINE_W", 15.0
         )  # Valeur temporaire à changer le temps d'obtenir la vraie valeur dans le .env
         if puissance:
             try:
