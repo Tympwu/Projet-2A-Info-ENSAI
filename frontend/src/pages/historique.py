@@ -54,4 +54,4 @@ with st.expander("Supprimer mon historique"):
         else:
             code = suppression["status_code"] if suppression else "aucune réponse"
             logger.error(f"Échec de la suppression de l'historique : {code}")
-            st.error(f"La suppression a échoué (code {code}).")
+            st.error(f"La suppression a échoué (code {code}).")   # test
