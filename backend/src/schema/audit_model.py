@@ -48,3 +48,15 @@ class AuditHistoriqueModel(BaseModel):
     id: int
     statut: str
     score: float | None = None
+
+
+class CertificatModel(BaseModel):
+    """Certificat renvoyé par l'API après application de la Quality Gate (F5)."""
+
+    audit_id: int
+    nom: str
+    date_delivrance: datetime.datetime | None = None
+    statut: str
+    score: float | None = None
+    emissionCO2_total: float | None = None
+    motifs: list[str] = []

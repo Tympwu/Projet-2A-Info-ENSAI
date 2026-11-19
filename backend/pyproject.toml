@@ -27,7 +27,7 @@ dependencies = [
 
 # Dependencies used only for development, not for runtime
 [project.optional-dependencies]
-dev = ["bandit", "coverage", "pylint", "pytest", "ruff"]
+dev = ["bandit", "coverage", "httpx", "pylint", "pytest", "ruff"]
 
 [build-system]
 requires = ["setuptools>=61.0"]
