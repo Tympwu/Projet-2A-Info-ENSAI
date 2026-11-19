@@ -1,12 +1,10 @@
 from datetime import datetime
 
 from business_object.audit import Audit
-from business_object.certificat import Certificat
 from business_object.dossier import Dossier
 from business_object.fichier import Fichier
 from dao.audit_dao import AuditDao
 from dao.fichier_dao import FichierDao
-from dao.manager_db import Manager_db
 from service.analyse_fichier import Analyse_fichier
 from service.utilisateur_service import UtilisateurService
 from utils.log_utils import get_logger, log
@@ -199,17 +197,3 @@ class DossierService:
         print("etape 5 OK")
 
         return audit
-
-    @log
-    def generer_et_exporter_certificat(self, audit: Audit, exporter: bool = False) -> Certificat:
-        """Génère le certificat de l'audit et l'exporte si demandé.
-        Args:
-            audit (Audit): Audit à utiliser pour la création du certificat
-            exporter (bool) = False: Paramètre indiquant la nécessité d'exporter le certificat dans un fichier pdf
-        Return:
-            Certificat: Certificat généré suite à l'Audit
-        """
-        certificat = Certificat(audit=audit, date_delivrance=datetime.today())
-        if exporter:
-            Manager_db().write_certificate(certificat)
-        return certificat
