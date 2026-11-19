@@ -2,6 +2,7 @@ from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
+
 from schema.audit_model import AuditReadModel, CertificatModel
 from service.audit_service import AuditService
 from utils.log_utils import get_logger
@@ -128,7 +129,10 @@ async def detail_audit(taille_entree: int = 500, audit_service=Depends(get_audit
     try:
         audit = audit_service.analyse_CO2_audit(nb_entree=taille_entree)
     except ValueError:
-        raise HTTPException(status_code=500, detail="Erreur lors de l'analyse.\nCela peut provenir d'une absence d'audit en mémoire, de fichiers incompatibles ou d'erreur d'analyse.") from ValueError
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur lors de l'analyse.\nCela peut provenir d'une absence d'audit en mémoire, de fichiers incompatibles ou d'erreur d'analyse.",
+        ) from ValueError
     return audit
 
 

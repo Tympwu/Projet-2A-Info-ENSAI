@@ -65,4 +65,3 @@ class Manager_db(metaclass=Singleton):
             UtilisateurDao().update_utilisateur(user)
 
         return True
-

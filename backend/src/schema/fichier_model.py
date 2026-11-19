@@ -66,7 +66,6 @@ class FichierSubmitModel(BaseModel):
     score: float | None = None
     emissionCO2: int | None = None
 
-
     @field_validator("extension")
     @classmethod
     def check_extension(cls, v: str) -> str:

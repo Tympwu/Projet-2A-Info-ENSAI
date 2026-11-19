@@ -46,7 +46,7 @@ async def consulter_historique(
     try:
         historique = historique_service.consulter_historique(id_utilisateur)
     except ValueError:
-        raise HTTPException(status_code=404, detail=f"Utilisateur (id={id_utilisateur}) not found.")
+        raise HTTPException(status_code=404, detail=f"Utilisateur (id={id_utilisateur}) not found.") from ValueError
     if not historique:
         raise HTTPException(status_code=500, details="Historique introuvable")
     return historique
@@ -70,7 +70,7 @@ async def remove_historique(
     try:
         success = historique_service.supprimer_historique(id_utilisateur)
     except ValueError:
-        raise HTTPException(status_code=500, detail="Erreur lors de la suppression de l'historique")
+        raise HTTPException(status_code=500, detail="Erreur lors de la suppression de l'historique") from ValueError
     if not success:
         raise HTTPException(status_code=404, detail=f"Utilisateur(id={id_utilisateur}) introuvable")
     else:

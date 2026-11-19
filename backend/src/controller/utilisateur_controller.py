@@ -44,7 +44,9 @@ async def find_utilisateur(
     logger.info("Recherche d'un utilisateur par ID")
     utilisateur = utilisateur_service.find_utilisateur(id_utilisateur)
     if not utilisateur:
-        raise HTTPException(status_code=404, detail=f"Utilisateur (id={id_utilisateur}) introuvable.")
+        raise HTTPException(
+            status_code=404, detail=f"Utilisateur (id={id_utilisateur}) introuvable."
+        )
     return utilisateur
 
 

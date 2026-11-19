@@ -29,7 +29,7 @@ class Certificat:
         date_delivrance: datetime | None = None,
     ) -> None:
         self.audit = audit
-        self.id = audit.id if audit is not None else None
+        self.id = None if audit is None else audit.id
         if audit is not None:
             self.nom = audit.dossier.nom or f"Audit n°{audit.id}"
         else:

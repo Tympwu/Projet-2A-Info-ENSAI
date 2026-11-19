@@ -125,7 +125,9 @@ class AuditService(metaclass=Singleton):
                 try:
                     code = chemin.read_text(encoding="utf-8")
                 except UnicodeDecodeError:
-                    raise ValueError(f"{chemin.name} n'est pas encodé en UTF-8") from UnicodeDecodeError
+                    raise ValueError(
+                        f"{chemin.name} n'est pas encodé en UTF-8"
+                    ) from UnicodeDecodeError
                 fichiers.append(Fichier(code=code, extension=chemin.suffix))
 
         if not fichiers:
