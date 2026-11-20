@@ -29,7 +29,7 @@ def afficher_audit(audit: dict, cle: str = "audit") -> None:
     col1, col2, col3 = st.columns(3)
     col1.metric("Score", audit.get("score"))
     col2.metric("Complexité", f"O(n^{audit.get("complexite_total")})")
-    col3.metric("Émissions de CO₂ totales", f"{(audit.get('emissionCO2_total') or 0):.2f}g/kWh")
+    col3.metric("Émissions de CO₂ totales", f"{(audit.get('emissionCO2_total') or 0):.2f}gCO₂/kWh")
 
     fichiers = audit.get("dossier")["liste_fichiers"]
     if fichiers:

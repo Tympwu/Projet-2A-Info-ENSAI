@@ -120,12 +120,6 @@ if audit:
     afficher_audit(audit, cle="nouvel_audit")
     id_audit = audit.get("id")
 
-    if id_audit is not None:
-        if st.button("Analyser le CO₂ de cet audit"):
-            st.session_state["audit_id"] = id_audit
-            st.session_state.pop("emissions", None)
-            st.switch_page("pages/analyse_CO2.py")
-
     if utilisateur and id_audit is not None:
         st.subheader("Certificat et SBOM")
         exports = recuperer_exports(id_audit)
