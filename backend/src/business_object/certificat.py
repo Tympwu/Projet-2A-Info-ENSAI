@@ -21,7 +21,7 @@ class Certificat:
     audit (Audit | None): Audit certifié.
     """
 
-    SEUIL_SCORE: float = 5.0
+    SEUIL_SCORE: float = 15.0
 
     def __init__(
         self,
@@ -66,7 +66,7 @@ class Certificat:
         # 2. Critère sécurité
         if self.audit.score is None:
             self.motifs.append("Le score de vulnérabilité n'a pas été calculé.")
-        elif self.audit.score >= self.SEUIL_SCORE:
+        elif self.audit.score <= self.SEUIL_SCORE:
             self.motifs.append(
                 f"Score de vulnérabilité trop élevé : {self.audit.score:.1f} "
                 f"(seuil : {self.SEUIL_SCORE:.1f})."

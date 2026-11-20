@@ -27,6 +27,7 @@ class Audit:
         id: int | None = None,
         score: float | None = None,
         emissionCO2_total: float | None = None,
+        complexite_total: int | None = None,
         date: datetime = None,
         statut: str = "créé",
     ) -> None:
@@ -50,7 +51,7 @@ class Audit:
         self.score = score
         self.emissionCO2_total = emissionCO2_total
         self.dossier = dossier
-        self.complexite_total = None
+        self.complexite_total = complexite_total
 
     def calculer_score(self) -> float:
         """
