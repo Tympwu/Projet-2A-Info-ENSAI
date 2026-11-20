@@ -2,6 +2,7 @@
 Page Streamlit « Historique » : audits enregistrés de l'utilisateur connecté.
 
 Un utilisateur voit ses audits, l'administrateur a accès à tous les audits.
+Chaque audit peut être ouvert dans la page de détail (certificat et SBOM).
 
 Endpoints utilisés :
     GET /historic/{id_utilisateur}
@@ -18,6 +19,7 @@ from utils.auth import exiger_connexion
 from utils.log_init import get_page_logger
 
 Id_admin = 1
+PAGE_DETAIL_AUDIT = "pages/detail_audit.py"
 
 configurer_page(layout="centered")
 logger = get_page_logger("home")
@@ -55,7 +57,10 @@ if not audits:
     st.info("Aucun audit enregistré.")
     st.stop()
 
-st.caption("Cochez les audits à supprimer, puis confirmez en bas de page.")
+st.caption(
+    "Ouvrez un audit pour voir son résultat et accéder à son détail "
+    "(certificat et SBOM). Cochez les audits à supprimer, puis confirmez en bas de page."
+)
 
 selection = []
 for a in audits:
@@ -68,6 +73,9 @@ for a in audits:
         selection.append(a["id"])
     with col_audit.expander(f"Audit n°{a['id']} · {a.get('date', '')} · {a.get('statut', '')}"):
         afficher_audit(a, cle=f"audit_{a['id']}")
+        if st.button("Voir le détail, le certificat et le SBOM", key=f"detail_{a['id']}"):
+            st.session_state["audit_id"] = a["id"]
+            st.switch_page(PAGE_DETAIL_AUDIT)
 
 st.divider()
 

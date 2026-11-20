@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import json
 import struct
 
 import streamlit as st
@@ -100,16 +101,76 @@ if st.button("Lancer l'audit", type="primary", disabled=not fichiers):
         logger.error(f"Échec de l'audit : {code}")
         st.error(f"L'audit a échoué (code {code}). {reponse['data'] if reponse else ''}")
 
+
+def recuperer_exports(id_audit: int) -> dict:
+    """Récupère le certificat et le SBOM d'un audit, en les gardant en session."""
+    cle = f"exports_{id_audit}"
+    if cle not in st.session_state:
+        st.session_state[cle] = {
+            "certificat": api_client.get(f"/audit/{id_audit}/certificat"),
+            "sbom": api_client.get(f"/audit/{id_audit}/sbom"),
+        }
+    return st.session_state[cle]
+
+
 audit = st.session_state.get("dernier_audit")
 if audit:
     st.divider()
     st.subheader("Résultat de l'audit")
     afficher_audit(audit, cle="nouvel_audit")
     id_audit = audit.get("id")
+
     if id_audit is not None:
         if st.button("Analyser le CO₂ de cet audit"):
             st.session_state["audit_id"] = id_audit
             st.session_state.pop("emissions", None)
             st.switch_page("pages/analyse_CO2.py")
-    if not utilisateur:
-        st.caption("Audit non enregistré : connectez-vous pour conserver vos audits.")
+
+    if utilisateur and id_audit is not None:
+        st.subheader("Certificat et SBOM")
+        exports = recuperer_exports(id_audit)
+        col_certif, col_sbom = st.columns(2)
+
+        # --- Certificat ---
+        rep_certif = exports["certificat"]
+        if rep_certif["status_code"] == 200:
+            certificat = rep_certif["data"]
+            statut = certificat["statut"]
+
+            if statut == "validé":
+                st.success(f"Certificat : {statut} ✅")
+            elif statut in ("échoué", "rejeté"):
+                st.error(f"Certificat : {statut} ❌")
+            else:
+                st.warning(f"Certificat : {statut}")
+
+            if certificat.get("motifs"):
+                with st.expander("Motifs"):
+                    for motif in certificat["motifs"]:
+                        st.write(f"- {motif}")
+
+            col_certif.download_button(
+                "📄 Télécharger le certificat",
+                data=json.dumps(certificat, ensure_ascii=False, indent=2),
+                file_name=f"certificat_audit_{id_audit}.json",
+                mime="application/json",
+            )
+        else:
+            col_certif.error(f"Certificat indisponible (code {rep_certif['status_code']}).")
+
+        # --- SBOM ---
+        rep_sbom = exports["sbom"]
+        if rep_sbom["status_code"] == 200:
+            col_sbom.download_button(
+                "📦 Télécharger le SBOM",
+                data=json.dumps(rep_sbom["data"], ensure_ascii=False, indent=2),
+                file_name=f"sbom_audit_{id_audit}.json",
+                mime="application/json",
+            )
+        else:
+            col_sbom.error(f"SBOM indisponible (code {rep_sbom['status_code']}).")
+    elif not utilisateur:
+        st.caption(
+            "Audit non enregistré : connectez-vous pour conserver vos audits "
+            "et télécharger le certificat et le SBOM."
+        )
