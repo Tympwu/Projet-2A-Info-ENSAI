@@ -102,6 +102,8 @@ class DossierService:
     @log
     def traiter_emission_dossier(self, audit: Audit, n: int = 500) -> Audit:
         """Analyse l'impact écologique du dossier compris dans l'audit
+        Calcul le score total de l'audit et l'enregistre dans la base de donnée
+
         Args:
             audit (Audit): Audit contenant le dossier dont l'analyse énergétique va être faire
             n (int) = 500: Taille de l'entrée prise comme référence
@@ -117,6 +119,19 @@ class DossierService:
                 audit.emissionCO2_total += fichier.emissionCO2
         if audit.emissionCO2_total == 0:
             logger.warning("Echec du calcul des emissions CO2 de l'audit")
+
+        # Calcul score total de l'audit
+        try:
+            audit.lancer()
+        except ValueError:
+            logger.error("Erreur lors du calcul général de l'audit")
+            raise ArithmeticError("Erreur lors du calcul général de l'audit") from ValueError
+        print("etape 4 OK")
+
+        # Enregistrement de l'audit dans la base de donnée
+        if not self.audit_dao.update_audit(audit):
+            raise ValueError("Erreur lors du stockage dans la base de donnée")
+        print("etape 5 OK")
         return audit
 
     @log
@@ -128,7 +143,6 @@ class DossierService:
             - Extraction des dépendances en local (dans l'objet fichier)
             - Analyse des anti-patterns présent dans le fichier et stockage en local
             - Calcul du score affecté au fichier
-        - Calcul final de l'audit
         Args:
             dossier (Dossier): Dossier à analyser pour l'audit
         Returns:
@@ -136,7 +150,6 @@ class DossierService:
         Raises:
             ValueError: Analyse des anti-patterns échouée
             ArithmeticError: Echec du calcul des scores des dépendances
-            ArithmeticError: Erreur lors du calcul général de l'audit
             FileNotFoundError: Le fichier est invalide ou illisible
             FileNotFoundError Le fichier est introuvable
         """
@@ -183,17 +196,5 @@ class DossierService:
                 logger.error("Echec du calcul des scores des dépendances")
                 raise ArithmeticError("Echec du calcul des scores des dépendances")
             print("etape 3 OK")
-
-        try:
-            audit.lancer()
-        except ValueError:
-            logger.error("Erreur lors du calcul général de l'audit")
-            raise ArithmeticError("Erreur lors du calcul général de l'audit") from ValueError
-        print("etape 4 OK")
-
-        # Enregistrement de l'audit dans la base de donnée
-        if not self.audit_dao.update_audit(audit):
-            raise ValueError("Erreur lors du stockage dans la base de donnée")
-        print("etape 5 OK")
 
         return audit

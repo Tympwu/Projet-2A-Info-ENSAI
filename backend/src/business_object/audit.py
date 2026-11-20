@@ -105,7 +105,7 @@ class Audit:
             f.id: f.complexite for f in self.dossier.obtenir_fichiers() if f.complexite is not None
         }
 
-    def lancer(self, CO2=False) -> bool:
+    def lancer(self) -> bool:
         """
             Exécute l'audit du dossier.
 
@@ -119,10 +119,6 @@ class Audit:
 
         Les émissions de CO2 totales sont également calculées si tous les
         fichiers possèdent une valeur d'émission.
-
-        Args
-        ----
-            CO2 (bool) = False : Prend en compte le calcul du CO2 ou pas
 
         Returns
         -------
@@ -146,21 +142,22 @@ class Audit:
 
             self.calculer_score()
 
-            if self.score < 5:
+            if any(f.emissionCO2 is None for f in fichiers if f.extension == ".py"):
+                raise ValueError(
+                    "Impossible de calculer les émissions totales : "
+                    "les émissions de certains fichiers ne sont pas calculées."
+                )
+
+            self.emissionCO2_total = sum(
+                (f.emissionCO2 for f in fichiers if f.extension == ".py"), start=0
+            )
+
+            self.score = (10 - round(self.emissionCO2_total / 0.01)) + (10 - self.score)
+
+            if self.score > 15:
                 self.statut = "validé"
             else:
                 self.statut = "refusé"
-
-            if CO2:
-                if any(f.emissionCO2 is None for f in fichiers if f.extension == ".py"):
-                    raise ValueError(
-                        "Impossible de calculer les émissions totales : "
-                        "les émissions de certains fichiers ne sont pas calculées."
-                    )
-
-                self.emissionCO2_total = sum(
-                    (f.emissionCO2 for f in fichiers if f.extension == ".py"), start=0
-                )
 
             return True
 

@@ -65,9 +65,7 @@ class AuditService(metaclass=Singleton):
             raise ValueError("Dossier introuvable")
         self.current_audit = self.dossier_service.traiter_dossier(dossier)
         self.current_audit = self.dossier_service.traiter_emission_dossier(self.current_audit, nb_entree)
-        print(self.dossier_service.traiter_emission_dossier(self.current_audit, nb_entree).dossier.liste_fichiers[0].complexite)
         self.current_audit.calculer_complexite()
-        print(self.current_audit.complexite_total)
         return self.current_audit
 
     @log
