@@ -32,7 +32,9 @@ if st.button("Lancer l'analyse", type="primary"):
         emissions = st.session_state.get("emissions")
         if emissions and emissions["id"] == audit_id:
             st.divider()
-            st.metric("Émissions de CO₂ totales", f"{(emissions['emissionCO2_total'] or 0):.2f}")
+            col1, col2 = st.columns(2)
+            col1.metric("Émissions de CO₂ totales", f"{(emissions['emissionCO2_total'] or 0):.2f}g/kWh")
+            col2.metric("Complexité maximale", f"O(n^{(emissions['complexite_total'] or 0)})")
             st.subheader("Détail par fichier")
             st.dataframe(
                 pd.DataFrame(emissions["dossier"]["liste_fichiers"]), use_container_width=True

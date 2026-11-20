@@ -26,10 +26,7 @@ def afficher_audit(audit: dict, cle: str = "audit") -> None:
     else:
         st.warning(f"Statut : {statut}")
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Score", audit.get("score"))
-    col2.metric("Émissions de CO₂", audit.get("emissionCO2_total"))
-    col3.metric("Complexité maximale", audit.get("complexite_max"))
+    st.metric("Score", audit.get("score"))
 
     fichiers = audit.get("fichiers")
     if fichiers:
