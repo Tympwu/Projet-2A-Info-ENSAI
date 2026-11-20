@@ -50,6 +50,7 @@ class Audit:
         self.score = score
         self.emissionCO2_total = emissionCO2_total
         self.dossier = dossier
+        self.complexite_total = None
 
     def calculer_score(self) -> float:
         """
@@ -138,6 +139,8 @@ class Audit:
         self.score = None
         self.emissionCO2_total = None
         try:
+            self.complexite_total = self.calculer_complexite()
+
             fichiers = self.dossier.obtenir_fichiers()
 
             self.calculer_score()

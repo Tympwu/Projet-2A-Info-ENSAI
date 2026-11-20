@@ -42,6 +42,7 @@ class AuditReadModel(BaseModel):
     date: datetime.datetime | None = datetime.datetime.today()
     emissionCO2_total: float | None = None
     dossier: DossierSchema
+    complexite_total: int | None = None
 
 
 class AuditHistoriqueModel(BaseModel):
