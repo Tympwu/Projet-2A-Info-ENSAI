@@ -25,14 +25,15 @@ class AuditDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "INSERT INTO audit(utilisateur_id, date_audit, statut, score, emissionCO2) VALUES "
-                        "(%(utilisateur_id)s, %(date_audit)s, %(statut)s, %(score)s, %(emissionCO2)s) "
+                        "INSERT INTO audit(utilisateur_id, date_audit, statut, score, complexite, emissionCO2) VALUES "
+                        "(%(utilisateur_id)s, %(date_audit)s, %(statut)s, %(score)s, %(complexite)s, %(emissionCO2)s) "
                         "RETURNING id;",
                         {
                             "utilisateur_id": utilisateur_id,
                             "date_audit": audit.date,
                             "statut": audit.statut,
                             "score": audit.score,
+                            "complexite": audit.complexite_total,
                             "emissionCO2": audit.emissionCO2_total,
                         },
                     )
@@ -65,6 +66,7 @@ class AuditDao(metaclass=Singleton):
                         "date_audit = %(date_audit)s, "
                         "statut = %(statut)s, "
                         "score = %(score)s, "
+                        "complexite = %(complexite)s, "
                         "emissionco2 = %(emissionCO2)s "
                         "WHERE id = %(id)s;",
                         {
@@ -72,6 +74,7 @@ class AuditDao(metaclass=Singleton):
                             "date_audit": audit.date,
                             "statut": audit.statut,
                             "score": audit.score,
+                            "complexite": audit.complexite_total,
                             "emissionCO2": audit.emissionCO2_total,
                         },
                     )
@@ -119,7 +122,7 @@ class AuditDao(metaclass=Singleton):
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT id, date_audit, statut, score, emissionCO2 "
+                        "SELECT id, date_audit, statut, score, complexite, emissionco2 "
                         "FROM audit WHERE id = %(id)s;",
                         {
                             "id": id_audit,
@@ -133,7 +136,7 @@ class AuditDao(metaclass=Singleton):
         audit = None
         if res:
             dossier = Dossier(
-                nom="",  # A VOIR
+                nom="",
                 signature_HMAC="",
                 liste_fichiers=FichierDao().find_by_audit(id_audit),
                 date_soumission=res["date_audit"],
@@ -142,6 +145,8 @@ class AuditDao(metaclass=Singleton):
                 id=res["id"],
                 date=res["date_audit"],
                 statut=res["statut"],
+                complexite_total=res["complexite"],
+                emissionCO2_total=res["emissionco2"],
                 dossier=dossier,
             )
             audit.score = res["score"]
@@ -188,6 +193,7 @@ class AuditDao(metaclass=Singleton):
                         date=row["date_audit"],
                         statut=row["statut"],
                         score=row["score"],
+                        complexite_total=row["complexite"],
                         emissionCO2_total=row["emissionco2"],
                         dossier=dossier,
                     )
@@ -204,7 +210,7 @@ class AuditDao(metaclass=Singleton):
         try:
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
-                    cursor.execute("SELECT id, date_audit, statut, score, emissionCO2 FROM audit;")
+                    cursor.execute("SELECT id, date_audit, statut, score, complexite, emissionCO2 FROM audit;")
                     res = cursor.fetchall()
         except Exception as e:
             logger.error(e)
@@ -225,6 +231,7 @@ class AuditDao(metaclass=Singleton):
                         date=row["date_audit"],
                         statut=row["statut"],
                         score=row["score"],
+                        complexite_total=row["complexite"],
                         emissionCO2_total=row["emissionco2"],
                         dossier=dossier,
                     )

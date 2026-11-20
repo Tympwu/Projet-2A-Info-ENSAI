@@ -19,6 +19,7 @@ CREATE TABLE Audit (
     date_audit DATE NOT NULL,
     statut VARCHAR DEFAULT NULL,
     score FLOAT(4) DEFAULT NULL,
+    complexite INT DEFAULT NULL,
     emissionCO2 NUMERIC(5) DEFAULT NULL,
 CONSTRAINT fk_Audit
 FOREIGN KEY (utilisateur_id)

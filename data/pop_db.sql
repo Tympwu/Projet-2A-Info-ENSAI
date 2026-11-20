@@ -3,14 +3,14 @@ INSERT INTO Utilisateurs(mot_de_passe, name, email) VALUES
 ('azerty', 'jacques', 'jacques@ensai.fr'),
 ('a'     , 'jean'   , 'jean@ensai.fr'   );
 
-INSERT INTO Audit(utilisateur_id, date_audit, statut, score, emissionCO2) VALUES
-(1, '01/01/1997', 'créé'  , NULL, NULL ),
-(1, '02/01/1997', 'échoué', 4   , NULL ),
-(2, '12/10/2004', 'refusé', 6   , 800  ),
-(2, '12/10/2004', 'validé', 3   , NULL ),
-(3, '06/24/2031', 'refusé', 9   , 95.25),
-(3, '06/30/2031', 'refusé', 7   , 90.63),
-(3, '06/30/2031', 'validé', 2   , 82.67);
+INSERT INTO Audit(utilisateur_id, date_audit, statut, score, complexite, emissionCO2) VALUES
+(1, '01/01/1997', 'créé'  , NULL, NULL, NULL ),
+(1, '02/01/1997', 'échoué', 4   , NULL, NULL ),
+(2, '12/10/2004', 'refusé', 6   , 4   , 800  ),
+(2, '12/10/2004', 'validé', 3   , NULL, NULL ),
+(3, '06/24/2031', 'refusé', 9   , 1   , 95.25),
+(3, '06/30/2031', 'refusé', 7   , 1   , 90.63),
+(3, '06/30/2031', 'validé', 2   , 1   , 82.67);
 
 INSERT INTO Fichier(audit_id, code, extension, score, complexite, emissionCO2) VALUES
 (1, 'a', '.py'  , NULL , NULL, NULL ),
