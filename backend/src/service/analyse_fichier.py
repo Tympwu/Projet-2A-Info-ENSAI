@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from business_object.dependance import Dependances
 from business_object.fichier import Fichier
 from business_object.vulnerabilite import Vulnerabilite
+from utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +175,7 @@ class AnalyseurAntiPatterns(ast.NodeVisitor):
         self.generic_visit(noeud)
 
 
-class Analyse_fichier:
+class Analyse_fichier(metaclass=Singleton):
     """
     Analyse les fichiers d'un dossier (complexité, dépendances, vulnérabilités...).
 
@@ -227,6 +228,9 @@ class Analyse_fichier:
         self.pue: float = 1.0  # Power Usage Effectiveness.C'est un indicateur d'efficacité énergétique d'un centre de donnée (recommandé par le prof)
         self.intensite_carbone: float = 29.0  # d'apres le bilan électrique 2025 de RTE
         self.vitesse_machine: float | None = None
+
+        # Liste de dépendances analysés
+        self.view_dependances = {}
 
         self.load_environment_variables()
 
@@ -526,6 +530,8 @@ class Analyse_fichier:
             TimeoutError: Si l'API ne répond pas à temps.
             json.JSONDecodeError: Si la réponse n'est pas du JSON valide.
         """
+        if dependance.nom in self.view_dependances:
+            return self.view_dependances[dependance.nom]
         fiches: list[dict] = []
         jeton = None
         while True:
@@ -545,6 +551,7 @@ class Analyse_fichier:
             fiches.extend(donnees.get("vulns", []))
             jeton = donnees.get("next_page_token")
             if not jeton:
+                self.view_dependances[dependance.nom] = fiches
                 return fiches
 
     def _score_vulnerabilite(self, fiche: dict) -> float | None:

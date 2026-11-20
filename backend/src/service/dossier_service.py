@@ -153,7 +153,7 @@ class DossierService:
             logger.error("Création de l'audit impossible")
             return None
 
-        print("Intro 2 OK\n Passage aux traitement fichier par fichier : \n\n")
+        print("Intro 2 OK\nPassage aux traitement fichier par fichier :\n")
         # Analyse fichier par fichiers
         for fichier in dossier.liste_fichiers:
             try:
