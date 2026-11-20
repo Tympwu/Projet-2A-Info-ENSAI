@@ -530,8 +530,10 @@ class Analyse_fichier(metaclass=Singleton):
             TimeoutError: Si l'API ne répond pas à temps.
             json.JSONDecodeError: Si la réponse n'est pas du JSON valide.
         """
-        if dependance.nom in self.view_dependances:
-            return self.view_dependances[dependance.nom]
+        # Les failles dépendent de la version : la clé du cache est (nom, version).
+        cle = (dependance.nom, dependance.version)
+        if cle in self.view_dependances:
+            return self.view_dependances[cle]
         fiches: list[dict] = []
         jeton = None
         while True:
@@ -551,7 +553,7 @@ class Analyse_fichier(metaclass=Singleton):
             fiches.extend(donnees.get("vulns", []))
             jeton = donnees.get("next_page_token")
             if not jeton:
-                self.view_dependances[dependance.nom] = fiches
+                self.view_dependances[cle] = fiches
                 return fiches
 
     def _score_vulnerabilite(self, fiche: dict) -> float | None:

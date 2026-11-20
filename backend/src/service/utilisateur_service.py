@@ -38,9 +38,8 @@ class UtilisateurService(metaclass=Singleton):
         if not utilisateur:
             return False
 
-        hash_mdp = self.verif_hash_mdp(mdp, name)
         utilisateur.name = name
-        utilisateur.mot_de_passe = hash_mdp
+        utilisateur.mot_de_passe = hash_mdp(mdp, name)
         utilisateur.email = email
 
         return utilisateur if self.utilisateur_dao.update_utilisateur(utilisateur) else None

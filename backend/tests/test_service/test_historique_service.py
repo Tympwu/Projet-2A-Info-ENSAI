@@ -1,11 +1,17 @@
 """Tests unitaires de HistoriqueService."""
 
 from unittest.mock import MagicMock, patch
+
 import pytest
 
-from service.historique_service import HistoriqueService
-from business_object.historique import Historique
 from business_object.audit import Audit
+from business_object.historique import Historique
+from service.historique_service import HistoriqueService
+
+
+def un_audit(id_audit: int) -> Audit:
+    """Audit minimal : depuis le passage à `code`, un Audit a toujours un dossier."""
+    return Audit(id=id_audit, dossier=MagicMock())
 
 
 @pytest.fixture
@@ -22,6 +28,7 @@ def service(faux_audit_dao):
 
 
 # --- Tests de la méthode utilitaire `verifier_id` ---
+
 
 @pytest.mark.parametrize("valeur_invalide", [0, -1, "1", None, 1.5])
 def test_verifier_id_invalide(valeur_invalide):
@@ -40,9 +47,10 @@ def test_verifier_id_valide():
 
 # --- Tests de la méthode `consulter_historique` ---
 
+
 def test_consulter_historique_succes(service, faux_audit_dao):
     """Vérifie la construction correcte de l'objet Historique pour un utilisateur valide."""
-    audits_fictifs = [Audit(id=1), Audit(id=2)]
+    audits_fictifs = [un_audit(1), un_audit(2)]
     faux_audit_dao.find_by_utilisateur.return_value = audits_fictifs
 
     historique = service.consulter_historique(id_utilisateur=3)
@@ -61,9 +69,10 @@ def test_consulter_historique_id_invalide(service):
 
 # --- Tests de la méthode `supprimer_audit_historique` ---
 
+
 def test_supprimer_audit_historique_succes(service, faux_audit_dao):
     """Vérifie la suppression réussie d'un audit existant."""
-    audit_existant = Audit(id=10)
+    audit_existant = un_audit(10)
     faux_audit_dao.find_audit.return_value = audit_existant
     faux_audit_dao.remove_audit.return_value = True
 
@@ -93,9 +102,10 @@ def test_supprimer_audit_historique_id_invalide(service):
 
 # --- Tests de la méthode `supprimer_historique` (global) ---
 
+
 def test_supprimer_historique_succes(service, faux_audit_dao):
     """Vérifie la suppression de tous les audits d'un utilisateur."""
-    audits = [Audit(id=1), Audit(id=2)]
+    audits = [un_audit(1), un_audit(2)]
     faux_audit_dao.find_by_utilisateur.return_value = audits
     faux_audit_dao.remove_audit.return_value = True
 
@@ -117,7 +127,7 @@ def test_supprimer_historique_aucun_audit(service, faux_audit_dao):
 
 def test_supprimer_historique_echec_partiel(service, faux_audit_dao):
     """Vérifie que la suppression globale retourne False si au moins une suppression échoue."""
-    audits = [Audit(id=1), Audit(id=2)]
+    audits = [un_audit(1), un_audit(2)]
     faux_audit_dao.find_by_utilisateur.return_value = audits
     faux_audit_dao.remove_audit.side_effect = [True, False]
 
@@ -127,6 +137,7 @@ def test_supprimer_historique_echec_partiel(service, faux_audit_dao):
 
 
 # --- Tests de la méthode `find_all_historiques` ---
+
 
 def test_find_all_historiques(service):
     """Vérifie la récupération de tous les historiques via le service utilisateur."""

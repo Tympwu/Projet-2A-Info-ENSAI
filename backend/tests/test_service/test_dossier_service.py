@@ -1,13 +1,13 @@
-"""Tests unitaires de DossierService."""
+"""Tests unitaires de DossierService (DAO, analyse et utilisateur connecté simulés)."""
 
-from datetime import datetime
 from unittest.mock import MagicMock, patch
+
 import pytest
 
-from service.dossier_service import DossierService
+from business_object.audit import Audit
 from business_object.dossier import Dossier
 from business_object.fichier import Fichier
-from business_object.audit import Audit
+from service.dossier_service import DossierService
 
 
 @pytest.fixture
@@ -19,166 +19,232 @@ def faux_fichier_dao():
 
 @pytest.fixture
 def faux_audit_dao():
-    """Remplace AuditDao."""
+    """Remplace AuditDao : la création et l'enregistrement de l'audit réussissent par défaut."""
     with patch("service.dossier_service.AuditDao") as faux:
+        faux.return_value.create_audit.return_value = True
+        faux.return_value.update_audit.return_value = True
         yield faux.return_value
 
 
 @pytest.fixture
 def faux_analyse_fichier():
-    """Remplace Analyse_fichier."""
+    """Remplace Analyse_fichier : l'analyse des dépendances donne un score de 2 à chaque fichier."""
     with patch("service.dossier_service.Analyse_fichier") as faux:
+        analyse = faux.return_value
+        analyse.detecter_anti_patterns.return_value = []
+
+        def donner_un_score(fichier):
+            fichier.score = 2.0
+            return True
+
+        analyse.analyse_dependances.side_effect = donner_un_score
+        yield analyse
+
+
+@pytest.fixture
+def utilisateur_connecte():
+    """Remplace UtilisateurService : par défaut, personne n'est connecté."""
+    with patch("service.dossier_service.UtilisateurService") as faux:
+        faux.return_value.utilisateur_connecte = None
         yield faux.return_value
 
 
 @pytest.fixture
-def service(faux_fichier_dao, faux_audit_dao, faux_analyse_fichier):
-    """Retourne une instance de DossierService avec ses dépendances mockées."""
+def service(faux_fichier_dao, faux_audit_dao, faux_analyse_fichier, utilisateur_connecte):
+    """DossierService dont toutes les dépendances sont simulées."""
     return DossierService()
 
 
-# --- Tests de consultation et gestion des fichiers ---
+def un_dossier() -> Dossier:
+    """Dossier réaliste : un requirements.txt et un fichier Python."""
+    return Dossier(
+        nom="projet",
+        liste_fichiers=[
+            Fichier(code="requests==2.31.0\n", extension=".txt"),
+            Fichier(code="def f(l):\n    for x in l:\n        pass\n", extension=".py"),
+        ],
+    )
+
+
+# --- Consultation et gestion des fichiers ---
+
 
 def test_find_all_fichier(service, faux_fichier_dao):
-    """Vérifie la récupération de tous les fichiers."""
-    fichiers_attendus = [Fichier(id=1), Fichier(id=2)]
-    faux_fichier_dao.find_all.return_value = fichiers_attendus
+    fichiers = [Fichier(code="a", id=1), Fichier(code="b", id=2)]
+    faux_fichier_dao.find_all.return_value = fichiers
 
-    resultat = service.find_all_fichier()
-
-    assert resultat == fichiers_attendus
-    faux_fichier_dao.find_all.assert_called_once()
+    assert service.find_all_fichier() == fichiers
 
 
 def test_find_fichier_by_id(service, faux_fichier_dao):
-    """Vérifie la recherche d'un fichier par son ID."""
-    fichier_attendu = Fichier(id=5)
-    faux_fichier_dao.find_fichier.return_value = fichier_attendu
+    fichier = Fichier(code="a", id=5)
+    faux_fichier_dao.find_fichier.return_value = fichier
 
-    resultat = service.find_fichier_by_id(5)
-
-    assert resultat == fichier_attendu
+    assert service.find_fichier_by_id(5) == fichier
     faux_fichier_dao.find_fichier.assert_called_once_with(5)
 
 
-def test_create_dossier_succes(service, faux_fichier_dao):
-    """Vérifie la création d'un dossier (tous les fichiers réussissent)."""
+def test_find_fichier_by_user(service, faux_fichier_dao):
+    faux_fichier_dao.find_by_utilisateur.return_value = []
+
+    assert service.find_fichier_by_user(3) == []
+    faux_fichier_dao.find_by_utilisateur.assert_called_once_with(3)
+
+
+def test_find_fichier_by_user_inconnu(service, faux_fichier_dao):
+    faux_fichier_dao.find_by_utilisateur.side_effect = ValueError("utilisateur inconnu")
+
+    assert service.find_fichier_by_user(99) is None
+
+
+def test_remove_fichier(service, faux_fichier_dao):
+    faux_fichier_dao.remove_fichier.return_value = True
+
+    assert service.remove_fichier(4) is True
+    faux_fichier_dao.remove_fichier.assert_called_once_with(4)
+
+
+def test_create_fichier_succes(service, faux_fichier_dao):
+    fichier = Fichier(code="x = 1", extension=".py")
     faux_fichier_dao.create_fichier.return_value = True
-    fichiers = [Fichier(chemin="a.py"), Fichier(chemin="b.py")]
 
-    assert service.create_dossier(fichiers) is True
-    assert faux_fichier_dao.create_fichier.call_count == 2
+    assert service.create_fichier(fichier) is fichier
 
 
-def test_create_dossier_echec_partiel(service, faux_fichier_dao):
-    """Vérifie qu'un échec de création sur un fichier retourne False."""
-    faux_fichier_dao.create_fichier.side_effect = [True, False]
-    fichiers = [Fichier(chemin="a.py"), Fichier(chemin="b.py")]
+def test_create_fichier_echec(service, faux_fichier_dao):
+    faux_fichier_dao.create_fichier.return_value = False
 
-    assert service.create_dossier(fichiers) is False
+    assert service.create_fichier(Fichier(code="x = 1", extension=".py")) is None
 
 
-def test_remove_dossier(service, faux_fichier_dao):
-    """Vérifie la suppression d'un dossier."""
-    faux_fichier_dao.remove_dossier.return_value = True
+def test_update_fichier_succes(service, faux_fichier_dao):
+    fichier = Fichier(code="x = 2", extension=".py", id=7)
+    faux_fichier_dao.update_fichier.return_value = True
+    faux_fichier_dao.find_fichier.return_value = fichier
 
-    assert service.remove_dossier("/path/to/dir") is True
-    faux_fichier_dao.remove_dossier.assert_called_once_with("/path/to/dir")
-
-
-def test_update_dossier_succes(service, faux_fichier_dao):
-    """Vérifie la mise à jour d'un dossier existant."""
-    dossier_init = Dossier(nom="ancien")
-    nouveau_dossier = Dossier(nom="nouveau")
-    faux_fichier_dao.read_dossier.return_value = dossier_init
-    faux_fichier_dao.update_dossier.return_value = True
-
-    resultat = service.update_dossier("/path", nouveau_dossier)
-
-    assert resultat is True
-    faux_fichier_dao.update_dossier.assert_called_once_with(dossier_init, dossier_nouv=nouveau_dossier)
+    assert service.update_fichier(fichier, id_audit=3) is fichier
+    faux_fichier_dao.update_fichier.assert_called_once_with(fichier=fichier, id_audit=3)
 
 
-def test_update_dossier_inexistant_leve_erreur(service, faux_fichier_dao):
-    """Vérifie qu'une ValueError est levée si le dossier à mettre à jour n'existe pas."""
-    faux_fichier_dao.read_dossier.return_value = None
+def test_update_fichier_echec(service, faux_fichier_dao):
+    faux_fichier_dao.update_fichier.return_value = False
 
-    with pytest.raises(ValueError, match="L'adresse fourni du premier dossier n'est pas valide"):
-        service.update_dossier("/path", Dossier(nom="nouveau"))
+    assert service.update_fichier(Fichier(code="", id=7)) is None
+
+
+def test_update_fichier_deja_traite(service, faux_fichier_dao):
+    faux_fichier_dao.update_fichier.side_effect = ValueError("déjà traité")
+
+    assert service.update_fichier(Fichier(code="", id=7)) is None
 
 
 def test_consulter_dossier(service, faux_fichier_dao):
-    """Vérifie la consultation d'un dossier par son chemin."""
-    dossier_attendu = Dossier(nom="test")
-    faux_fichier_dao.read_dossier.return_value = dossier_attendu
+    dossier = Dossier(nom="", liste_fichiers=[])
+    faux_fichier_dao.read_dossier.return_value = dossier
 
-    assert service.consulter_dossier("/path") == dossier_attendu
-    faux_fichier_dao.read_dossier.assert_called_once_with("/path")
+    assert service.consulter_dossier(8) is dossier
+    faux_fichier_dao.read_dossier.assert_called_once_with(8)
 
 
-# --- Tests de l'analyse d'émissions CO2 ---
+# --- Émissions CO2 ---
+
 
 def test_traiter_emission_dossier(service, faux_analyse_fichier):
-    """Vérifie le calcul et l'accumulation des émissions CO2 pour les fichiers du dossier."""
-    f1 = MagicMock(emissionCO2=None)
-    f2 = MagicMock(emissionCO2=None)
-    dossier = MagicMock(liste_fichiers=[f1, f2])
-    audit = Audit(dossier=dossier)
-
-    faux_analyse_fichier.calculer_emissionCO2e.side_effect = [1.5, 2.5]
+    f1, f2 = Fichier(code="", extension=".py"), Fichier(code="", extension=".py")
+    audit = Audit(dossier=Dossier(nom="", liste_fichiers=[f1, f2]))
+    faux_analyse_fichier.estimer_emission_fichier.side_effect = [1.5, 2.5]
 
     resultat = service.traiter_emission_dossier(audit, n=100)
 
     assert resultat.emissionCO2_total == 4.0
-    assert f1.emissionCO2 == 1.5
-    assert f2.emissionCO2 == 2.5
-    assert faux_analyse_fichier.calculer_emissionCO2e.call_count == 2
+    assert (f1.emissionCO2, f2.emissionCO2) == (1.5, 2.5)
+    faux_analyse_fichier.estimer_emission_fichier.assert_any_call(f1, taille_reference=100)
 
 
-# --- Tests de l'analyse et traitement global d'un dossier ---
+def test_traiter_emission_dossier_ignore_les_fichiers_non_python(service, faux_analyse_fichier):
+    """Régression : un requirements.txt n'a pas de complexité, il ne doit pas faire planter l'audit."""
+    requirements = Fichier(code="requests==2.31.0\n", extension=".txt")
+    script = Fichier(code="", extension=".py")
+    audit = Audit(dossier=Dossier(nom="", liste_fichiers=[requirements, script]))
+    faux_analyse_fichier.estimer_emission_fichier.return_value = 2.0
 
-def test_traiter_dossier_succes(service, faux_audit_dao, faux_analyse_fichier):
-    """Vérifie le traitement complet et réussi d'un dossier pour un audit."""
-    fichiers = [MagicMock(spec=Fichier)]
-    fichiers[0].extraire_dependances.return_value = True
-    
-    dossier = Dossier(nom="test", liste_fichiers=fichiers)
-    faux_audit_dao.create_audit.return_value = True
-    
-    faux_analyse_fichier.detecter_anti_patterns.return_value = ["pattern1"]
-    faux_analyse_fichier.analyse_dependances.return_value = True
+    resultat = service.traiter_emission_dossier(audit, n=100)
 
-    audit_obtenu = service.traiter_dossier(dossier, id_utilisateur=1)
+    assert resultat.emissionCO2_total == 2.0
+    assert requirements.emissionCO2 is None
+    faux_analyse_fichier.estimer_emission_fichier.assert_called_once_with(
+        script, taille_reference=100
+    )
 
-    assert audit_obtenu is not None
-    assert isinstance(audit_obtenu, Audit)
-    faux_audit_dao.create_audit.assert_called_once()
-    assert fichiers[0].liste_anti_pattern == ["pattern1"]
+
+# --- Traitement complet d'un dossier (audit) ---
+
+
+def test_traiter_dossier_succes(service, faux_audit_dao):
+    dossier = un_dossier()
+
+    audit = service.traiter_dossier(dossier)
+
+    assert isinstance(audit, Audit)
+    assert audit.statut == "validé"  # score 2 < 5
+    assert audit.score == 2.0
+    assert dossier.liste_fichiers[1].liste_anti_pattern == []
+    faux_audit_dao.create_audit.assert_called_once_with(audit, None)  # personne de connecté
+    faux_audit_dao.update_audit.assert_called_once_with(audit)
+
+
+def test_traiter_dossier_rattache_l_audit_a_l_utilisateur_connecte(
+    service, faux_audit_dao, utilisateur_connecte
+):
+    utilisateur_connecte.utilisateur_connecte = MagicMock(id=42)
+
+    audit = service.traiter_dossier(un_dossier())
+
+    faux_audit_dao.create_audit.assert_called_once_with(audit, 42)
+
+
+def test_traiter_dossier_anti_patterns_seulement_sur_les_py(service, faux_analyse_fichier):
+    service.traiter_dossier(un_dossier())
+
+    faux_analyse_fichier.detecter_anti_patterns.assert_called_once()
 
 
 def test_traiter_dossier_echec_creation_audit(service, faux_audit_dao):
-    """Vérifie que traiter_dossier retourne None si la création de l'audit en base échoue."""
     faux_audit_dao.create_audit.return_value = False
-    dossier = Dossier(nom="test", liste_fichiers=[])
 
-    assert service.traiter_dossier(dossier) is None
-
-
-def test_traiter_dossier_echec_dependance_fichier(service, faux_audit_dao):
-    """Vérifie que le traitement s'arrête et retourne None si l'extraction des dépendances échoue."""
-    fichier = MagicMock(spec=Fichier)
-    fichier.extraire_dependances.return_value = False
-    dossier = Dossier(nom="test", liste_fichiers=[fichier])
-    faux_audit_dao.create_audit.return_value = True
-
-    assert service.traiter_dossier(dossier) is None
+    assert service.traiter_dossier(un_dossier()) is None
 
 
-def test_traiter_dossier_fichier_introuvable(service, faux_audit_dao):
-    """Vérifie la gestion de l'exception FileNotFoundError lors du traitement d'un fichier."""
-    fichier = MagicMock(spec=Fichier)
-    fichier.extraire_dependances.side_effect = FileNotFoundError()
-    dossier = Dossier(nom="test", liste_fichiers=[fichier])
-    faux_audit_dao.create_audit.return_value = True
+def test_traiter_dossier_fichier_illisible(service):
+    dossier = Dossier(nom="projet", liste_fichiers=[Fichier(code="", extension=".js")])
 
-    assert service.traiter_dossier(dossier) is None
+    with pytest.raises(FileNotFoundError):
+        service.traiter_dossier(dossier)
+
+
+def test_traiter_dossier_echec_anti_patterns(service, faux_analyse_fichier):
+    faux_analyse_fichier.detecter_anti_patterns.return_value = None
+
+    with pytest.raises(ValueError):
+        service.traiter_dossier(un_dossier())
+
+
+def test_traiter_dossier_echec_analyse_dependances(service, faux_analyse_fichier):
+    faux_analyse_fichier.analyse_dependances.side_effect = None
+    faux_analyse_fichier.analyse_dependances.return_value = False
+
+    with pytest.raises(ArithmeticError):
+        service.traiter_dossier(un_dossier())
+
+
+def test_traiter_dossier_dossier_vide(service):
+    """Un dossier sans fichier ne peut pas avoir de score : l'audit échoue."""
+    with pytest.raises(ArithmeticError):
+        service.traiter_dossier(Dossier(nom="vide", liste_fichiers=[]))
+
+
+def test_traiter_dossier_echec_enregistrement(service, faux_audit_dao):
+    faux_audit_dao.update_audit.return_value = False
+
+    with pytest.raises(ValueError):
+        service.traiter_dossier(un_dossier())

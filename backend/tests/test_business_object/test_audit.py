@@ -1,4 +1,3 @@
-
 """
 Tests unitaires de la classe Audit.
 
@@ -13,8 +12,8 @@ import pytest
 
 from business_object.audit import Audit
 
-
 # ---------- Fonctions utilitaires ----------
+
 
 def creer_fichier(
     id=0,
@@ -45,13 +44,12 @@ def creer_audit(*fichiers, **options) -> Audit:
     Le dossier fournit uniquement obtenir_fichiers(),
     qui est la méthode utilisée par Audit.
     """
-    dossier = SimpleNamespace(
-        obtenir_fichiers=lambda: list(fichiers)
-    )
+    dossier = SimpleNamespace(obtenir_fichiers=lambda: list(fichiers))
     return Audit(id=1, dossier=dossier, **options)
 
 
 # ---------- Création ----------
+
 
 def test_valeurs_par_defaut():
     audit = creer_audit()
@@ -64,14 +62,16 @@ def test_valeurs_par_defaut():
 
 # ---------- Score ----------
 
-def test_calculer_score_est_la_moyenne_et_se_stocke():
+
+def test_calculer_score_est_le_max_et_se_stocke():
+    """Une seule faille critique suffit : le score de l'audit est le pire score."""
     audit = creer_audit(
         creer_fichier(0, score=2),
-        creer_fichier(1, score=4),
+        creer_fichier(1, score=9.8),
     )
 
-    assert audit.calculer_score() == 3.0
-    assert audit.score == 3.0
+    assert audit.calculer_score() == 9.8
+    assert audit.score == 9.8
 
 
 def test_calculer_score_dossier_vide():
@@ -90,6 +90,7 @@ def test_calculer_score_refuse_un_score_manquant():
 
 
 # ---------- Complexité ----------
+
 
 def test_obtenir_complexites_ignore_les_valeurs_absentes():
     audit = creer_audit(
@@ -117,12 +118,7 @@ def test_obtenir_complexites_garde_zero():
     ids=["pire en dernier", "pire en premier"],
 )
 def test_calculer_complexite_retourne_le_plus_grand_k(ks):
-    audit = creer_audit(
-        *[
-            creer_fichier(i, complexite=k)
-            for i, k in enumerate(ks)
-        ]
-    )
+    audit = creer_audit(*[creer_fichier(i, complexite=k) for i, k in enumerate(ks)])
 
     assert audit.calculer_complexite() == max(ks)
 
@@ -137,9 +133,7 @@ def test_calculer_complexite_ignore_les_inconnus():
 
 
 def test_calculer_complexite_zero_est_une_valeur_valide():
-    audit = creer_audit(
-        creer_fichier(0, complexite=0)
-    )
+    audit = creer_audit(creer_fichier(0, complexite=0))
 
     assert audit.calculer_complexite() == 0
 
@@ -159,6 +153,7 @@ def test_calculer_complexite_dossier_vide():
 
 # ---------- Lancement de l'audit ----------
 
+
 @pytest.mark.parametrize(
     "score, statut",
     [
@@ -170,9 +165,7 @@ def test_calculer_complexite_dossier_vide():
     ids=["0", "4.9", "5 (seuil : refusé)", "9"],
 )
 def test_lancer_statut_selon_le_score(score, statut):
-    audit = creer_audit(
-        creer_fichier(0, score=score, emission=0.1)
-    )
+    audit = creer_audit(creer_fichier(0, score=score, emission=0.1))
 
     assert audit.lancer() is True
     assert audit.statut == statut
@@ -192,9 +185,7 @@ def test_lancer_additionne_les_emissions():
 
 def test_lancer_sans_calcul_co2():
     """Un audit peut être lancé sans calculer les émissions."""
-    audit = creer_audit(
-        creer_fichier(0, score=2, emission=None)
-    )
+    audit = creer_audit(creer_fichier(0, score=2, emission=None))
 
     assert audit.lancer() is True
     assert audit.score == 2
@@ -222,9 +213,7 @@ def test_lancer_sans_calcul_co2():
         ),
     ],
 )
-def test_lancer_echoue_si_une_donnee_manque(
-    fichiers, calcul_co2
-):
+def test_lancer_echoue_si_une_donnee_manque(fichiers, calcul_co2):
     audit = creer_audit(*fichiers)
 
     with pytest.raises(ValueError):
@@ -236,12 +225,10 @@ def test_lancer_echoue_si_une_donnee_manque(
 
 # ---------- Affichage ----------
 
+
 def test_repr():
-    audit = creer_audit(
-        date=datetime(2026, 11, 3)
-    )
+    audit = creer_audit(date=datetime(2026, 11, 3))
 
     assert repr(audit) == (
-        "Audit(id=1, date=03/11/2026, statut=créé, "
-        "score=None, emissionCO2_total=None)"
+        "Audit(id=1, date=03/11/2026, statut=créé, score=None, emissionCO2_total=None)"
     )
