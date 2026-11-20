@@ -68,13 +68,15 @@ fichiers = st.file_uploader(
     accept_multiple_files=True,
 )
 
+n = st.number_input("Taille de l'entrée de référence (n)", min_value=1, value=500, step=100)
+
 if st.button("Lancer l'audit", type="primary", disabled=not fichiers):
     with st.spinner("Analyse en cours..."):
         files = [
             ("liste_fichier", (f.name, f.getvalue(), f.type or "application/octet-stream"))
             for f in fichiers
         ]
-        donnees = {"utilisateur_id": utilisateur["id"]} if utilisateur else None
+        donnees = {"utilisateur_id": utilisateur["id"], "nb_entree": n} if utilisateur else None
 
         # F1 : Récupérer la clé secrète
         cle_secrete = st.secrets["HMAC_SECRET_KEY"]
