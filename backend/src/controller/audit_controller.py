@@ -77,6 +77,7 @@ async def start_audit(
     utilisateur_id: int | None = Form(None),
     x_hmac_signature: str = Header(..., alias="X-HMAC-Signature"),
     audit_service=Depends(get_audit_service),
+    nb_entree: int = 500
 ):
     """F1 : Vérifier la signature HMAC avant de lancer l'audit."""
 
@@ -107,7 +108,7 @@ async def start_audit(
     logger.info("Signature HMAC valide. Création du dossier.")
 
     dossier = audit_service.create_dossier(liste_fichier)
-    audit = audit_service.create_audit(dossier)
+    audit = audit_service.create_audit(dossier, nb_entree)
 
     return audit
 

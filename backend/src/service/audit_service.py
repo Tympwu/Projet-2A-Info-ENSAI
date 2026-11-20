@@ -49,11 +49,12 @@ class AuditService(metaclass=Singleton):
         return audit
 
     @log
-    def create_audit(self, dossier) -> Audit:
+    def create_audit(self, dossier, nb_entree) -> Audit:
         """Créer un audit en se basant sur le dossier contenu dans l'audit
 
         Args:
             dossier (Dossier): Dossier contenant tous les fichiers
+            nb_entree (int): Taille de l'entrée à utiliser pour calculer les émissions
 
         Returns:
             Audit: L'audit nouvellement crée, None si il y a eu un échec dans la création.
@@ -63,6 +64,10 @@ class AuditService(metaclass=Singleton):
         if not dossier:
             raise ValueError("Dossier introuvable")
         self.current_audit = self.dossier_service.traiter_dossier(dossier)
+        self.current_audit = self.dossier_service.traiter_emission_dossier(self.current_audit, nb_entree)
+        print(self.dossier_service.traiter_emission_dossier(self.current_audit, nb_entree).dossier.liste_fichiers[0].complexite)
+        self.current_audit.calculer_complexite()
+        print(self.current_audit.complexite_total)
         return self.current_audit
 
     @log

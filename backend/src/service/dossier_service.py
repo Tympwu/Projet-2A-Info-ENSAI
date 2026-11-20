@@ -110,8 +110,8 @@ class DossierService:
         """
         audit.emissionCO2_total = 0
         for fichier in audit.dossier.liste_fichiers:
-            fichier.emissionCO2 = self.analyse_fichier.calculer_emissionCO2e(
-                fichier, nb_operations=n
+            fichier.emissionCO2 = self.analyse_fichier.estimer_emission_fichier(
+                fichier, taille_reference=n
             )
             if isinstance(fichier.emissionCO2, (int, float)):
                 audit.emissionCO2_total += fichier.emissionCO2

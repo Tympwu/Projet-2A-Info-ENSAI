@@ -77,19 +77,20 @@ class Audit:
             raise ValueError(
                 "Impossible de calculer le score : le score de certains fichiers n'est pas calculé."
             )
-        self.score = sum(f.score for f in fichiers) / len(fichiers)
+        self.score = max(f.score for f in fichiers)
         return self.score
 
     def calculer_complexite(self) -> int | None:
         """
-        Donne la pire complexité des fichiers du dossier, sous forme de l'exposant k.
+        Calcul la pire complexité des fichiers du dossier et l'enregistre localement, sous forme de l'exposant k.
 
         Returns
         -------
         int | None: Le plus grand exposant k (0 pour O(1), 1 pour O(n), 2 pour O(n^2)...),
         ou None si aucun fichier n'a de complexité exploitable.
         """
-        return max(self.obtenir_complexites().values(), default=None)
+        self.complexite_total = max(self.obtenir_complexites().values(), default=None)
+        return self.complexite_total
 
     def obtenir_complexites(self) -> dict[int, int]:
         """
