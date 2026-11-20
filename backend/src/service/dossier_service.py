@@ -112,6 +112,9 @@ class DossierService:
         """
         audit.emissionCO2_total = 0
         for fichier in audit.dossier.liste_fichiers:
+            # Seuls les fichiers Python ont une complexité, donc des émissions estimables.
+            if fichier.extension != ".py":
+                continue
             fichier.emissionCO2 = self.analyse_fichier.estimer_emission_fichier(
                 fichier, taille_reference=n
             )

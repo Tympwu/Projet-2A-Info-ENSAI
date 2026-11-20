@@ -49,6 +49,7 @@ def audit():
         statut="TERMINE",
         score=85.0,
         emissionCO2_total=1.2,
+        dossier=SimpleNamespace(liste_fichiers=[]),  # update_audit met aussi à jour les fichiers
     )
 
 
@@ -93,6 +94,21 @@ def test_update_audit_introuvable(dao, curseur, audit):
     curseur.rowcount = 0
 
     assert dao.update_audit(audit) is False
+
+
+def test_update_audit_rattache_ses_fichiers(dao, curseur, audit, faux_fichier_dao):
+    """Chaque fichier du dossier est rattaché à l'audit en base."""
+    curseur.rowcount = 1
+    fichiers = ["fichier_1", "fichier_2"]
+    audit.dossier = SimpleNamespace(liste_fichiers=fichiers)
+
+    assert dao.update_audit(audit) is True
+
+    appels = faux_fichier_dao.update_fichier.call_args_list
+    assert [(a.args[0], a.kwargs["id_audit"]) for a in appels] == [
+        ("fichier_1", 1),
+        ("fichier_2", 1),
+    ]
 
 
 def test_remove_audit_succes(dao, curseur, audit):

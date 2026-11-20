@@ -1,6 +1,7 @@
-"""Tests unitaires de FichierDao."""
+"""Tests unitaires de FichierDao (la base de données est simulée par un faux curseur)."""
 
 import re
+from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -28,10 +29,10 @@ def fichier():
     """Retourne un fichier minimal avec les attributs que le DAO lit."""
     return SimpleNamespace(
         id=1,
-        chemin="/path/to/file.py",
-        extension="py",
-        complexite=5,
-        score=90.0,
+        code="import requests\n",
+        extension=".py",
+        complexite=2,
+        score=7.5,
         emissionCO2=0.5,
     )
 
@@ -40,45 +41,67 @@ def ligne(id_fichier=1):
     """Retourne une ligne telle que la base la renverrait pour un fichier."""
     return {
         "id": id_fichier,
-        "chemin": "/path/to/file.py",
-        "extension": "py",
-        "complexite": 5,
-        "score": 90.0,
+        "audit_id": 3,
+        "code": "import requests\n",
+        "extension": ".py",
+        "complexite": 2,
+        "score": 7.5,
         "emissionco2": 0.5,
     }
+
+
+# --- Création ---
 
 
 def test_create_fichier_succes(dao, curseur, fichier):
     curseur.fetchone.return_value = {"id": 12}
 
-    assert dao.create_fichier(fichier, audit_id=5) is True
+    assert dao.create_fichier(fichier) is True
 
     assert fichier.id == 12  # l'identifiant généré par la base est récupéré
     parametres = curseur.execute.call_args.args[1]
-    assert parametres["audit_id"] == 5
-    assert parametres["chemin"] == "/path/to/file.py"
-    assert parametres["extension"] == "py"
+    assert parametres["code"] == "import requests\n"
+    assert parametres["extension"] == ".py"
     assert parametres["emissionco2"] == 0.5
 
 
 def test_create_fichier_sans_resultat(dao, curseur, fichier):
     curseur.fetchone.return_value = None
 
-    assert dao.create_fichier(fichier, audit_id=5) is False
+    assert dao.create_fichier(fichier) is False
     assert fichier.id == 1  # inchangé
 
 
+# --- Mise à jour ---
+
+
 def test_update_fichier_succes(dao, curseur, fichier):
+    curseur.fetchall.return_value = []  # le fichier n'est encore lié à aucun audit
     curseur.rowcount = 1
 
-    assert dao.update_fichier(fichier) is True
-    assert curseur.execute.call_args.args[1]["id_fichier"] == 1
+    assert dao.update_fichier(fichier, id_audit=3) is True
+
+    parametres = curseur.execute.call_args.args[1]
+    assert parametres["id_fichier"] == 1
+    assert parametres["audit_id"] == 3
 
 
 def test_update_fichier_introuvable(dao, curseur, fichier):
+    curseur.fetchall.return_value = []
     curseur.rowcount = 0
 
     assert dao.update_fichier(fichier) is False
+
+
+def test_update_fichier_deja_traite(dao, curseur, fichier):
+    """Un fichier déjà rattaché à un audit ne peut plus être modifié."""
+    curseur.fetchall.return_value = [ligne(1)]
+
+    with pytest.raises(ValueError):
+        dao.update_fichier(fichier, id_audit=3)
+
+
+# --- Suppression ---
 
 
 def test_remove_fichier_succes(dao, curseur):
@@ -94,16 +117,19 @@ def test_remove_fichier_introuvable(dao, curseur):
     assert dao.remove_fichier(99) is False
 
 
+# --- Recherche ---
+
+
 def test_find_fichier_trouve(dao, curseur):
     curseur.fetchone.return_value = ligne(4)
 
     f = dao.find_fichier(4)
 
     assert f.id == 4
-    assert f.chemin == "/path/to/file.py"
-    assert f.extension == "py"
-    assert f.complexite == 5
-    assert f.score == 90.0
+    assert f.code == "import requests\n"
+    assert f.extension == ".py"
+    assert f.complexite == 2
+    assert f.score == 7.5
     assert f.emissionCO2 == 0.5
 
 
@@ -122,6 +148,12 @@ def test_find_by_utilisateur(dao, curseur):
     assert curseur.execute.call_args.args[1] == {"id_user": 3}
 
 
+def test_find_by_utilisateur_aucun_fichier(dao, curseur):
+    curseur.fetchall.return_value = []
+
+    assert dao.find_by_utilisateur(3) == []
+
+
 def test_find_by_audit(dao, curseur):
     curseur.fetchall.return_value = [ligne(1)]
 
@@ -136,9 +168,19 @@ def test_find_all(dao, curseur):
 
     fichiers = dao.find_all()
 
-    assert len(fichiers) == 2
-    assert fichiers[0].id == 1
-    assert fichiers[1].id == 2
+    assert [f.id for f in fichiers] == [1, 2]
+
+
+def test_read_dossier(dao, curseur):
+    """Le dossier d'un audit contient ses fichiers et prend la date de l'audit."""
+    date_audit = datetime(2026, 11, 3)
+    curseur.fetchall.return_value = [ligne(1), ligne(2)]
+    curseur.fetchone.return_value = {"date_audit": date_audit}
+
+    dossier = dao.read_dossier(5)
+
+    assert [f.id for f in dossier.liste_fichiers] == [1, 2]
+    assert dossier.date_soumission == date_audit
 
 
 def test_find_by_utilisateur_requete_bien_espacee(dao, curseur):
@@ -154,7 +196,7 @@ def test_find_by_utilisateur_requete_bien_espacee(dao, curseur):
 @pytest.mark.parametrize(
     "appel",
     [
-        lambda dao, fichier: dao.create_fichier(fichier, 1),
+        lambda dao, fichier: dao.create_fichier(fichier),
         lambda dao, fichier: dao.update_fichier(fichier),
         lambda dao, fichier: dao.remove_fichier(1),
         lambda dao, fichier: dao.find_fichier(1),
@@ -162,15 +204,7 @@ def test_find_by_utilisateur_requete_bien_espacee(dao, curseur):
         lambda dao, fichier: dao.find_by_audit(1),
         lambda dao, fichier: dao.find_all(),
     ],
-    ids=[
-        "create",
-        "update",
-        "remove",
-        "find",
-        "find_by_util",
-        "find_by_audit",
-        "find_all",
-    ],
+    ids=["create", "update", "remove", "find", "find_by_util", "find_by_audit", "find_all"],
 )
 def test_erreur_bd_remontee(dao, curseur, fichier, appel):
     """Une erreur de la base n'est pas avalée : elle remonte à l'appelant."""

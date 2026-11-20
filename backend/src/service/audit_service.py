@@ -64,7 +64,9 @@ class AuditService(metaclass=Singleton):
         if not dossier:
             raise ValueError("Dossier introuvable")
         self.current_audit = self.dossier_service.traiter_dossier(dossier)
-        self.current_audit = self.dossier_service.traiter_emission_dossier(self.current_audit, nb_entree)
+        self.current_audit = self.dossier_service.traiter_emission_dossier(
+            self.current_audit, nb_entree
+        )
         self.current_audit.calculer_complexite()
         return self.current_audit
 

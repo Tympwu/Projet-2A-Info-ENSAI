@@ -7,7 +7,6 @@ Endpoint utilisé :
     POST /user/
 """
 
-# import re
 
 import streamlit as st
 
@@ -27,13 +26,11 @@ password_confirmation = st.text_input("Confirmer le mot de passe", type="passwor
 
 mdp_assez_long = len(password) >= 8
 mdp_identiques = password != "" and password == password_confirmation
-# email_valide = re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email) is not None
 
 st.write("✅" if mdp_assez_long else "❌", "Au moins 8 caractères")
 st.write("✅" if mdp_identiques else "❌", "Les deux mots de passe sont identiques")
-# st.write("✅" if email_valide else "❌", "Adresse email valide")
 
-formulaire_valide = bool(username) and mdp_assez_long and mdp_identiques  # and email_valide
+formulaire_valide = bool(username) and mdp_assez_long and mdp_identiques
 
 with st.container(horizontal_alignment="center"):
     if st.button("Créer le compte", width=200, disabled=not formulaire_valide):
