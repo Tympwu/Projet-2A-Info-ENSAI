@@ -15,6 +15,7 @@ from dao.audit_dao import AuditDao
 from service.analyse_fichier import Analyse_fichier
 from service.dossier_service import DossierService
 from utils.log_utils import log
+from utils.security import decrypt_certificat
 from utils.singleton import Singleton
 
 EXTENSIONS_AUTORISEES = {".py", ".txt", ".toml", ".lock"}
@@ -232,4 +233,24 @@ class AuditService(metaclass=Singleton):
         certificat = Certificat(audit=audit, date_delivrance=datetime.now())
         seuil_co2 = os.getenv("SEUIL_CO2_G")
         certificat.calcul_QualityGate(seuil_co2=float(seuil_co2) if seuil_co2 else None)
+        certificat.calcul_cle()
         return certificat
+
+    @log
+    def verif_certificat(self, certificat) -> Audit | None:
+        """Méthode permettant de décrypter des données cryptées et de vérifier si ces dernières correspondent au format de l'application
+
+        Args
+        ----
+            cle_certificat (str) : Données cryptées à analyser
+        Returns
+        -------
+            Audit | None : Renvoie l'audit correspondant aux données cryptées, None si le format est incorrect
+        """
+        cle_certificat = certificat.signature
+        message = f"{certificat.id_audit}|{certificat.date_delivrance}"
+        decrypt = decrypt_certificat(message, cle_certificat)
+        if decrypt:
+            return self.audit_dao.find_audit(certificat.id_audit)
+        else:
+            return None

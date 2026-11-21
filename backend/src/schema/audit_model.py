@@ -61,3 +61,11 @@ class CertificatModel(BaseModel):
     score: float | None = None
     emissionCO2_total: float | None = None
     motifs: list[str] = []
+    cle: bytes
+
+
+class SignatureRequest(BaseModel):
+    """Signature contenu dans un certificat"""
+    signature: str
+    id_audit: int
+    date_delivrance: datetime.datetime

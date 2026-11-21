@@ -3,7 +3,7 @@ from io import BytesIO
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
-from schema.audit_model import AuditReadModel, CertificatModel
+from schema.audit_model import AuditReadModel, CertificatModel, SignatureRequest
 from service.audit_service import AuditService
 from utils.log_utils import get_logger
 from utils.security import preparer_contenu_hmac, verifier_hmac
@@ -77,7 +77,7 @@ async def start_audit(
     utilisateur_id: int | None = Form(None),
     x_hmac_signature: str = Header(..., alias="X-HMAC-Signature"),
     audit_service=Depends(get_audit_service),
-    nb_entree: int = 500
+    nb_entree: int = 500,
 ):
     """F1 : Vérifier la signature HMAC avant de lancer l'audit."""
 
@@ -184,4 +184,27 @@ async def telecharger_certificat(id_audit: int, audit_service=Depends(get_audit_
         score=certificat.audit.score,
         emissionCO2_total=certificat.audit.emissionCO2_total,
         motifs=certificat.motifs,
+        cle=certificat.cle,
     )
+
+
+@router.post("/verif_certificat", response_model=AuditReadModel, tags=["Audits"])
+async def verif_certificat(certificat: SignatureRequest, audit_service=Depends(get_audit_service)):
+    """Fonction permettant de vérifier l'authenticité d'un certificat
+
+    Args
+    ----
+        cle_certificat (str) : Clé du certificat a être vérifié
+    Returns
+    -------
+        AuditReadModel : Audit du certificat si ce dernier est correct
+    Raises
+    ------
+        HTTPException: Erreur 404 si le certificat n'est pas valide
+    """
+    audit = audit_service.verif_certificat(certificat)
+    print("hi")
+    if audit is None:
+        raise HTTPException(status_code=404, detail="Le certificat n'est pas valide")
+    else:
+        return audit

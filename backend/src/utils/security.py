@@ -1,7 +1,11 @@
+import base64
 import hashlib
 import hmac
 import os
 import struct
+
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 
 
 def hash_mdp(mdp: str, name: str) -> str:
@@ -63,3 +67,31 @@ def verifier_hmac(contenu: bytes, signature: str) -> bool:
 
     # Comparaison résistante aux attaques temporelles.
     return hmac.compare_digest(signature_attendue, signature)
+
+
+def crypter_certificat(message: str) -> str:
+    """Fonction permettant de signer des données pour valider le certificat"""
+    pem = os.getenv("PRIVATE_KEY")
+    private_key = serialization.load_pem_private_key(pem.encode(), password=None)
+    sig = private_key.sign(
+        message.encode(),
+        padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+        hashes.SHA256(),
+    )
+    return base64.b64encode(sig).decode()
+
+
+def decrypt_certificat(message: str, signature_b64: str) -> bool:
+    """Fonction permettant de vérifier la signature d'un certificat"""
+    pem = os.getenv("PUBLIC_KEY")
+    public_key = serialization.load_pem_public_key(pem.encode())
+    try:
+        public_key.verify(
+            base64.b64decode(signature_b64),
+            message.encode(),
+            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+            hashes.SHA256(),
+        )
+        return True
+    except Exception:
+        return False

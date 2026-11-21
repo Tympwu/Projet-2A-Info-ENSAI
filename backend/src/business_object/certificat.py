@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from business_object.audit import Audit
+from dao.audit_dao import AuditDao
+from utils.security import crypter_certificat, decrypt_certificat
 
 
 class Certificat:
@@ -37,6 +39,7 @@ class Certificat:
         self.date_delivrance = date_delivrance
         self.statut = "en attente"
         self.motifs: list[str] = []
+        self.cle: bytes = None
 
     def calcul_QualityGate(self, seuil_co2: float | None = None) -> bool:
         """
@@ -81,3 +84,9 @@ class Certificat:
 
         self.statut = "validé" if not self.motifs else "échoué"
         return self.statut == "validé"
+
+    def calcul_cle(self):
+        """Calcul la clé crypté correspondant à l'audit et la stocke dans *self.cle*"""
+        data = f"{self.audit.id}|{self.date_delivrance}"
+        self.cle = crypter_certificat(data)
+
