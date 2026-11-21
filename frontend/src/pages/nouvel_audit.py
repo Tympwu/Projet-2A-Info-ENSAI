@@ -1,16 +1,20 @@
 import hashlib
 import hmac
 import json
+import os
 import struct
 
 import streamlit as st
 
 from utils.affichage import afficher_audit, configurer_page
 from utils.api_client import api_client
+from utils.env_variables import load_environment_variables
 from utils.log_init import get_page_logger
 
 configurer_page(layout="centered")
 logger = get_page_logger("home")
+
+load_environment_variables()
 
 
 # signature du fichier
@@ -80,7 +84,7 @@ if st.button("Lancer l'audit", type="primary", disabled=not fichiers):
         donnees = {"utilisateur_id": utilisateur["id"], "nb_entree": n} if utilisateur else None
 
         # F1 : Récupérer la clé secrète
-        cle_secrete = st.secrets["HMAC_SECRET_KEY"]
+        cle_secrete = os.getenv("HMAC_SECRET_KEY")
 
         # F1 : Calculer la signature HMAC
         signature = signer_fichiers(fichiers, cle_secrete)
