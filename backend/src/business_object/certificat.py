@@ -1,8 +1,7 @@
 from datetime import datetime
 
 from business_object.audit import Audit
-from dao.audit_dao import AuditDao
-from utils.security import crypter_certificat, decrypt_certificat
+from utils.security import crypter_certificat
 
 
 class Certificat:
@@ -89,4 +88,3 @@ class Certificat:
         """Calcul la clé crypté correspondant à l'audit et la stocke dans *self.cle*"""
         data = f"{self.audit.id}|{self.date_delivrance}"
         self.cle = crypter_certificat(data)
-

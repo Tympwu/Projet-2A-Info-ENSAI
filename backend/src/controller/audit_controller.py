@@ -203,7 +203,6 @@ async def verif_certificat(certificat: SignatureRequest, audit_service=Depends(g
         HTTPException: Erreur 404 si le certificat n'est pas valide
     """
     audit = audit_service.verif_certificat(certificat)
-    print("hi")
     if audit is None:
         raise HTTPException(status_code=404, detail="Le certificat n'est pas valide")
     else:
