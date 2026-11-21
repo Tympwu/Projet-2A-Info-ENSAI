@@ -18,10 +18,11 @@ from utils.log_init import get_page_logger
 
 PAGE_APRES_CONNEXION = "pages/nouvel_audit.py"
 PAGE_CREATION_COMPTE = "pages/creer_compte.py"
+ID_admin = 1
 
-CLES_SESSION_UTILISATEUR = ("utilisateur", "access_token", "dernier_audit")
+CLES_SESSION_UTILISATEUR = ("utilisateur", "dernier_audit", "audit_id")
 
-configurer_page(layout="centered")   # remplace ton st.set_page_config(...)
+configurer_page(layout="centered")  # remplace ton st.set_page_config(...)
 logger = get_page_logger("home")
 
 
@@ -42,6 +43,7 @@ st.markdown(
 
 utilisateur = st.session_state.get("utilisateur")
 if utilisateur:
+    is_admin = ID_admin == utilisateur["id"]
     st.write(f"Connecté en tant que **{utilisateur.get('name', '')}**.")
 
     col1, col2 = st.columns(2)
@@ -52,39 +54,52 @@ if utilisateur:
         for cle in CLES_SESSION_UTILISATEUR:
             st.session_state.pop(cle, None)
         st.rerun()
+    if not is_admin:
+        with st.expander("Supprimer mon compte"):
+            st.warning("Action définitive : votre compte et vos données seront supprimés.")
 
-    with st.expander("Supprimer mon compte"):
-        st.warning("Action définitive : votre compte et vos données seront supprimés.")
-
-        mot_de_passe = st.text_input("Mot de passe", type="password", key="mdp_suppression")
-        confirmer = st.checkbox(
-            "Je confirme vouloir supprimer définitivement mon compte",
-            key="confirmer_suppression",
-        )
-
-        if st.button(
-            "Supprimer définitivement mon compte",
-            disabled=not (mot_de_passe and confirmer),
-        ):
-            # On revérifie le mot de passe pour éviter une suppression par erreur
-            verification = api_client.post(
-                "/user/login",
-                json={"name": utilisateur["name"], "mot_de_passe": mot_de_passe},
+            mot_de_passe = st.text_input("Mot de passe", type="password", key="mdp_suppression")
+            confirmer = st.checkbox(
+                "Je confirme vouloir supprimer définitivement mon compte",
+                key="confirmer_suppression",
             )
-            if not verification or verification["status_code"] != 200:
-                st.error("Mot de passe incorrect.")
-                st.stop()
 
-            reponse = api_client.delete(f"/user/{utilisateur['id']}")
-            if reponse and reponse["status_code"] == 200:
-                logger.info(f"Compte de {utilisateur.get('name', '')} supprimé")
-                vider_session_utilisateur()
-                st.session_state["compte_supprime"] = True
-                st.rerun()
+            if st.button(
+                "Supprimer définitivement mon compte",
+                disabled=not (mot_de_passe and confirmer),
+            ):
+                # On revérifie le mot de passe pour éviter une suppression par erreur
+                verification = api_client.post(
+                    "/user/login",
+                    json={"name": utilisateur["name"], "mot_de_passe": mot_de_passe},
+                )
+                if not verification or verification["status_code"] != 200:
+                    st.error("Mot de passe incorrect.")
+                    st.stop()
+
+                reponse = api_client.delete(f"/user/{utilisateur['id']}")
+                if reponse and reponse["status_code"] == 200:
+                    logger.info(f"Compte de {utilisateur.get('name', '')} supprimé")
+                    vider_session_utilisateur()
+                    st.session_state["compte_supprime"] = True
+                    st.rerun()
+                else:
+                    code = reponse["status_code"] if reponse else "aucune réponse"
+                    logger.error(f"Échec de la suppression du compte : {code}")
+                    st.error(f"La suppression a échoué (code {code}).")
+
+    if is_admin:
+        if st.button("Réinitialiser la base de données", type="primary"):
+            logger.info("Réinitialisation de la base de données")
+            response = api_client.get("/reset_database")
+
+            if response:
+                logger.info("Base de données réinitialisée")
+                st.toast("Base de données réinitialisée ✅")
             else:
-                code = reponse["status_code"] if reponse else "aucune réponse"
-                logger.error(f"Échec de la suppression du compte : {code}")
-                st.error(f"La suppression a échoué (code {code}).")
+                logger.error("Échec de la réinitialisation de la base")
+                st.toast("Échec de la réinitialisation ❌")
+
     st.stop()
 if st.session_state.pop("compte_supprime", False):
     st.success("Votre compte a été supprimé.")
@@ -93,7 +108,7 @@ username = st.text_input("Nom d'utilisateur", placeholder="Entrez votre nom d'ut
 password = st.text_input("Mot de passe", type="password", placeholder="Entrez votre mot de passe")
 
 with st.container(horizontal_alignment="center"):
-    if st.button("Se connecter", disabled=not username or not password):
+    if st.button("Se connecter", disabled=not username or not password, shortcut="Enter"):
         logger.info(f"Tentative de connexion pour l'utilisateur : {username}")
 
         try:
@@ -109,7 +124,6 @@ with st.container(horizontal_alignment="center"):
                 if status_code == 200:
                     logger.info(f"Utilisateur {username} connecté.")
                     st.session_state["utilisateur"] = data
-                    st.session_state["access_token"] = data.get("access_token")
                     st.success(f"Bienvenue {data.get('name', username)} ! 🎉")
                     st.switch_page(PAGE_APRES_CONNEXION)
                 elif status_code in (401, 404):
@@ -133,14 +147,3 @@ st.space("small")
 
 if st.button("Créer un compte"):
     st.switch_page(PAGE_CREATION_COMPTE)
-
-if st.button("Réinitialiser la base de données", type="primary"):
-    logger.info("Réinitialisation de la base de données")
-    response = api_client.get("/reset_database")
-
-    if response:
-        logger.info("Base de données réinitialisée")
-        st.toast("Base de données réinitialisée ✅")
-    else:
-        logger.error("Échec de la réinitialisation de la base")
-        st.toast("Échec de la réinitialisation ❌")
