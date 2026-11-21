@@ -1,10 +1,14 @@
 import json
+import os
 
 import streamlit as st
 
 from utils.affichage import afficher_audit, configurer_page
 from utils.api_client import api_client
+from utils.env_variables import load_environment_variables
 from utils.log_init import get_page_logger
+
+load_environment_variables()
 
 configurer_page(layout="centered")
 logger = get_page_logger("home")
@@ -14,6 +18,11 @@ st.session_state["audit_id"] = None
 
 st.title("Vérification de certificats")
 st.write("Déposez le certificat à analyser.")
+
+if st.button("Afficher la clé publique pour la copier", type="primary"):
+    st.write("La librairie utilisé est **cryptography**")
+    st.write(os.getenv("PUBLIC_KEY"))
+
 
 certificat = st.file_uploader(
     "Certificat",
