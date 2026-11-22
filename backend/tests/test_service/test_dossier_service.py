@@ -30,6 +30,7 @@ def faux_audit_dao():
 def faux_analyse_fichier():
     """Remplace Analyse_fichier : l'analyse des dépendances donne un score de 2 à chaque fichier."""
     with patch("service.dossier_service.Analyse_fichier") as faux:
+
         analyse = faux.return_value
         analyse.detecter_anti_patterns.return_value = []
 
@@ -62,6 +63,7 @@ def un_dossier() -> Dossier:
         liste_fichiers=[
             Fichier(code="requests==2.31.0\n", extension=".txt"),
             Fichier(code="def f(l):\n    for x in l:\n        pass\n", extension=".py"),
+
         ],
     )
 
@@ -93,6 +95,7 @@ def test_find_fichier_by_user(service, faux_fichier_dao):
 
 def test_find_fichier_by_user_inconnu(service, faux_fichier_dao):
     faux_fichier_dao.find_by_utilisateur.side_effect = ValueError("utilisateur inconnu")
+
 
     assert service.find_fichier_by_user(99) is None
 
@@ -126,6 +129,7 @@ def test_update_fichier_succes(service, faux_fichier_dao):
     faux_fichier_dao.update_fichier.assert_called_once_with(fichier=fichier, id_audit=3)
 
 
+
 def test_update_fichier_echec(service, faux_fichier_dao):
     faux_fichier_dao.update_fichier.return_value = False
 
@@ -149,32 +153,63 @@ def test_consulter_dossier(service, faux_fichier_dao):
 # --- Émissions CO2 ---
 
 
-def test_traiter_emission_dossier(service, faux_analyse_fichier):
-    f1, f2 = Fichier(code="", extension=".py"), Fichier(code="", extension=".py")
+def test_traiter_emission_dossier(service, faux_analyse_fichier, faux_audit_dao):
+    """Les émissions sont additionnées, la note sur 20 calculée et l'audit enregistré."""
+    f1 = Fichier(code="", extension=".py")
+    f2 = Fichier(code="", extension=".py")
+    f1.score, f2.score = 2.0, 1.0  # pire CVSS = 2 -> 8/10 en sécurité
     audit = Audit(dossier=Dossier(nom="", liste_fichiers=[f1, f2]))
-    faux_analyse_fichier.estimer_emission_fichier.side_effect = [1.5, 2.5]
+    faux_analyse_fichier.estimer_emission_fichier.side_effect = [0.01, 0.02]
 
     resultat = service.traiter_emission_dossier(audit, n=100)
 
-    assert resultat.emissionCO2_total == 4.0
-    assert (f1.emissionCO2, f2.emissionCO2) == (1.5, 2.5)
+
+    assert resultat.emissionCO2_total == pytest.approx(0.03)
+    assert (f1.emissionCO2, f2.emissionCO2) == (0.01, 0.02)
+    assert resultat.score == 15  # 8 (sécurité) + 7 (sobriété)
+    assert resultat.statut == "refusé"  # 15 ne dépasse pas le seuil
     faux_analyse_fichier.estimer_emission_fichier.assert_any_call(f1, taille_reference=100)
+    faux_audit_dao.update_audit.assert_called_once_with(resultat)
 
 
 def test_traiter_emission_dossier_ignore_les_fichiers_non_python(service, faux_analyse_fichier):
     """Régression : un requirements.txt n'a pas de complexité, il ne doit pas faire planter l'audit."""
     requirements = Fichier(code="requests==2.31.0\n", extension=".txt")
     script = Fichier(code="", extension=".py")
+    requirements.score, script.score = 0.0, 0.0
     audit = Audit(dossier=Dossier(nom="", liste_fichiers=[requirements, script]))
-    faux_analyse_fichier.estimer_emission_fichier.return_value = 2.0
+    faux_analyse_fichier.estimer_emission_fichier.return_value = 0.0
 
     resultat = service.traiter_emission_dossier(audit, n=100)
 
-    assert resultat.emissionCO2_total == 2.0
+    assert resultat.emissionCO2_total == 0.0
     assert requirements.emissionCO2 is None
+    assert resultat.score == 20
+    assert resultat.statut == "validé"
     faux_analyse_fichier.estimer_emission_fichier.assert_called_once_with(
         script, taille_reference=100
     )
+
+
+def test_traiter_emission_dossier_dossier_vide(service):
+    """Un dossier sans fichier ne peut pas avoir de note : l'audit échoue."""
+    audit = Audit(dossier=Dossier(nom="vide", liste_fichiers=[]))
+
+
+    with pytest.raises(ArithmeticError):
+        service.traiter_emission_dossier(audit)
+
+
+def test_traiter_emission_dossier_echec_enregistrement(
+    service, faux_analyse_fichier, faux_audit_dao
+):
+    script = Fichier(code="", extension=".py")
+    script.score = 0.0
+    faux_analyse_fichier.estimer_emission_fichier.return_value = 0.0
+    faux_audit_dao.update_audit.return_value = False
+
+    with pytest.raises(ValueError):
+        service.traiter_emission_dossier(Audit(dossier=Dossier(nom="", liste_fichiers=[script])))
 
 
 # --- Traitement complet d'un dossier (audit) ---
@@ -186,11 +221,13 @@ def test_traiter_dossier_succes(service, faux_audit_dao):
     audit = service.traiter_dossier(dossier)
 
     assert isinstance(audit, Audit)
-    assert audit.statut == "validé"  # score 2 < 5
-    assert audit.score == 2.0
+    # traiter_dossier analyse les dépendances de chaque fichier ; la note sur 20 et
+    # l'enregistrement final sont faits ensuite par traiter_emission_dossier.
+    assert audit.statut == "créé"
+    assert all(f.score == 2.0 for f in dossier.liste_fichiers)
     assert dossier.liste_fichiers[1].liste_anti_pattern == []
     faux_audit_dao.create_audit.assert_called_once_with(audit, None)  # personne de connecté
-    faux_audit_dao.update_audit.assert_called_once_with(audit)
+
 
 
 def test_traiter_dossier_rattache_l_audit_a_l_utilisateur_connecte(
@@ -225,6 +262,7 @@ def test_traiter_dossier_fichier_illisible(service):
 def test_traiter_dossier_echec_anti_patterns(service, faux_analyse_fichier):
     faux_analyse_fichier.detecter_anti_patterns.return_value = None
 
+
     with pytest.raises(ValueError):
         service.traiter_dossier(un_dossier())
 
@@ -234,17 +272,4 @@ def test_traiter_dossier_echec_analyse_dependances(service, faux_analyse_fichier
     faux_analyse_fichier.analyse_dependances.return_value = False
 
     with pytest.raises(ArithmeticError):
-        service.traiter_dossier(un_dossier())
-
-
-def test_traiter_dossier_dossier_vide(service):
-    """Un dossier sans fichier ne peut pas avoir de score : l'audit échoue."""
-    with pytest.raises(ArithmeticError):
-        service.traiter_dossier(Dossier(nom="vide", liste_fichiers=[]))
-
-
-def test_traiter_dossier_echec_enregistrement(service, faux_audit_dao):
-    faux_audit_dao.update_audit.return_value = False
-
-    with pytest.raises(ValueError):
-        service.traiter_dossier(un_dossier())
+        service.traiter_dossier(un_dossier()) 

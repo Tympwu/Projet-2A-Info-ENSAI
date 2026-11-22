@@ -46,9 +46,10 @@ def audit():
     return SimpleNamespace(
         id=1,
         date=DATE,
-        statut="TERMINE",
-        score=85.0,
+        statut="validé",
+        score=16.0,
         emissionCO2_total=1.2,
+        complexite_total=2,
         dossier=SimpleNamespace(liste_fichiers=[]),  # update_audit met aussi à jour les fichiers
     )
 
@@ -58,8 +59,9 @@ def ligne(id_audit=1):
     return {
         "id": id_audit,
         "date_audit": DATE,
-        "statut": "TERMINE",
-        "score": 85.0,
+        "statut": "validé",
+        "score": 16.0,
+        "complexite": 2,
         "emissionco2": 1.2,
     }
 
@@ -72,7 +74,8 @@ def test_create_audit_succes(dao, curseur, audit):
     assert audit.id == 7  # l'identifiant généré par la base est récupéré
     parametres = curseur.execute.call_args.args[1]
     assert parametres["utilisateur_id"] == 3
-    assert parametres["statut"] == "TERMINE"
+    assert parametres["statut"] == "validé"
+    assert parametres["complexite"] == 2
     assert parametres["emissionCO2"] == 1.2
 
 
@@ -130,8 +133,9 @@ def test_find_audit_trouve(dao, curseur, faux_fichier_dao):
     audit = dao.find_audit(3)
 
     assert audit.id == 3
-    assert audit.statut == "TERMINE"
-    assert audit.score == 85.0
+    assert audit.statut == "validé"
+    assert audit.score == 16.0
+    assert audit.complexite_total == 2
     assert audit.emissionCO2_total == 1.2
     assert audit.dossier.liste_fichiers == ["fichier_1"]
     faux_fichier_dao.find_by_audit.assert_called_once_with(3)
@@ -201,4 +205,4 @@ def test_find_all_plusieurs_audits(dao, curseur, faux_fichier_dao):
 
 def test_find_all_aucun_audit(dao, curseur, faux_fichier_dao):
     curseur.fetchall.return_value = []
-    assert dao.find_all() == []
+    assert dao.find_all() == [] 

@@ -129,12 +129,10 @@ class DossierService:
         except ValueError:
             logger.error("Erreur lors du calcul général de l'audit")
             raise ArithmeticError("Erreur lors du calcul général de l'audit") from ValueError
-        print("etape 4 OK")
 
         # Enregistrement de l'audit dans la base de donnée
         if not self.audit_dao.update_audit(audit):
             raise ValueError("Erreur lors du stockage dans la base de donnée")
-        print("etape 5 OK")
         return audit
 
     @log
@@ -162,14 +160,12 @@ class DossierService:
         if id_utilisateur:
             id_utilisateur = id_utilisateur.id
 
-        print("Intro 1 OK")
         # Création de l'audit
         audit = Audit(dossier=dossier, date=datetime.today())
         if not self.audit_dao.create_audit(audit, id_utilisateur):
             logger.error("Création de l'audit impossible")
             return None
 
-        print("Intro 2 OK\nPassage aux traitement fichier par fichier :\n")
         # Analyse fichier par fichiers
         for fichier in dossier.liste_fichiers:
             try:
@@ -181,7 +177,6 @@ class DossierService:
             except FileNotFoundError:
                 logger.error("Fichier de l'audit introuvable")
                 raise FileNotFoundError("Le fichier est introuvable") from FileNotFoundError
-            print("étape 1 OK")
 
             if fichier.extension == ".py":
                 # Analyse des anti_patterns
@@ -192,12 +187,10 @@ class DossierService:
                     raise ValueError("Analyse des anti-patterns échouée")
                 else:
                     fichier.liste_anti_pattern = anti_pattern
-                print("etape 2 OK", anti_pattern)
 
             # Calcul du score basé sur les dépendances
             if not self.analyse_fichier.analyse_dependances(fichier):
                 logger.error("Echec du calcul des scores des dépendances")
                 raise ArithmeticError("Echec du calcul des scores des dépendances")
-            print("etape 3 OK")
 
-        return audit
+        return audit 

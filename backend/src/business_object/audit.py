@@ -21,6 +21,10 @@ class Audit:
     dossier (Dossier): Dossier audité.
     """
 
+    NOTE_MAX_CRITERE: int = 10
+    GRAMMES_CO2_PAR_POINT: float = 0.01
+    SEUIL_VALIDATION: float = 15.0
+
     def __init__(
         self,
         dossier: Dossier,
@@ -55,19 +59,20 @@ class Audit:
 
     def calculer_score(self) -> float:
         """
-        Calcule le score global de l'audit et le stocke dans `self.score`.
+        Calcule le score de vulnérabilité du dossier et le stocke dans `self.score`.
 
-        Le score global est la moyenne des scores des fichiers du dossier.
-        Ces scores doivent avoir été calculés au préalable par la couche Service pour chaque fichier
+        Le score retenu est le maximum (le pire) des scores CVSS des fichiers, de 0 à 10 :
+        une seule faille grave suffit à compromettre tout le projet. Une première version
+        faisait la moyenne, ce qui diluait une faille critique parmi des fichiers sains.
 
         Returns
         -------
-        float: Score global (moyenne des scores des fichiers).
+        float: Pire score CVSS des fichiers (0 à 10).
 
         Raises
         ------
         ValueError: Si le dossier n'a aucun fichier, ou si le score d'un fichier
-        n'a pas encore été calculé, ça évite d'avoir un score = 0 qui fausserait la moyenne
+        n'a pas encore été calculé (un score manquant ne doit pas passer pour un 0).
         """
         fichiers = self.dossier.obtenir_fichiers()
         if not fichiers:
@@ -114,8 +119,9 @@ class Audit:
          puis détermine si l'audit est validé ou refusé.
 
             Un audit est :
-            - "validé" si le score global est strictement inférieur à 5.
-            - "refusé" si le score global est supérieur ou égal à 5.
+            - "validé" si la note sur 20 est strictement supérieure à 15.
+            - "refusé" sinon.
+            La note = (10 - pire CVSS) + max(0, 10 - un point par 0,01 gCO2e).
             - "échoué" si une erreur empêche le calcul du score.
 
         Les émissions de CO2 totales sont également calculées si tous les
@@ -141,7 +147,7 @@ class Audit:
 
             fichiers = self.dossier.obtenir_fichiers()
 
-            self.calculer_score()
+            score_cvss = self.calculer_score()
 
             if any(f.emissionCO2 is None for f in fichiers if f.extension == ".py"):
                 raise ValueError(
@@ -153,16 +159,21 @@ class Audit:
                 (f.emissionCO2 for f in fichiers if f.extension == ".py"), start=0
             )
 
-            self.score = (10 - round(self.emissionCO2_total / 0.01)) + (10 - self.score)
+            note_securite = self.NOTE_MAX_CRITERE - score_cvss
+            note_sobriete = max(
+                0,
+                self.NOTE_MAX_CRITERE
+                - round(self.emissionCO2_total / self.GRAMMES_CO2_PAR_POINT),
+            )
+            self.score = note_securite + note_sobriete
 
-            if self.score > 15:
-                self.statut = "validé"
-            else:
-                self.statut = "refusé"
+            self.statut = "validé" if self.score > self.SEUIL_VALIDATION else "refusé"
 
             return True
 
         except ValueError:
+            self.score = None
+            self.emissionCO2_total = None
             self.statut = "échoué"
             raise
 

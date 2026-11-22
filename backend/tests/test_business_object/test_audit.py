@@ -30,6 +30,7 @@ def creer_fichier(
     """
     return SimpleNamespace(
         id=id,
+
         score=score,
         emissionCO2=emission,
         complexite=complexite,
@@ -63,6 +64,7 @@ def test_valeurs_par_defaut():
 # ---------- Score ----------
 
 
+
 def test_calculer_score_est_le_max_et_se_stocke():
     """Une seule faille critique suffit : le score de l'audit est le pire score."""
     audit = creer_audit(
@@ -94,6 +96,7 @@ def test_calculer_score_refuse_un_score_manquant():
 
 def test_obtenir_complexites_ignore_les_valeurs_absentes():
     audit = creer_audit(
+
         creer_fichier(0, complexite=1),
         creer_fichier(1, complexite=2),
         creer_fichier(2, complexite=None),
@@ -126,6 +129,7 @@ def test_calculer_complexite_retourne_le_plus_grand_k(ks):
 def test_calculer_complexite_ignore_les_inconnus():
     audit = creer_audit(
         creer_fichier(0, complexite=None),
+
         creer_fichier(1, complexite=1),
     )
 
@@ -155,71 +159,65 @@ def test_calculer_complexite_dossier_vide():
 
 
 @pytest.mark.parametrize(
-    "score, statut",
+    "score_cvss, emission, note, statut",
     [
-        (0, "validé"),
-        (4.9, "validé"),
-        (5, "refusé"),
-        (9, "refusé"),
+        (0, 0.0, 20, "validé"),
+
+        (2, 0.02, 16, "validé"),
+        (4, 0.01, 15, "refusé"),
+        (9.8, 0.0, pytest.approx(10.2), "refusé"),
+        (0, 0.5, 10, "refusé"),
     ],
-    ids=["0", "4.9", "5 (seuil : refusé)", "9"],
+    ids=["parfait", "16/20", "15/20 (seuil : refusé)", "faille critique", "CO2 très élevé"],
 )
-def test_lancer_statut_selon_le_score(score, statut):
-    audit = creer_audit(creer_fichier(0, score=score, emission=0.1))
+def test_lancer_note_sur_20_et_statut(score_cvss, emission, note, statut):
+    """La note = (10 - pire CVSS) + (10 - 1 point par 0,01 gCO2e), validée au-dessus de 15."""
+    audit = creer_audit(creer_fichier(0, score=score_cvss, emission=emission))
 
     assert audit.lancer() is True
+    assert audit.score == note
     assert audit.statut == statut
-    assert audit.score == score
+
+
+def test_lancer_note_sobriete_jamais_negative():
+    """Au-delà de 0,1 gCO2e, la note de sobriété reste à 0 : la note globale reste dans [0, 20]."""
+    audit = creer_audit(creer_fichier(0, score=10, emission=5.0))
+
+    audit.lancer()
+
+    assert audit.score == 0
+    assert audit.statut == "refusé"
 
 
 def test_lancer_additionne_les_emissions():
-    """Vérifie le calcul des émissions lorsque CO2=True."""
+    """Les émissions des fichiers Python sont additionnées."""
     audit = creer_audit(
         creer_fichier(0, score=1, emission=0.1),
         creer_fichier(1, score=1, emission=0.2),
+        creer_fichier(2, score=1, emission=None, extension=".txt"),
+
     )
 
-    assert audit.lancer(CO2=True) is True
+    assert audit.lancer() is True
     assert audit.emissionCO2_total == pytest.approx(0.3)
 
 
-def test_lancer_sans_calcul_co2():
-    """Un audit peut être lancé sans calculer les émissions."""
-    audit = creer_audit(creer_fichier(0, score=2, emission=None))
-
-    assert audit.lancer() is True
-    assert audit.score == 2
-    assert audit.statut == "validé"
-    assert audit.emissionCO2_total is None
-
-
 @pytest.mark.parametrize(
-    "fichiers, calcul_co2",
+    "fichiers",
     [
-        pytest.param(
-            [],
-            False,
-            id="dossier vide",
-        ),
-        pytest.param(
-            [creer_fichier(0, score=None, emission=0.1)],
-            False,
-            id="score manquant",
-        ),
-        pytest.param(
-            [creer_fichier(0, score=1, emission=None)],
-            True,
-            id="emission manquante",
-        ),
+        pytest.param([], id="dossier vide"),
+        pytest.param([creer_fichier(0, score=None, emission=0.1)], id="score manquant"),
+        pytest.param([creer_fichier(0, score=1, emission=None)], id="emission manquante"),
     ],
 )
-def test_lancer_echoue_si_une_donnee_manque(fichiers, calcul_co2):
+def test_lancer_echoue_si_une_donnee_manque(fichiers):
     audit = creer_audit(*fichiers)
 
     with pytest.raises(ValueError):
-        audit.lancer(CO2=calcul_co2)
+        audit.lancer()
 
     assert audit.statut == "échoué"
+    assert audit.score is None
     assert audit.emissionCO2_total is None
 
 
@@ -230,5 +228,6 @@ def test_repr():
     audit = creer_audit(date=datetime(2026, 11, 3))
 
     assert repr(audit) == (
+
         "Audit(id=1, date=03/11/2026, statut=créé, score=None, emissionCO2_total=None)"
-    )
+    ) 

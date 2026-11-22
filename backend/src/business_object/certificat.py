@@ -13,7 +13,7 @@ class Certificat:
 
     Attributs
     ---------
-    SEUIL_SCORE (float): Score (CVSS, 0 à 10) à partir duquel l'audit est refusé.
+    SEUIL_SCORE (float): Note sur 20 que l'audit doit dépasser strictement pour être certifié.
     id (int | None): Identifiant de l'audit certifié.
     nom (str): Nom du projet audité.
     date_delivrance (datetime | None): Date de délivrance du certificat.
@@ -30,6 +30,7 @@ class Certificat:
         date_delivrance: datetime | None = None,
     ) -> None:
         self.audit = audit
+
         self.id = None if audit is None else audit.id
         if audit is not None:
             self.nom = audit.dossier.nom or f"Audit n°{audit.id}"
@@ -46,7 +47,7 @@ class Certificat:
 
         Critères :
         - l'audit doit être terminé (sinon le certificat est "rejeté") ;
-        - le score de vulnérabilité doit être strictement inférieur à `SEUIL_SCORE` ;
+        - la note de l'audit (sur 20) doit être strictement supérieure à `SEUIL_SCORE` ;
         - si `seuil_co2` est donné et que les émissions sont connues, elles ne doivent
           pas dépasser `seuil_co2` (en gCO2e).
 
@@ -62,16 +63,17 @@ class Certificat:
         # 1. Un audit absent ou pas terminé ne peut pas être certifié.
         if self.audit is None or not self.audit.statut or self.audit.statut in ("créé", "échoué"):
             self.statut = "rejeté"
+
             self.motifs.append("L'audit n'a pas été mené à son terme.")
             return False
 
-        # 2. Critère sécurité
+        # 2. Note globale (sécurité + sobriété)
         if self.audit.score is None:
-            self.motifs.append("Le score de vulnérabilité n'a pas été calculé.")
+            self.motifs.append("La note de l'audit n'a pas été calculée.")
         elif self.audit.score <= self.SEUIL_SCORE:
             self.motifs.append(
-                f"Score de vulnérabilité trop élevé : {self.audit.score:.1f} "
-                f"(seuil : {self.SEUIL_SCORE:.1f})."
+                f"Note insuffisante : {self.audit.score:.1f}/20 "
+                f"(il faut plus de {self.SEUIL_SCORE:.0f}/20)."
             )
 
         # 3. Critère carbone
