@@ -13,6 +13,9 @@ if audit_id is None:
     st.stop()
 
 reponse = api_client.get(f"/audit/{audit_id}")
+if not reponse or reponse["status_code"] != 200:
+    st.error(f"Audit indisponible (code {reponse['status_code'] if reponse else 'aucune réponse'}).")
+    st.stop()
 audit = reponse["data"]
 
 st.title(f"Audit n°{audit['id']}")

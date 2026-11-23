@@ -69,10 +69,17 @@ def verifier_hmac(contenu: bytes, signature: str) -> bool:
     return hmac.compare_digest(signature_attendue, signature)
 
 
+def _lire_cle_pem(nom: str) -> bytes:
+    """Lit une clé PEM depuis l'environnement (les '\\n' littéraux sont convertis en retours à la ligne)."""
+    valeur = os.getenv(nom)
+    if not valeur:
+        raise RuntimeError(f"{nom} non configurée.")
+    return valeur.replace("\\n", "\n").encode()
+
+
 def crypter_certificat(message: str) -> str:
     """Fonction permettant de signer des données pour valider le certificat"""
-    pem = os.getenv("PRIVATE_KEY")
-    private_key = serialization.load_pem_private_key(pem.encode(), password=None)
+    private_key = serialization.load_pem_private_key(_lire_cle_pem("PRIVATE_KEY"), password=None)
     sig = private_key.sign(
         message.encode(),
         padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
@@ -83,8 +90,7 @@ def crypter_certificat(message: str) -> str:
 
 def decrypt_certificat(message: str, signature_b64: str) -> bool:
     """Fonction permettant de vérifier la signature d'un certificat"""
-    pem = os.getenv("PUBLIC_KEY")
-    public_key = serialization.load_pem_public_key(pem.encode())
+    public_key = serialization.load_pem_public_key(_lire_cle_pem("PUBLIC_KEY"))
     try:
         public_key.verify(
             base64.b64decode(signature_b64),

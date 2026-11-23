@@ -9,11 +9,7 @@ For installation from scratch, see the [root README](../README.md).
 ## :rocket: Run
 
 1. Install the dependencies (from the root of the repository): `uv sync --project frontend --all-extras`
-2. Create `frontend/.streamlit/secrets.toml` with the same key as `HMAC_SECRET_KEY` in the backend `.env`:
-
-   ```toml
-   HMAC_SECRET_KEY = "<your secret key>"
-   ```
+2. Make sure `HMAC_SECRET_KEY` is defined in the root `.env` (the same key is used by the backend to check signatures). The frontend reads it from the environment; with Docker Compose, the root `.env` is passed to the containers.
 
 3. Make sure the backend is running, then launch the interface **from the `frontend` folder**:
 
@@ -52,12 +48,12 @@ The interface listens on port **8000** (`.streamlit/config.toml`). On SSP Cloud,
 | `src/utils/log_init.py` | Logging set-up |
 | `src/assets/` | Logo and images |
 | `.streamlit/config.toml` | Port and colour theme |
-| `.streamlit/secrets.toml` | HMAC key — **never commit it** |
 
 ### HMAC signature (F1)
 
 Before sending files to `POST /audit/start_audit`, `nouvel_audit.py` computes an HMAC-SHA256 signature of
-the files with the key from `secrets.toml` and sends it in the `X-HMAC-Signature` header.
+the files with the `HMAC_SECRET_KEY` environment variable and sends it in the `X-HMAC-Signature` header.
+If the variable is missing, the page displays an error instead of running the audit.
 The backend rejects the submission (HTTP 403) if the signature does not match.
 
 

@@ -85,6 +85,10 @@ if st.button("Lancer l'audit", type="primary", disabled=not fichiers):
 
         # F1 : Récupérer la clé secrète
         cle_secrete = os.getenv("HMAC_SECRET_KEY")
+        if not cle_secrete:
+            logger.error("HMAC_SECRET_KEY absente : audit impossible")
+            st.error("Configuration incomplète : HMAC_SECRET_KEY n'est pas définie.")
+            st.stop()
 
         # F1 : Calculer la signature HMAC
         signature = signer_fichiers(fichiers, cle_secrete)

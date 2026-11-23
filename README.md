@@ -9,11 +9,7 @@ For installation from scratch, see the [root README](../README.md).
 ## :rocket: Run
 
 1. Install the dependencies (from the root of the repository): `uv sync --project frontend --all-extras`
-2. Create `frontend/.streamlit/secrets.toml` with the same key as `HMAC_SECRET_KEY` in the backend `.env`:
-
-   ```toml
-   HMAC_SECRET_KEY = "<your secret key>"
-   ```
+2. Copy `.env.example` to `.env` and fill in `HMAC_SECRET_KEY` (and `PRIVATE_KEY` / `PUBLIC_KEY` for certificates). The root `.env` is passed to the backend and frontend containers by Docker Compose.
 
 3. Make sure the backend is running, then launch the interface **from the `frontend` folder**:
 

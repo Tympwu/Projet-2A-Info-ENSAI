@@ -93,7 +93,7 @@ if utilisateur:
             logger.info("Réinitialisation de la base de données")
             response = api_client.get("/reset_database")
 
-            if response:
+            if response and response["status_code"] == 200:
                 logger.info("Base de données réinitialisée")
                 st.toast("Base de données réinitialisée ✅")
             else:
