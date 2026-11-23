@@ -10,12 +10,12 @@ from business_object.certificat import Certificat
 
 @pytest.fixture
 def faux_audit():
-    """Crée un faux audit terminé, avec un score sous le seuil."""
+    """Crée un faux audit terminé, avec une note au-dessus du seuil (sur 20)."""
     audit = MagicMock()  # pas de spec=Audit : `dossier` est un attribut d'instance
     audit.id = 1
     audit.dossier.nom = "ProjetTest"
     audit.statut = "validé"
-    audit.score = 4.0
+    audit.score = 18.0
     audit.emissionCO2_total = None
     return audit
 
@@ -30,6 +30,7 @@ def test_certificat_init(faux_audit):
     assert cert.date_delivrance == date_fixe
     assert cert.statut == "en attente"
     assert cert.motifs == []
+
     assert cert.audit == faux_audit
 
 
@@ -58,9 +59,10 @@ def test_calcul_quality_gate_rejete_audit_non_termine(faux_audit, statut):
 
 
 def test_calcul_quality_gate_valide(faux_audit):
-    """Le certificat est validé si le score est inférieur au seuil."""
-    faux_audit.score = 3.5
+    """Le certificat est validé si la note dépasse strictement le seuil de 15/20."""
+    faux_audit.score = 16.5
     cert = Certificat(audit=faux_audit)
+
 
     assert cert.calcul_QualityGate() is True
     assert cert.statut == "validé"
@@ -68,13 +70,21 @@ def test_calcul_quality_gate_valide(faux_audit):
 
 
 def test_calcul_quality_gate_echoue_score(faux_audit):
-    """Le certificat échoue si le score atteint le seuil, avec un motif explicite."""
-    faux_audit.score = 7.5
+    """Le certificat échoue si la note ne dépasse pas le seuil, avec un motif explicite."""
+    faux_audit.score = 12.0
     cert = Certificat(audit=faux_audit)
 
     assert cert.calcul_QualityGate() is False
     assert cert.statut == "échoué"
-    assert "vulnérabilité" in cert.motifs[0]
+    assert "Note insuffisante" in cert.motifs[0]
+
+
+def test_calcul_quality_gate_seuil_exact_refuse(faux_audit):
+    """Une note de exactement 15/20 ne suffit pas : il faut la dépasser."""
+    faux_audit.score = 15.0
+    cert = Certificat(audit=faux_audit)
+
+    assert cert.calcul_QualityGate() is False
 
 
 def test_calcul_quality_gate_echoue_score_absent(faux_audit):
@@ -84,6 +94,7 @@ def test_calcul_quality_gate_echoue_score_absent(faux_audit):
 
     assert cert.calcul_QualityGate() is False
     assert cert.statut == "échoué"
+
 
 
 def test_calcul_quality_gate_echoue_carbone(faux_audit):
@@ -106,7 +117,7 @@ def test_calcul_quality_gate_carbone_ignore_sans_seuil(faux_audit):
 def test_calcul_quality_gate_cumule_les_motifs(faux_audit):
     """Tous les critères non respectés sont listés."""
     faux_audit.score = 9.8
-    faux_audit.emissionCO2_total = 2.0
+    faux_audit.emissionCO2_total = 2.0  # note trop basse ET émissions au-dessus du seuil
     cert = Certificat(audit=faux_audit)
 
     cert.calcul_QualityGate(seuil_co2=1.0)

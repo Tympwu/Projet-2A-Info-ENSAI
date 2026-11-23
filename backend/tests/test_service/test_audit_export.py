@@ -1,5 +1,6 @@
 """Tests des exports SBOM et certificat : service et routes."""
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -14,7 +15,7 @@ from controller import audit_controller
 from service.audit_service import AuditService
 
 
-def un_audit(score=2.0, statut="validé") -> Audit:
+def un_audit(score=18.0, statut="validé") -> Audit:
     """Audit enregistré avec un requirements.txt contenant une dépendance épinglée."""
     fichier = Fichier(code="requests==2.31.0\n", extension=".txt", id=1)
     dossier = Dossier(nom="", liste_fichiers=[fichier])
@@ -48,12 +49,42 @@ def test_generer_sbom_audit_inexistant(service):
 
 
 def test_generer_certificat_valide(service):
-    service.audit_dao.find_audit.return_value = un_audit(score=2.0)
+    service.audit_dao.find_audit.return_value = un_audit(score=18.0)
 
     certificat = service.generer_certificat(3)
 
     assert certificat.statut == "validé"
     assert certificat.date_delivrance is not None
+    assert certificat.cle  # le certificat porte sa signature
+
+
+def test_certificat_signe_verifiable(service):
+    """Un certificat délivré est reconnu comme authentique par verif_certificat."""
+    audit = un_audit(score=18.0)
+    service.audit_dao.find_audit.return_value = audit
+    certificat = service.generer_certificat(3)
+
+    demande = SimpleNamespace(
+        id_audit=3, date_delivrance=certificat.date_delivrance, signature=certificat.cle
+    )
+
+    assert service.verif_certificat(demande) is audit
+
+
+def test_certificat_falsifie_refuse(service):
+    """Modifier l'audit ou la date d'un certificat invalide sa signature."""
+    service.audit_dao.find_audit.return_value = un_audit(score=18.0)
+    certificat = service.generer_certificat(3)
+
+    autre_audit = SimpleNamespace(
+        id_audit=4, date_delivrance=certificat.date_delivrance, signature=certificat.cle
+    )
+    signature_inventee = SimpleNamespace(
+        id_audit=3, date_delivrance=certificat.date_delivrance, signature="AAAA"
+    )
+
+    assert service.verif_certificat(autre_audit) is None
+    assert service.verif_certificat(signature_inventee) is None
 
 
 def test_generer_certificat_refuse(service):
@@ -66,7 +97,7 @@ def test_generer_certificat_refuse(service):
 
 
 def test_generer_certificat_seuil_co2(service, monkeypatch):
-    audit = un_audit(score=2.0)
+    audit = un_audit(score=18.0)
     audit.emissionCO2_total = 5.0
     service.audit_dao.find_audit.return_value = audit
     monkeypatch.setenv("SEUIL_CO2_G", "1")
