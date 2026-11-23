@@ -36,6 +36,7 @@ class FichierModel(BaseModel):
     @field_validator("extension")
     @classmethod
     def check_extension(cls, v: str) -> str:
+        """Refuse les extensions que l'API ne sait pas analyser."""
         if v not in {".py", ".lock", ".txt", ".toml"}:
             raise TypeError("Le type de fichier accepté doit être un .py, .txt, .toml ou .lock")
         return v
@@ -43,6 +44,7 @@ class FichierModel(BaseModel):
     @field_validator("complexite")
     @classmethod
     def check_complexite(cls, v: int) -> int:
+        """Vérifie que la complexité, si elle est fournie, est un entier."""
         if v is None:
             return v
         elif not isinstance(v, int):
@@ -51,6 +53,8 @@ class FichierModel(BaseModel):
 
 
 class FichierReadModel(BaseModel):
+    """Fichier renvoyé par l'API, avec ses résultats d'analyse."""
+
     id: int
     code: str
     extension: str
@@ -60,6 +64,8 @@ class FichierReadModel(BaseModel):
 
 
 class FichierSubmitModel(BaseModel):
+    """Fichier envoyé à l'API pour être enregistré."""
+
     code: str
     extension: str
     complexite: int | None = None
@@ -69,6 +75,7 @@ class FichierSubmitModel(BaseModel):
     @field_validator("extension")
     @classmethod
     def check_extension(cls, v: str) -> str:
+        """Refuse les extensions que l'API ne sait pas analyser."""
         if v not in {".py", ".lock", ".txt"}:
             raise TypeError("Le type de fichier accepté doit être un .py, .txt ou .lock")
         return v

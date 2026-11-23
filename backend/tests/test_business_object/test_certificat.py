@@ -97,29 +97,9 @@ def test_calcul_quality_gate_echoue_score_absent(faux_audit):
 
 
 
-def test_calcul_quality_gate_echoue_carbone(faux_audit):
-    """Le certificat échoue si les émissions dépassent le seuil carbone."""
-    faux_audit.emissionCO2_total = 2.0
-    cert = Certificat(audit=faux_audit)
-
-    assert cert.calcul_QualityGate(seuil_co2=1.0) is False
-    assert "carbone" in cert.motifs[0]
-
-
-def test_calcul_quality_gate_carbone_ignore_sans_seuil(faux_audit):
-    """Sans seuil carbone, les émissions ne bloquent pas le certificat."""
+def test_calcul_quality_gate_ne_regarde_que_la_note(faux_audit):
+    """Les émissions comptent déjà dans la note sur 20 : la Quality Gate ne les revérifie pas."""
     faux_audit.emissionCO2_total = 1000.0
     cert = Certificat(audit=faux_audit)
 
     assert cert.calcul_QualityGate() is True
-
-
-def test_calcul_quality_gate_cumule_les_motifs(faux_audit):
-    """Tous les critères non respectés sont listés."""
-    faux_audit.score = 9.8
-    faux_audit.emissionCO2_total = 2.0  # note trop basse ET émissions au-dessus du seuil
-    cert = Certificat(audit=faux_audit)
-
-    cert.calcul_QualityGate(seuil_co2=1.0)
-
-    assert len(cert.motifs) == 2

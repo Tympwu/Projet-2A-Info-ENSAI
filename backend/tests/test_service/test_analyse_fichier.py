@@ -80,6 +80,15 @@ def test_rechargement_prend_la_nouvelle_valeur(analyseur, monkeypatch):
     assert analyseur.api_url_OSV == "https://autre.test/v1/query"
 
 
+@pytest.mark.parametrize("url", ["http://api.osv.dev/v1/query", "file:///etc/passwd"])
+def test_url_osv_non_https_refusee(monkeypatch, url):
+    """Seule une adresse https est acceptée pour interroger OSV."""
+    monkeypatch.setenv("OSV_API_URL", url)
+
+    with pytest.raises(ValueError, match="https"):
+        Analyse_fichier()
+
+
 @pytest.mark.parametrize("variable", ["PUISSANCE_MACHINE_W", "INTENSITE_CARBONE_G_KWH"])
 def test_configuration_non_numerique_refusee(monkeypatch, variable):
     monkeypatch.setenv(variable, "beaucoup")

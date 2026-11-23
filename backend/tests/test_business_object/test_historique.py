@@ -1,9 +1,11 @@
 """Tests unitaires pour le business object Historique."""
 
 from unittest.mock import MagicMock
+
 import pytest
-from business_object.historique import Historique
+
 from business_object.audit import Audit
+from business_object.historique import Historique
 
 
 @pytest.fixture
@@ -50,7 +52,7 @@ def test_consulter_historique(audit_1, audit_2):
 def test_ajout_historique(audit_1):
     """Vérifie l'ajout d'un nouvel audit dans l'historique."""
     historique = Historique(id=1, audits=[])
-    
+
     assert len(historique.audits) == 0
 
     historique.ajout_historique(audit_1)

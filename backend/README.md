@@ -84,15 +84,21 @@ sequenceDiagram
         OSV-->>AF: vulnerabilities (CVSS)
         DS->>AF: detecter_anti_patterns(file) — .py files only
     end
-    DS->>DS: audit.lancer() — score and status
     DS->>DAO: save the audit and its files
+    AS->>DS: traiter_emission_dossier(audit, nb_entree)
+    loop for each .py file
+        DS->>AF: estimer_emission_fichier(file, n)
+    end
+    DS->>DS: audit.lancer() — note out of 20 and status
+    DS->>DAO: update the audit
     DAO-->>Client: 200 OK — audit JSON
 ```
 
 Then, on demand:
 
 - `GET /audit/{id}/sbom` → `AuditService.generer_sbom(id)` → `SBOM.generer_sbom(audit)`
-- `GET /audit/{id}/certificat` → `AuditService.generer_certificat(id)` → `Certificat.calcul_QualityGate()`
+- `GET /audit/{id}/certificat` → `AuditService.generer_certificat(id)` → `Certificat.calcul_QualityGate()`, then `Certificat.calcul_cle()` signs it
+- `POST /audit/verif_certificat` → `AuditService.verif_certificat(...)` → checks the signature and returns the audit (404 if it is not authentic)
 
 
 ## :gear: How the analyses work
@@ -109,6 +115,7 @@ Then, on demand:
 - Dependencies are extracted from `requirements.txt`, `pyproject.toml`, `uv.lock` (exact versions) and from the `import` statements of `.py` files (standard library excluded).
 - Each dependency is sent to OSV; the score of a vulnerability is its CVSS base score (v3 or v4), or a score derived from its severity label.
 - The score of a file is its worst vulnerability (0 to 10).
+- Only pinned dependencies give a reliable result: without a version, OSV returns the vulnerabilities of every version of the package (a warning is logged).
 
 ### F3 — Complexity and emissions (`Analyse_fichier`)
 
@@ -129,15 +136,29 @@ CycloneDX 1.6 JSON: each component has a [purl](https://github.com/package-url/p
 (`pkg:pypi/<name>@<version>`) used as `bom-ref`; names are normalised according to PEP 503;
 when a library appears both with and without a version, only the pinned version is kept.
 
-### F5 — Quality Gate (`business_object/certificat.py`)
+### F5 — Note, Quality Gate and signed certificate
+
+**Note out of 20** (`Audit.lancer()`), the higher the better:
+
+```text
+security  = 10 - worst CVSS score of the files          (one critical flaw is enough to lose the points)
+sobriety  = max(0, 10 - 1 point per 0.01 gCO2e emitted)
+note      = security + sobriety                         (audit "validé" if note > 15)
+```
+
+**Quality Gate** (`business_object/certificat.py`):
 
 | Check | Result if it fails |
 | ----- | ------------------ |
 | The audit is finished (status not `créé` / `échoué`) | `rejeté` |
-| Vulnerability score < `SEUIL_SCORE` (5.0) | `échoué` + reason |
-| Emissions ≤ `SEUIL_CO2_G` (only if this variable is set and emissions are known) | `échoué` + reason |
+| Note > `SEUIL_SCORE` (15/20) | `échoué` + reason |
 
 The certificate is `validé` when no reason was found; every reason is listed in `motifs`.
+
+**Signature** (`utils/security.py`): the backend signs `"<audit id>|<delivery date>"` with RSA-PSS
+(SHA-256) and the private key `PRIVATE_KEY`; the signature is returned in the `cle` field.
+`POST /audit/verif_certificat` checks it with `PUBLIC_KEY`: anyone holding a certificate can prove
+that it was really delivered by CleanOps, and gets back the audit it refers to.
 
 
 ## :card_file_box: Database
@@ -147,7 +168,7 @@ Created by `data/init_db.sql` in the schema `POSTGRES_SCHEMA` (`project` by defa
 | Table | Main columns |
 | ----- | ------------ |
 | `Utilisateurs` | `id`, `name`, `mot_de_passe` (SHA-256 hash), `email` |
-| `Audit` | `id`, `utilisateur_id`, `date_audit`, `statut`, `score`, `emissionCO2` |
+| `Audit` | `id`, `utilisateur_id`, `date_audit`, `statut`, `score` (note /20), `complexite`, `emissionCO2` (gCO2e) |
 | `Fichier` | `id`, `audit_id`, `code`, `extension`, `score`, `complexite`, `emissionCO2` |
 
 
@@ -162,7 +183,8 @@ Created by `data/init_db.sql` in the schema `POSTGRES_SCHEMA` (`project` by defa
 | `PUISSANCE_MACHINE_W` | `15` | CO2 estimation (F3) |
 | `INTENSITE_CARBONE_G_KWH` | `29` | CO2 estimation (F3) |
 | `OSV_API_URL` | `https://api.osv.dev/v1/query` | Vulnerability lookup (F2) |
-| `SEUIL_CO2_G` | not set (no carbon check) | Quality Gate (F5) |
+| `PRIVATE_KEY` | **required** | Certificate signature (F5) |
+| `PUBLIC_KEY` | **required** | Certificate verification (F5) |
 
 
 ## :hammer_and_wrench: Development toolkit

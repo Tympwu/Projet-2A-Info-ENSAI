@@ -47,11 +47,17 @@ if st.button("Vérifier certificat", type="primary", disabled=not data_ok):
                 contenu = json.loads(certificat.getvalue().decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError):
                 st.error("Fichier illisible : le certificat doit être un JSON valide.")
+                st.stop()
         else:
             contenu = {}
             contenu["cle"] = certificat_key
             contenu["audit_id"] = certificat_audit
             contenu["date_delivrance"] = certificat_date
+
+        champs = ("cle", "audit_id", "date_delivrance")
+        if not all(contenu.get(champ) for champ in champs):
+            st.error("Le certificat doit contenir les champs cle, audit_id et date_delivrance.")
+            st.stop()
 
         data = {
             "signature": contenu["cle"],

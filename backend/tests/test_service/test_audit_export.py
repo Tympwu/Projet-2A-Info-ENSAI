@@ -96,15 +96,6 @@ def test_generer_certificat_refuse(service):
     assert certificat.motifs
 
 
-def test_generer_certificat_seuil_co2(service, monkeypatch):
-    audit = un_audit(score=18.0)
-    audit.emissionCO2_total = 5.0
-    service.audit_dao.find_audit.return_value = audit
-    monkeypatch.setenv("SEUIL_CO2_G", "1")
-
-    assert service.generer_certificat(3).statut == "échoué"
-
-
 def test_generer_certificat_audit_inexistant(service):
     service.audit_dao.find_audit.return_value = None
 
@@ -164,3 +155,22 @@ def test_route_certificat_404(client):
     faux_service.generer_certificat.return_value = None
 
     assert client.get("/audit/99/certificat").status_code == 404
+
+
+def test_route_verif_certificat_authentique(client):
+    client, faux_service = client
+    faux_service.verif_certificat.return_value = un_audit(score=18.0)
+    demande = {"signature": "abc", "id_audit": 3, "date_delivrance": "2026-11-23T20:00:00"}
+
+    reponse = client.post("/audit/verif_certificat", json=demande)
+
+    assert reponse.status_code == 200
+    assert reponse.json()["id"] == 3
+
+
+def test_route_verif_certificat_invalide(client):
+    client, faux_service = client
+    faux_service.verif_certificat.return_value = None
+    demande = {"signature": "faux", "id_audit": 3, "date_delivrance": "2026-11-23T20:00:00"}
+
+    assert client.post("/audit/verif_certificat", json=demande).status_code == 404

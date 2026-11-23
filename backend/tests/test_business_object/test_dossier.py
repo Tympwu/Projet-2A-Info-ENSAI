@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from business_object.dependance import Dependances
 from business_object.dossier import Dossier
 from business_object.fichier import Fichier
-from business_object.dependance import Dependances
 
 
 @pytest.fixture

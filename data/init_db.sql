@@ -20,7 +20,7 @@ CREATE TABLE Audit (
     statut VARCHAR DEFAULT NULL,
     score FLOAT(4) DEFAULT NULL,
     complexite INT DEFAULT NULL,
-    emissionCO2 NUMERIC(5) DEFAULT NULL,
+    emissionCO2 DOUBLE PRECISION DEFAULT NULL,
 CONSTRAINT fk_Audit
 FOREIGN KEY (utilisateur_id)
 REFERENCES Utilisateurs(id) ON DELETE CASCADE
@@ -35,9 +35,9 @@ CREATE TABLE Fichier (
     audit_id INTEGER,
     code VARCHAR NOT NULL,
     extension VARCHAR(20),
-    score NUMERIC(4) DEFAULT NULL,
+    score FLOAT DEFAULT NULL,
     complexite INTEGER DEFAULT NULL,
-    emissionCO2 NUMERIC(4) DEFAULT NULL,
+    emissionCO2 DOUBLE PRECISION DEFAULT NULL,
 CONSTRAINT fk_Fichier
 FOREIGN KEY (audit_id)
 REFERENCES Audit(id) ON DELETE CASCADE
