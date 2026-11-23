@@ -77,7 +77,7 @@ async def start_audit(
     utilisateur_id: int | None = Form(None),
     x_hmac_signature: str = Header(..., alias="X-HMAC-Signature"),
     audit_service=Depends(get_audit_service),
-    nb_entree: int = 500,
+    nb_entree: int = Form(500),
 ):
     """F1 : Vérifier la signature HMAC avant de lancer l'audit."""
 
@@ -173,7 +173,11 @@ async def telecharger_certificat(id_audit: int, audit_service=Depends(get_audit_
         HTTPException: Erreur 404 si l'audit n'existe pas.
     """
     logger.info(f"Génération du certificat de l'audit {id_audit}")
-    certificat = audit_service.generer_certificat(id_audit)
+    try:
+        certificat = audit_service.generer_certificat(id_audit)
+    except RuntimeError as errorr:
+        logger.error(f"Certificat impossible : {errorr}")
+        raise HTTPException(status_code=503, detail=str(errorr)) from errorr
     if certificat is None:
         raise HTTPException(status_code=404, detail=f"Audit (id={id_audit}) introuvable.")
     return CertificatModel(

@@ -13,7 +13,7 @@ Endpoints utilisés :
 
 import streamlit as st
 
-from utils.affichage import afficher_audit, configurer_page
+from utils.affichage import configurer_page
 from utils.api_client import api_client
 from utils.auth import exiger_connexion
 from utils.log_init import get_page_logger
@@ -71,8 +71,9 @@ for a in audits:
         label_visibility="collapsed",
     ):
         selection.append(a["id"])
-    with col_audit.expander(f"Audit n°{a['id']} · {a.get('date', '')} · {a.get('statut', '')}"):
-        afficher_audit(a, cle=f"audit_{a['id']}")
+    with col_audit.expander(f"Audit n°{a['id']} · {a.get('statut', '')}"):
+        score = a.get("score")
+        st.write(f"Score : {score:.1f}/20" if score is not None else "Score : non calculé")
         if st.button("Voir le détail, le certificat et le SBOM", key=f"detail_{a['id']}"):
             st.session_state["audit_id"] = a["id"]
             st.switch_page(PAGE_DETAIL_AUDIT)

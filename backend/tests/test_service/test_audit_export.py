@@ -105,6 +105,25 @@ def test_generer_certificat_seuil_co2(service, monkeypatch):
     assert service.generer_certificat(3).statut == "échoué"
 
 
+def test_analyse_co2_audit_persiste_l_audit(service):
+    fichier = Fichier(code="x = 1\n", extension=".py", id=2, score=0.0)
+    audit = Audit(dossier=Dossier(nom="", liste_fichiers=[fichier]), id=3)
+    service.current_audit = audit
+    service.analyse_fichier = MagicMock()
+
+    def estimer(f, taille_reference):
+        f.emissionCO2 = 2.0
+        return 2.0
+
+    service.analyse_fichier.estimer_emission_fichier.side_effect = estimer
+    service.audit_dao.update_audit.return_value = True
+
+    resultat = service.analyse_CO2_audit(nb_entree=500)
+
+    assert resultat.emissionCO2_total == 2.0
+    service.audit_dao.update_audit.assert_called_once_with(audit)
+
+
 def test_generer_certificat_audit_inexistant(service):
     service.audit_dao.find_audit.return_value = None
 

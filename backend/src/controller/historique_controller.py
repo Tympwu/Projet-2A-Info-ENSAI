@@ -48,7 +48,7 @@ async def consulter_historique(
     except ValueError:
         raise HTTPException(status_code=404, detail=f"Utilisateur (id={id_utilisateur}) not found.") from ValueError
     if not historique:
-        raise HTTPException(status_code=500, details="Historique introuvable")
+        raise HTTPException(status_code=500, detail="Historique introuvable")
     return historique
 
 

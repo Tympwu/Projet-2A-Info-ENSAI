@@ -158,7 +158,9 @@ Created by `data/init_db.sql` in the schema `POSTGRES_SCHEMA` (`project` by defa
 | `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DATABASE`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | — | `DBConnection` |
 | `POSTGRES_SCHEMA` | — | `DBConnection` (tests use `project_test_dao`) |
 | `UVICORN_HOST`, `UVICORN_PORT` | `127.0.0.1`, `5000` | `main.py` |
-| `HMAC_SECRET_KEY` | **required** | `verifier_hmac` (F1) |
+| `HMAC_SECRET_KEY` | **required** | `verifier_hmac` (F1), `nouvel_audit.py` (frontend) |
+| `PRIVATE_KEY` | **required** for certificates | `crypter_certificat` (F5), PEM RSA private key |
+| `PUBLIC_KEY` | **required** for certificates | `decrypt_certificat` (F5), PEM RSA public key |
 | `PUISSANCE_MACHINE_W` | `15` | CO2 estimation (F3) |
 | `INTENSITE_CARBONE_G_KWH` | `29` | CO2 estimation (F3) |
 | `OSV_API_URL` | `https://api.osv.dev/v1/query` | Vulnerability lookup (F2) |
