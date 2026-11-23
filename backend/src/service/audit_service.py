@@ -194,9 +194,11 @@ class AuditService(metaclass=Singleton):
         if compteur_fichier_analyse == 0:
             raise ValueError("Pas de fichier possible à analyser")
         try:
-            self.current_audit.lancer(CO2=True)
+            self.current_audit.lancer()
         except ValueError:
             raise ValueError("Échec dans l'analyse de l'audit") from ValueError
+        if not self.audit_dao.update_audit(self.current_audit):
+            raise ValueError("Erreur lors du stockage dans la base de donnée")
         return self.current_audit
 
     @log
