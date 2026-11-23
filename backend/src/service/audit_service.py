@@ -217,9 +217,7 @@ class AuditService(metaclass=Singleton):
     @log
     def generer_certificat(self, id_audit: int) -> Certificat | None:
         """Applique la Quality Gate à un audit enregistré et produit son certificat .
-
-        Le seuil carbone est lu dans la variable d'environnement SEUIL_CO2_G (en gCO2e).
-        S'il n'est pas défini, seul le score de vulnérabilité est pris en compte.
+        La fonction calcule aussi la signature propre au certificat
 
         Args:
             id_audit (int): Identifiant de l'audit.
@@ -231,8 +229,7 @@ class AuditService(metaclass=Singleton):
         if audit is None:
             return None
         certificat = Certificat(audit=audit, date_delivrance=datetime.now())
-        seuil_co2 = os.getenv("SEUIL_CO2_G")
-        certificat.calcul_QualityGate(seuil_co2=float(seuil_co2) if seuil_co2 else None)
+        certificat.calcul_QualityGate()
         certificat.calcul_cle()
         return certificat
 

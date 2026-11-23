@@ -40,19 +40,13 @@ class Certificat:
         self.motifs: list[str] = []
         self.cle: bytes = None
 
-    def calcul_QualityGate(self, seuil_co2: float | None = None) -> bool:
+    def calcul_QualityGate(self) -> bool:
         """
         Vérifie si l'audit remplit les critères de qualité (Quality Gate).
 
         Critères :
         - l'audit doit être terminé (sinon le certificat est "rejeté") ;
         - le score de vulnérabilité doit être strictement inférieur à `SEUIL_SCORE` ;
-        - si `seuil_co2` est donné et que les émissions sont connues, elles ne doivent
-          pas dépasser `seuil_co2` (en gCO2e).
-
-        Args:
-            seuil_co2 (float | None): Émissions maximales autorisées en gCO2e.
-                None = pas de critère carbone.
 
         Returns:
             bool: True si le certificat est validé, False sinon.
@@ -72,13 +66,6 @@ class Certificat:
             self.motifs.append(
                 f"Score de vulnérabilité trop élevé : {self.audit.score:.1f} "
                 f"(seuil : {self.SEUIL_SCORE:.1f})."
-            )
-
-        # 3. Critère carbone
-        emission = self.audit.emissionCO2_total
-        if seuil_co2 is not None and emission is not None and emission > seuil_co2:
-            self.motifs.append(
-                f"Empreinte carbone trop élevée : {emission:.3g} gCO2e (seuil : {seuil_co2:.3g})."
             )
 
         self.statut = "validé" if not self.motifs else "échoué"
