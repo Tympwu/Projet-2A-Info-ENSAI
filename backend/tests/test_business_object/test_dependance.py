@@ -1,14 +1,16 @@
 """Tests unitaires pour le business object Dependances."""
 
 from unittest.mock import patch
+
 import pytest
+
 from business_object.dependance import Dependances
 
 
 def test_dependances_init():
     """Vérifie l'initialisation des attributs de la dépendance."""
     dep = Dependances(nom="requests", version="2.28.0", auteur="Kenneth Reitz")
-    
+
     assert dep.nom == "requests"
     assert dep.version == "2.28.0"
     assert dep.auteur == "Kenneth Reitz"
@@ -18,7 +20,7 @@ def test_dependances_init():
 def test_a_vulnerabilite_succes(mock_vulnerabilite_class):
     """Vérifie la création correcte des vulnérabilités au-dessus du seuil."""
     dep = Dependances(nom="requests", version="2.28.0", auteur=None)
-    
+
     data_api = {
         "vulns": [
             {"id": "CVE-2023-0001", "summary": "Bug critique"},
@@ -44,7 +46,7 @@ def test_a_vulnerabilite_succes(mock_vulnerabilite_class):
 def test_a_vulnerabilite_filtrage(mock_vulnerabilite_class):
     """Vérifie que les scores inférieurs au seuil ou None sont ignorés."""
     dep = Dependances(nom="requests", version="2.28.0", auteur=None)
-    
+
     data_api = {
         "vulns": [
             {"id": "CVE-LOW", "summary": "Faible"},

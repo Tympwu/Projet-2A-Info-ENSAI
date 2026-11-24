@@ -230,4 +230,4 @@ def test_repr():
     assert repr(audit) == (
 
         "Audit(id=1, date=03/11/2026, statut=créé, score=None, emissionCO2_total=None)"
-    ) 
+    )

@@ -127,7 +127,11 @@ async def update_fichier(
     return fichier_nouv
 
 
-@router.get("/{id_utilisateur}", response_model=list[FichierReadModel], tags=["Fichier"])
+# Chemin distinct de "/{id_fichier}" : sinon FastAPI prendrait toujours l'id pour un id de fichier
+# et cette route ne serait jamais atteinte.
+@router.get(
+    "/utilisateur/{id_utilisateur}", response_model=list[FichierReadModel], tags=["Fichier"]
+)
 async def find_by_utilisateur(id_utilisateur: int, dossier_service=Depends(get_dossier_service)):
     """Trouve une liste de fichiers en fonction de l'ID d'un utilisateur.
     Args:

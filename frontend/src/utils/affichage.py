@@ -1,6 +1,5 @@
 """Fonctions d'affichage réutilisables entre les pages."""
 
-import base64
 from pathlib import Path
 
 import pandas as pd
@@ -27,24 +26,15 @@ def afficher_audit(audit: dict, cle: str = "audit") -> None:
         st.warning(f"Statut : {statut}")
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Score", audit.get("score"))
-    col2.metric("Complexité", f"O(n^{audit.get("complexite_total")})")
-    col3.metric("Émissions de CO₂ totales", f"{(audit.get('emissionCO2_total') or 0):.2f}gCO₂/kWh")
+    note = audit.get("score")
+    col1.metric("Note", f"{note:.1f}/20" if note is not None else "—")
+    col2.metric("Complexité", f"O(n^{audit.get('complexite_total')})")
+    col3.metric("Émissions de CO₂ totales", f"{(audit.get('emissionCO2_total') or 0):.2g} gCO₂e")
 
     fichiers = audit.get("dossier")["liste_fichiers"]
     if fichiers:
         st.subheader("Détail par fichier")
         st.dataframe(pd.DataFrame(fichiers), width="stretch")
-
-    certificat = audit.get("certificat_pdf")  # PDF encodé en base64, si l'audit est validé
-    if statut == "validé" and certificat:
-        st.download_button(
-            "Télécharger le certificat (PDF)",
-            data=base64.b64decode(certificat),
-            file_name="certificat_audit.pdf",
-            mime="application/pdf",
-            key=f"{cle}_certificat",
-        )
 
 
 def configurer_page(layout: str = "centered") -> None:

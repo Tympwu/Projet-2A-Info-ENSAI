@@ -205,4 +205,4 @@ def test_find_all_plusieurs_audits(dao, curseur, faux_fichier_dao):
 
 def test_find_all_aucun_audit(dao, curseur, faux_fichier_dao):
     curseur.fetchall.return_value = []
-    assert dao.find_all() == [] 
+    assert dao.find_all() == []

@@ -1,8 +1,7 @@
 """Tests unitaires pour le business object Utilisateur."""
 
-import pytest
-from business_object.utilisateur import Utilisateur
 from business_object.historique import Historique
+from business_object.utilisateur import Utilisateur
 
 
 def test_utilisateur_init_complet():

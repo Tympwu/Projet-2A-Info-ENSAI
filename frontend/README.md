@@ -32,8 +32,8 @@ The interface listens on port **8000** (`.streamlit/config.toml`). On SSP Cloud,
 | ---- | ---- | ------ | ------------ |
 | Home | `pages/home.py` | everyone | Log in, go to account creation, reset the database |
 | Create account | `pages/creer_compte.py` | everyone | Registration form |
-| New audit | `pages/nouvel_audit.py` | everyone (guests: audit not saved) | Upload files, sign them (HMAC), run the audit and display the result |
-| CO2 analysis | `pages/analyse_CO2.py` | everyone | Estimate the emissions of the audit for an input size *n* |
+| New audit | `pages/nouvel_audit.py` | everyone (guests: audit not saved) | Upload files, choose the input size *n* used for the CO2 estimate, sign the files (HMAC), run the audit, display the result and download the certificate and the SBOM |
+| Certificate check | `pages/certificat.py` | everyone | Upload a certificate (JSON) or type its signature, audit id and date: the backend says whether it is authentic and shows the audit |
 | My audits | `pages/historique.py` | logged-in users | History of the user's audits |
 | Audit details | `pages/detail_audit.py` | logged-in users | Full result of one audit |
 
@@ -57,7 +57,7 @@ The interface listens on port **8000** (`.streamlit/config.toml`). On SSP Cloud,
 ### HMAC signature (F1)
 
 Before sending files to `POST /audit/start_audit`, `nouvel_audit.py` computes an HMAC-SHA256 signature of
-the files with the key from `secrets.toml` and sends it in the `X-HMAC-Signature` header.
+the files with `HMAC_SECRET_KEY` (from `secrets.toml`, or from the root `.env` which is also loaded) and sends it in the `X-HMAC-Signature` header.
 The backend rejects the submission (HTTP 403) if the signature does not match.
 
 

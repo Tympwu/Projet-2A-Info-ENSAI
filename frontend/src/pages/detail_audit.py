@@ -31,9 +31,9 @@ def formater(valeur, format_="{:.2f}", defaut="—"):
 
 
 col1, col2, col3 = st.columns(3)
-col1.metric("Score", formater(audit.get("score"), "{:.1f}"))
-col2.metric("Émissions de CO₂", formater(audit.get("emissionCO2_total")))
-col3.metric("Complexité max", audit.get("complexite_max") or "—")
+col1.metric("Note /20", formater(audit.get("score"), "{:.1f}"))
+col2.metric("Émissions de CO₂ (g)", formater(audit.get("emissionCO2_total"), "{:.2g}"))
+col3.metric("Complexité", formater(audit.get("complexite_total"), "O(n^{})"))
 
 st.subheader("Détail par fichier")
 fichiers = audit.get("dossier", {}).get("liste_fichiers", [])

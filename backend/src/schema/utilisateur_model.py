@@ -26,6 +26,7 @@ class UtilisateurModel(BaseModel):
     @field_validator("mot_de_passe")
     @classmethod
     def check_password_length(cls, v: str) -> str:
+        """Refuse les mots de passe de moins de 8 caractères."""
         min_len = 8
         if len(v) < min_len:
             raise ValueError(
@@ -35,6 +36,8 @@ class UtilisateurModel(BaseModel):
 
 
 class UtilisateurReadModel(BaseModel):
+    """Utilisateur renvoyé par l'API (sans son mot de passe)."""
+
     id: int
     name: str
     email: EmailStr
@@ -42,5 +45,7 @@ class UtilisateurReadModel(BaseModel):
 
 
 class UtilisateurLoginModel(BaseModel):
+    """Identifiants envoyés pour se connecter."""
+
     name: str
     mot_de_passe: str
