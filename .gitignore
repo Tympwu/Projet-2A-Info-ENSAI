@@ -170,7 +170,3 @@ doc/report/.quarto/
 .env
 frontend/.streamlit/secrets.toml
 
-
-#fonction pour générer une clé secrète pour le HMAC
-
-python -c "import secrets; print(secrets.token_hex(32))"

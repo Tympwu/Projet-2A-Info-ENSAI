@@ -60,4 +60,4 @@ def test_cle_hmac_absente(monkeypatch):
 def test_hash_mdp_sale_par_le_nom():
     """Deux utilisateurs avec le même mot de passe n'ont pas le même hash."""
     assert hash_mdp("Secret123!", "alice") != hash_mdp("Secret123!", "bob")
-    assert hash_mdp("Secret123!", "alice") == hash_mdp("Secret123!", "alice") 
+    assert hash_mdp("Secret123!", "alice") == hash_mdp("Secret123!", "alice")

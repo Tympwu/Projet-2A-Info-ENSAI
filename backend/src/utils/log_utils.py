@@ -84,6 +84,7 @@ def log(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
+        """Journalise l'appel, ses paramètres (masqués s'ils sont sensibles) et son résultat."""
         if args and hasattr(args[0], "__class__"):
             logger = get_logger(f"{args[0].__class__.__module__}")
         else:
@@ -141,6 +142,7 @@ def log(func):
 
 
 class LogMiddleware(BaseHTTPMiddleware):
+    """Middleware FastAPI qui journalise chaque requête HTTP et sa réponse."""
     async def dispatch(self, request: Request, call_next):
         """
         Middleware to log HTTP requests and responses.

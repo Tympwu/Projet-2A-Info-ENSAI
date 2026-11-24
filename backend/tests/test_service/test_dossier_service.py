@@ -272,4 +272,4 @@ def test_traiter_dossier_echec_analyse_dependances(service, faux_analyse_fichier
     faux_analyse_fichier.analyse_dependances.return_value = False
 
     with pytest.raises(ArithmeticError):
-        service.traiter_dossier(un_dossier()) 
+        service.traiter_dossier(un_dossier())

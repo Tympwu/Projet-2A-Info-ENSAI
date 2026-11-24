@@ -36,6 +36,7 @@ class AuditModel(BaseModel):
 
 
 class AuditReadModel(BaseModel):
+    """Audit renvoyé par l'API : statut, note sur 20, émissions et fichiers analysés."""
     id: int | None = None
     score: float | None = None
     statut: str = "créé"
@@ -46,6 +47,7 @@ class AuditReadModel(BaseModel):
 
 
 class AuditHistoriqueModel(BaseModel):
+    """Résumé d'un audit tel qu'il apparaît dans l'historique."""
     id: int
     statut: str
     score: float | None = None

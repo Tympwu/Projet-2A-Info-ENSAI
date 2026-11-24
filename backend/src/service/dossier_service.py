@@ -193,4 +193,4 @@ class DossierService:
                 logger.error("Echec du calcul des scores des dépendances")
                 raise ArithmeticError("Echec du calcul des scores des dépendances")
 
-        return audit 
+        return audit

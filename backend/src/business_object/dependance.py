@@ -2,6 +2,16 @@ from business_object.vulnerabilite import Vulnerabilite
 
 
 class Dependances:
+    """
+    Bibliothèque dont dépend le code audité.
+
+    Attributs
+    ---------
+    nom (str): Nom du paquet, par exemple "requests".
+    version (str | None): Version épinglée, None si elle est inconnue.
+    auteur (str | None): Auteur du paquet, s'il est connu.
+    """
+
     def __init__(self, nom: str, version: str, auteur: str | None) -> None:
         self.nom: str = nom
         self.auteur: str = auteur

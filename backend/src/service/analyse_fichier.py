@@ -102,6 +102,7 @@ class AnalyseurAntiPatterns(ast.NodeVisitor):
         self.fonctions_recursives = set()
 
     def _visiter_boucle(self, noeud: ast.AST) -> None:
+        """Visite une boucle for/while et note si elle est imbriquée dans une autre."""
         # On entre dans une boucle : on augmente la profondeur de 1.
         self.profondeur += 1
         # Si la profondeur atteint 2, cela signifie qu'une boucle
@@ -122,6 +123,7 @@ class AnalyseurAntiPatterns(ast.NodeVisitor):
     visit_While = _visiter_boucle
 
     def visit_FunctionDef(self, noeud: ast.FunctionDef) -> None:
+        """Visite une fonction en retenant son nom, pour repérer ses appels récursifs."""
         # On analyse aussi les décorateurs et les valeurs par défaut
         # des paramètres de la fonction.
         for decorateur in noeud.decorator_list:
@@ -146,6 +148,7 @@ class AnalyseurAntiPatterns(ast.NodeVisitor):
     visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_Call(self, noeud: ast.Call) -> None:
+        """Repère un appel de la fonction en cours d'analyse, c'est-à-dire une récursion."""
         # On vérifie les appels uniquement si on se trouve dans une fonction.
         if self.fonctions:
             # Nom de la fonction actuellement analysée.
@@ -250,6 +253,8 @@ class Analyse_fichier(metaclass=Singleton):
         load_dotenv()
 
         self.api_url_OSV = os.getenv("OSV_API_URL", self.URL_OSV_PAR_DEFAUT)
+        if not self.api_url_OSV.startswith("https://"):
+            raise ValueError("OSV_API_URL doit être une adresse https://.")
         puissance = os.getenv(
             "PUISSANCE_MACHINE_W", 15.0
         )  # Valeur temporaire à changer le temps d'obtenir la vraie valeur dans le .env
@@ -548,7 +553,9 @@ class Analyse_fichier(metaclass=Singleton):
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
-            with urllib.request.urlopen(requete, timeout=self.TIMEOUT_OSV) as reponse:
+            # L'URL vient de la configuration (OSV_API_URL) et est vérifiée à l'initialisation :
+            # seul le schéma https est accepté, d'où l'exception bandit B310.
+            with urllib.request.urlopen(requete, timeout=self.TIMEOUT_OSV) as reponse:  # nosec B310
                 donnees = json.load(reponse)
             fiches.extend(donnees.get("vulns", []))
             jeton = donnees.get("next_page_token")

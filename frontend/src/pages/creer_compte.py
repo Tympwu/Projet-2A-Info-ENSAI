@@ -25,7 +25,7 @@ password = st.text_input("Mot de passe", type="password")
 password_confirmation = st.text_input("Confirmer le mot de passe", type="password")
 
 mdp_assez_long = len(password) >= 8
-mdp_identiques = password != "" and password == password_confirmation
+mdp_identiques = bool(password) and password == password_confirmation
 
 st.write("✅" if mdp_assez_long else "❌", "Au moins 8 caractères")
 st.write("✅" if mdp_identiques else "❌", "Les deux mots de passe sont identiques")

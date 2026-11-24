@@ -1,7 +1,8 @@
 """Outils d'authentification pour les pages Streamlit."""
 
-import streamlit as st
 import time
+
+import streamlit as st
 
 PAGE_CONNEXION = "pages/home.py"  # même chemin que celui utilisé dans creer_compte.py
 
