@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
 
-from schema.audit_model import AuditHistoriqueModel
+from schema.audit_model import AuditReadModel
 
 
 class HistoriqueSchema(BaseModel):
@@ -9,7 +9,7 @@ class HistoriqueSchema(BaseModel):
     """
 
     id: int
-    audits: list[AuditHistoriqueModel] = []
+    audits: list[AuditReadModel] = []
 
 
 class UtilisateurModel(BaseModel):

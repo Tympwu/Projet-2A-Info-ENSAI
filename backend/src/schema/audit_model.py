@@ -46,13 +46,6 @@ class AuditReadModel(BaseModel):
     complexite_total: int | None = None
 
 
-class AuditHistoriqueModel(BaseModel):
-    """Résumé d'un audit tel qu'il apparaît dans l'historique."""
-    id: int
-    statut: str
-    score: float | None = None
-
-
 class CertificatModel(BaseModel):
     """Certificat renvoyé par l'API après application de la Quality Gate (F5)."""
 
